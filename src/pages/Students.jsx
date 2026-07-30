@@ -1,19 +1,9 @@
-import { useState, useMemo } from "react";
-import { Search, AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { Search, AlertTriangle, CheckCircle2, ArrowRight, X } from "lucide-react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
-const STUDENTS = [
-  { id:"2021-0001", name:"Maria Santos",     avatar:"MS", course:"BS Computer Science",        yr:3, status:"Regular",   gwa:1.75, alerts:1 },
-  { id:"2021-0045", name:"Juan dela Cruz",   avatar:"JC", course:"BS Information Technology",  yr:3, status:"Irregular", gwa:2.45, alerts:2 },
-  { id:"2022-0078", name:"Ana Reyes",        avatar:"AR", course:"BS Computer Science",        yr:2, status:"Regular",   gwa:1.38, alerts:0 },
-  { id:"2020-0112", name:"Roberto Lim",      avatar:"RL", course:"BS Information Systems",     yr:4, status:"Irregular", gwa:2.88, alerts:2 },
-  { id:"2022-0145", name:"Patricia Navarro", avatar:"PN", course:"BS Information Technology",  yr:2, status:"Regular",   gwa:2.20, alerts:0 },
-  { id:"2023-0088", name:"Kevin Torralba",   avatar:"KT", course:"BS Computer Science",        yr:1, status:"Regular",   gwa:1.88, alerts:0 },
-  { id:"2021-0078", name:"Carlo Estrada",    avatar:"CE", course:"BS Computer Science",        yr:3, status:"Irregular", gwa:3.25, alerts:1 },
-  { id:"2022-0201", name:"Liza Montaño",     avatar:"LM", course:"BS Information Technology",  yr:2, status:"Irregular", gwa:2.75, alerts:1 },
-];
-
-const YEAR_LABELS = ["1st", "2nd", "3rd", "4th"];
+const YEAR_LABELS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
 function gwaColor(g) {
   if (g <= 1.75) return "text-[#1a7f37]";
@@ -36,9 +26,9 @@ function Avatar({ initials }) {
     "bg-[#9e6a03] text-[#fff8c5]",
     "bg-[#6e40c9] text-[#ede8ff]",
   ];
-  const idx = (initials.charCodeAt(0) * 7 + initials.charCodeAt(1)) % colors.length;
+  const idx = initials ? (initials.charCodeAt(0) * 7 + initials.charCodeAt(1)) % colors.length : 0;
   return (
-    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${colors[idx]}`}>
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${colors[idx]}`}>
       {initials}
     </div>
   );
@@ -46,113 +36,299 @@ function Avatar({ initials }) {
 
 export default function Students() {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const [yr, setYr] = useState("all");
-  const [course, setCourse] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initAlert  = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "");
+  const initYear   = searchParams.get("year") || "";
+  const initCourse = searchParams.get("course") || "";
 
-  const filtered = useMemo(() => STUDENTS.filter(s => {
-    const mq = !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.id.includes(q) || s.course.toLowerCase().includes(q.toLowerCase());
-    const my = yr === "all" || String(s.yr) === yr;
-    const mc = course === "all" || s.course.includes(course);
-    const ms = status === "all" || s.status === status;
-    return mq && my && mc && ms;
-  }), [q, yr, course, status]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
 
-  const selectClass = "h-8 px-2.5 text-[12px] border border-[#d0d7de] rounded-md bg-white text-[#1f2328] cursor-pointer outline-none focus:border-[#1a7f37]";
+  const [q,        setQ]        = useState("");
+  const [yr,       setYr]       = useState(initYear);
+  const [course,   setCourse]   = useState(initCourse);
+  const [status,   setStatus]   = useState("");
+  const [hasAlert, setHasAlert] = useState(initAlert);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select("id, name, avatar, course, yr, status, gwa, concerns(id)")
+          .order("name");
+        if (error) throw error;
+        const formatted = (data || []).map(s => ({
+          ...s,
+          gwa: Number(s.gwa),
+          alerts: (s.concerns || []).length
+        }));
+        setStudents(formatted);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const hasActiveFilter = q || (yr && yr !== "all") || (course && course !== "all") || (status && status !== "all") || (hasAlert && hasAlert !== "all");
+
+  function clearAll() {
+    setQ(""); setYr(""); setCourse(""); setStatus(""); setHasAlert("");
+    setSearchParams({}); // Clear query string if present
+  }
+
+  const filtered = useMemo(() => students.filter(s => {
+    const mq = !q        || s.name.toLowerCase().includes(q.toLowerCase()) || s.id.includes(q) || s.course.toLowerCase().includes(q.toLowerCase());
+    const my = !yr       || yr === "all"       || String(s.yr) === yr;
+    const mc = !course   || course === "all"   || s.course === course;
+    const ms = !status   || status === "all"   || s.status === status;
+    const ma = !hasAlert || hasAlert === "all" || (hasAlert === "yes" ? s.alerts > 0 : (hasAlert === "no" ? s.alerts === 0 : (hasAlert === "top" ? s.gwa <= 1.75 : true)));
+    return mq && my && mc && ms && ma;
+  }), [students, q, yr, course, status, hasAlert]);
+
+  const sel = `h-10 px-3 text-[14px] border-2 border-[#d0d7de] rounded-lg bg-white
+    cursor-pointer outline-none focus:border-[#1a7f37] font-medium`;
 
   return (
-    <div className="max-w-5xl pb-12">
+    <div className="w-full pb-12">
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#1f2328] tracking-tight mb-1">Students</h1>
-        <p className="text-sm text-[#656d76]">{STUDENTS.length} records displayed · 300 total enrolled</p>
+        <h1 className="text-2xl font-bold text-[#1f2328] tracking-tight mb-1">Students</h1>
+        <p className="text-[15px] text-[#656d76]">
+          {!loading ? `${filtered.length} of ${students.length} records shown` : "Loading records..."} · Complete student registry
+        </p>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#656d76]" />
-          <input
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="Search name, ID, course…"
-            className="w-full h-8 pl-8 pr-3 text-[12px] border border-[#d0d7de] rounded-md bg-white text-[#1f2328] outline-none focus:border-[#1a7f37]"
-          />
+      {/* Filter Bar */}
+      <div className="bg-white border-2 border-[#d0d7de] rounded-xl p-4 mb-5">
+        <p className="text-[12px] font-bold text-[#656d76] uppercase tracking-wide mb-3">
+          Filter Students
+        </p>
+        <div className="flex gap-3 flex-wrap items-center">
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[220px]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#656d76]" />
+            <input
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Search by name, student ID, or course..."
+              className="w-full h-10 pl-9 pr-3 text-[14px] border-2 border-[#d0d7de] rounded-lg
+                bg-white text-[#1f2328] outline-none focus:border-[#1a7f37] font-medium"
+            />
+          </div>
+
+          {/* Course */}
+          <select
+            value={course}
+            onChange={e => setCourse(e.target.value)}
+            className={`${sel} ${!course ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+          >
+            <option value="" disabled hidden>Course</option>
+            <option value="all">All Courses</option>
+            <option value="BS Computer Science">BS Computer Science</option>
+            <option value="BS Information Technology">BS Information Technology</option>
+            <option value="Associate in Computer Technology">Associate in Computer Technology (A.C.T)</option>
+          </select>
+
+          {/* Student Status */}
+          <select
+            value={status}
+            onChange={e => setStatus(e.target.value)}
+            className={`${sel} ${!status ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+          >
+            <option value="" disabled hidden>Student Status</option>
+            <option value="all">All Status</option>
+            <option value="Regular">Regular</option>
+            <option value="Irregular">Irregular</option>
+          </select>
+
+          {/* Academic Standing */}
+          <select
+            value={hasAlert}
+            onChange={e => setHasAlert(e.target.value)}
+            className={`${sel} ${!hasAlert ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+          >
+            <option value="" disabled hidden>Academic Standing</option>
+            <option value="all">All Students</option>
+            <option value="top">Top Performers (≤ 1.75)</option>
+            <option value="yes">With Academic Concern</option>
+            <option value="no">No Concerns</option>
+          </select>
+
+          {/* Clear Filters Button */}
+          {hasActiveFilter && (
+            <button
+              onClick={clearAll}
+              className="h-10 px-4 flex items-center gap-2 bg-[#cf222e] hover:bg-[#b91c1c]
+                text-white text-[14px] font-bold rounded-lg transition-colors flex-shrink-0"
+            >
+              <X size={15} />
+              Clear Filters
+            </button>
+          )}
         </div>
-        <select value={yr} onChange={e => setYr(e.target.value)} className={selectClass}>
-          <option value="all">All Years</option>
-          {[1,2,3,4].map(y => <option key={y} value={y}>{YEAR_LABELS[y-1]} Year</option>)}
-        </select>
-        <select value={course} onChange={e => setCourse(e.target.value)} className={selectClass}>
-          <option value="all">All Courses</option>
-          <option value="Computer Science">BSCS</option>
-          <option value="Information Technology">BSIT</option>
-          <option value="Information Systems">BSIS</option>
-        </select>
-        <select value={status} onChange={e => setStatus(e.target.value)} className={selectClass}>
-          <option value="all">All Status</option>
-          <option value="Regular">Regular</option>
-          <option value="Irregular">Irregular</option>
-        </select>
+
+        {/* Active filter tags */}
+        {hasActiveFilter && (
+          <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[#e8ecf0]">
+            <span className="text-[12px] font-semibold text-[#656d76]">Active Filters:</span>
+            {hasAlert === "yes" && (
+              <span className="text-[12px] font-semibold bg-[#ffebe9] text-[#cf222e] border border-[#ffb8b0] rounded-full px-2.5 py-0.5 flex items-center gap-1">
+                <AlertTriangle size={10} /> With Academic Concern
+              </span>
+            )}
+            {hasAlert === "no" && (
+              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5 flex items-center gap-1">
+                <CheckCircle2 size={10} /> No Concerns
+              </span>
+            )}
+            {hasAlert === "top" && (
+              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5 flex items-center gap-1">
+                <CheckCircle2 size={10} /> Top Performer
+              </span>
+            )}
+
+            {course && course !== "all" && (
+              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5">
+                {course}
+              </span>
+            )}
+            {status && status !== "all" && (
+              <span className="text-[12px] font-semibold bg-[#fff8c5] text-[#9a6700] border border-[#f0d070] rounded-full px-2.5 py-0.5">
+                {status}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#d0d7de] rounded-lg overflow-hidden">
+      <div className="bg-white border-2 border-[#d0d7de] rounded-xl overflow-hidden">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-[#f6f8fa]">
-              {["Student", "Student ID", "Course", "Year", "Enrollment", "GWA", "Alerts", ""].map((h, i) => (
-                <th key={i} className="px-4 py-2 text-[10px] font-semibold text-[#656d76] text-left border-b border-[#d0d7de] uppercase tracking-wide whitespace-nowrap">
+            <tr className="bg-[#f6f8fa] border-b-2 border-[#d0d7de]">
+              {[
+                "Student Name",
+                "Student ID",
+                "Course",
+                "Student Status",
+                "Academic Standing",
+                "Action",
+              ].map((h, i) => (
+                <th key={i} className="px-5 py-4 text-[12px] font-bold text-[#656d76] text-left uppercase tracking-wide whitespace-nowrap">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-[13px] text-[#656d76]">
-                  No students match your filters.
+                <td colSpan={8} className="px-5 py-14 text-center">
+                  <p className="text-[16px] font-semibold text-[#656d76] mb-3">
+                    Loading students...
+                  </p>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={8} className="px-5 py-14 text-center">
+                  <p className="text-[16px] font-semibold text-[#cf222e] mb-3">
+                    Error loading students: {error}
+                  </p>
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-5 py-14 text-center">
+                  <p className="text-[16px] font-semibold text-[#656d76] mb-3">
+                    No students match your selected filters.
+                  </p>
+                  <button
+                    onClick={clearAll}
+                    className="text-[14px] font-bold text-white bg-[#1a7f37] px-5 py-2.5 rounded-lg hover:bg-[#166d30] transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
                 </td>
               </tr>
             ) : filtered.map((s, i) => (
               <tr
                 key={s.id}
-                onClick={() => navigate(`/students/${s.id}`)}
-                className={`hover:bg-[#f6f8fa] cursor-pointer transition-colors ${i < filtered.length - 1 ? "border-b border-[#d0d7de]" : ""}`}
+                className={`transition-colors hover:bg-[#f6f8fa] ${i < filtered.length - 1 ? "border-b border-[#e8ecf0]" : ""}`}
               >
-                <td className="px-4 py-2.5">
-                  <div className="flex items-center gap-2">
+                {/* Student Name */}
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
                     <Avatar initials={s.avatar} />
-                    <span className="text-[13px] font-semibold text-[#1f2328]">{s.name}</span>
+                    <span className="text-[15px] font-bold text-[#1f2328]">{s.name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-[11px] font-mono text-[#656d76]">{s.id}</td>
-                <td className="px-4 py-2.5 text-[12px] text-[#656d76]">{s.course}</td>
-                <td className="px-4 py-2.5 text-[12px] text-[#656d76]">{YEAR_LABELS[s.yr - 1]} Year</td>
-                <td className="px-4 py-2.5">
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${s.status === "Regular" ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]" : "bg-[#fff8c5] text-[#9a6700] border-[#f0d070]"}`}>
+
+                {/* Student ID */}
+                <td className="px-5 py-4 text-[13px] font-mono text-[#656d76]">{s.id}</td>
+
+                {/* Course */}
+                <td className="px-5 py-4 text-[14px] text-[#656d76]">{s.course}</td>
+
+
+
+                {/* Student Status */}
+                <td className="px-5 py-4">
+                  <span className={`text-[13px] font-semibold px-3 py-1.5 rounded-lg border-2
+                    ${s.status === "Regular"
+                      ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]"
+                      : "bg-[#fff8c5] text-[#9a6700] border-[#f0d070]"}`}>
                     {s.status}
                   </span>
                 </td>
-                <td className="px-4 py-2.5">
-                  <span className={`text-[12px] font-bold font-mono px-2 py-0.5 rounded-md border ${gwaColor(s.gwa)} ${gwaBg(s.gwa)}`}>
-                    {s.gwa.toFixed(2)}
-                  </span>
+
+                {/* Academic Standing */}
+                <td className="px-5 py-4">
+                  {s.alerts > 0 ? (
+                    <span className="inline-flex items-center gap-2 text-[13px] font-bold text-[#cf222e] bg-[#ffebe9] border border-[#ffb8b0] px-3 py-1.5 rounded-lg">
+                      <AlertTriangle size={14} />
+                      {s.alerts} Concern{s.alerts > 1 ? "s" : ""}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#1a7f37] bg-[#dafbe1] border border-[#a4e8b4] px-3 py-1.5 rounded-lg">
+                      <CheckCircle2 size={14} />
+                      No Concerns
+                    </span>
+                  )}
                 </td>
-                <td className="px-4 py-2.5">
-                  {s.alerts > 0
-                    ? <span className="flex items-center gap-1 text-[12px] font-semibold text-[#cf222e]"><AlertTriangle size={11} />{s.alerts}</span>
-                    : <span className="flex items-center gap-1 text-[11px] text-[#9198a1]"><CheckCircle2 size={11} />—</span>
-                  }
+
+                {/* Action */}
+                <td className="px-5 py-4">
+                  <button
+                    onClick={() => navigate(`/students/${s.id}`)}
+                    className="inline-flex items-center gap-2 bg-[#1a7f37] hover:bg-[#166d30]
+                      text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    View Record
+                    <ArrowRight size={14} />
+                  </button>
                 </td>
-                <td className="px-4 py-2.5"><ChevronRight size={13} className="text-[#9198a1]" /></td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Footer */}
+        {filtered.length > 0 && !loading && !error && (
+          <div className="px-5 py-3 border-t border-[#e8ecf0] bg-[#f6f8fa]">
+            <p className="text-[13px] text-[#656d76]">
+              Showing <span className="font-bold text-[#1f2328]">{filtered.length}</span> student{filtered.length !== 1 ? "s" : ""}
+              {hasActiveFilter ? " matching your active filters" : ""} · Use the <span className="font-bold text-[#1a7f37]">View Record</span> button to open a student's full academic history
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

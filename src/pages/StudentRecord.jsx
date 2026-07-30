@@ -1,175 +1,18 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle, Clock, MinusCircle } from "lucide-react";
+import {
+  ArrowLeft, CheckCircle2, XCircle,
+  Clock, MinusCircle, AlertTriangle
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
 
-const STUDENTS = [
-  {
-    id:"2021-0001", name:"Maria Santos", avatar:"MS", course:"BS Computer Science", yr:3, status:"Regular", gwa:1.75,
-    alerts:["Missing prerequisite: CC121 required before CC304"],
-    semesters:[
-      { label:"1st Year · 1st Semester", gwa:1.50, subjects:[
-        { code:"CC101",  title:"Intro to Computing",              u:3, g:1.25, s:"passed" },
-        { code:"CC102",  title:"Computer Programming 1",          u:3, g:1.50, s:"passed" },
-        { code:"Math101",title:"Mathematics in the Modern World", u:3, g:1.75, s:"passed" },
-        { code:"GEC001", title:"Understanding the Self",          u:3, g:2.00, s:"passed" },
-        { code:"PE001",  title:"Physical Education 1",            u:2, g:1.25, s:"passed" },
-      ]},
-      { label:"1st Year · 2nd Semester", gwa:1.63, subjects:[
-        { code:"CC111",  title:"Computer Programming 2",          u:3, g:1.50, s:"passed", pre:"CC102" },
-        { code:"CC112",  title:"Digital Logic Design",            u:3, g:1.75, s:"passed" },
-        { code:"Math102",title:"Calculus 1",                      u:3, g:2.00, s:"passed" },
-        { code:"GEC002", title:"Readings in Philippine History",  u:3, g:1.50, s:"passed" },
-        { code:"PE002",  title:"Physical Education 2",            u:2, g:1.25, s:"passed" },
-      ]},
-      { label:"2nd Year · 1st Semester", gwa:1.88, subjects:[
-        { code:"CC201",  title:"Data Structures & Algorithms",    u:3, g:1.75, s:"passed", pre:"CC111" },
-        { code:"CC202",  title:"Object-Oriented Programming",     u:3, g:2.00, s:"passed", pre:"CC111" },
-        { code:"CC203",  title:"Discrete Mathematics",            u:3, g:1.75, s:"passed" },
-        { code:"Math201",title:"Calculus 2",                      u:3, g:2.25, s:"passed", pre:"Math102" },
-        { code:"GEC003", title:"The Contemporary World",          u:3, g:1.75, s:"passed" },
-      ]},
-      { label:"2nd Year · 2nd Semester", gwa:2.10, subjects:[
-        { code:"CC211",  title:"Database Management Systems",     u:3, g:2.00, s:"passed", pre:"CC201" },
-        { code:"CC212",  title:"Computer Architecture",           u:3, g:2.25, s:"passed" },
-        { code:"CC213",  title:"Software Engineering 1",          u:3, g:2.25, s:"passed" },
-        { code:"CC121",  title:"Web Development Fundamentals",    u:3, g:null, s:"dropped" },
-        { code:"GEC004", title:"Art Appreciation",                u:3, g:2.00, s:"passed" },
-      ]},
-      { label:"3rd Year · 1st Semester", gwa:2.13, subjects:[
-        { code:"CC301",  title:"Operating Systems",               u:3, g:2.00, s:"passed", pre:"CC212" },
-        { code:"CC302",  title:"Software Engineering 2",          u:3, g:2.25, s:"passed", pre:"CC213" },
-        { code:"CC303",  title:"Programming Languages",           u:3, g:2.00, s:"passed" },
-        { code:"CC304",  title:"Web Systems & Technologies",      u:3, g:null, s:"incomplete", preFlag:true, preNote:"Requires CC121 — previously Dropped" },
-        { code:"CC305",  title:"Human-Computer Interaction",      u:3, g:2.25, s:"passed" },
-      ]},
-    ]
-  },
-  {
-    id:"2021-0045", name:"Juan dela Cruz", avatar:"JC", course:"BS Information Technology", yr:3, status:"Irregular", gwa:2.45,
-    alerts:["Missing prerequisite: CC121 required before CC304", "At risk: GWA approaching 3.0"],
-    semesters:[
-      { label:"1st Year · 1st Semester", gwa:2.13, subjects:[
-        { code:"IT101",  title:"Intro to Information Technology", u:3, g:2.00, s:"passed" },
-        { code:"CC102",  title:"Computer Programming 1",          u:3, g:2.25, s:"passed" },
-        { code:"Math101",title:"Mathematics in the Modern World", u:3, g:2.25, s:"passed" },
-        { code:"GEC001", title:"Understanding the Self",          u:3, g:2.00, s:"passed" },
-        { code:"PE001",  title:"Physical Education 1",            u:2, g:2.00, s:"passed" },
-      ]},
-      { label:"1st Year · 2nd Semester", gwa:2.50, subjects:[
-        { code:"IT102",  title:"Web Design & Development",        u:3, g:2.25, s:"passed" },
-        { code:"CC111",  title:"Computer Programming 2",          u:3, g:2.75, s:"passed", pre:"CC102" },
-        { code:"Math102",title:"Calculus 1",                      u:3, g:3.00, s:"passed" },
-        { code:"GEC002", title:"Readings in Philippine History",  u:3, g:2.25, s:"passed" },
-        { code:"PE002",  title:"Physical Education 2",            u:2, g:2.25, s:"passed" },
-      ]},
-      { label:"2nd Year · 1st Semester", gwa:2.63, subjects:[
-        { code:"IT201",  title:"Network Fundamentals",            u:3, g:2.50, s:"passed" },
-        { code:"IT202",  title:"Systems Analysis & Design",       u:3, g:5.00, s:"failed" },
-        { code:"CC201",  title:"Data Structures & Algorithms",    u:3, g:2.75, s:"passed", pre:"CC111" },
-        { code:"GEC003", title:"The Contemporary World",          u:3, g:2.25, s:"passed" },
-        { code:"Math201",title:"Probability & Statistics",        u:3, g:2.75, s:"passed" },
-      ]},
-      { label:"2nd Year · 2nd Semester", gwa:2.50, subjects:[
-        { code:"IT202",  title:"Systems Analysis & Design (Retake)", u:3, g:2.50, s:"passed" },
-        { code:"IT203",  title:"Database Administration",         u:3, g:2.50, s:"passed", pre:"CC201" },
-        { code:"IT204",  title:"Network Administration",          u:3, g:2.75, s:"passed", pre:"IT201" },
-        { code:"GEC004", title:"Art Appreciation",                u:3, g:2.25, s:"passed" },
-        { code:"CC213",  title:"Software Engineering 1",          u:3, g:2.50, s:"passed" },
-      ]},
-      { label:"3rd Year · 1st Semester", gwa:2.88, subjects:[
-        { code:"IT301",  title:"Advanced Networking",             u:3, g:2.75, s:"passed", pre:"IT204" },
-        { code:"IT302",  title:"IT Project Management",           u:3, g:3.00, s:"passed" },
-        { code:"IT303",  title:"Information Security",            u:3, g:2.75, s:"passed" },
-        { code:"CC311",  title:"Machine Learning Fundamentals",   u:3, g:3.00, s:"passed" },
-        { code:"GEC005", title:"Ethics",                          u:3, g:3.00, s:"passed" },
-      ]},
-    ]
-  },
-  {
-    id:"2022-0078", name:"Ana Reyes", avatar:"AR", course:"BS Computer Science", yr:2, status:"Regular", gwa:1.38,
-    alerts:[],
-    semesters:[
-      { label:"1st Year · 1st Semester", gwa:1.30, subjects:[
-        { code:"CC101",  title:"Intro to Computing",              u:3, g:1.25, s:"passed" },
-        { code:"CC102",  title:"Computer Programming 1",          u:3, g:1.25, s:"passed" },
-        { code:"Math101",title:"Mathematics in the Modern World", u:3, g:1.50, s:"passed" },
-        { code:"GEC001", title:"Understanding the Self",          u:3, g:1.25, s:"passed" },
-        { code:"PE001",  title:"Physical Education 1",            u:2, g:1.25, s:"passed" },
-      ]},
-      { label:"1st Year · 2nd Semester", gwa:1.38, subjects:[
-        { code:"CC111",  title:"Computer Programming 2",          u:3, g:1.25, s:"passed", pre:"CC102" },
-        { code:"CC112",  title:"Digital Logic Design",            u:3, g:1.50, s:"passed" },
-        { code:"Math102",title:"Calculus 1",                      u:3, g:1.50, s:"passed" },
-        { code:"GEC002", title:"Readings in Philippine History",  u:3, g:1.25, s:"passed" },
-        { code:"PE002",  title:"Physical Education 2",            u:2, g:1.50, s:"passed" },
-      ]},
-      { label:"2nd Year · 1st Semester", gwa:1.45, subjects:[
-        { code:"CC201",  title:"Data Structures & Algorithms",    u:3, g:1.50, s:"passed", pre:"CC111" },
-        { code:"CC202",  title:"Object-Oriented Programming",     u:3, g:1.25, s:"passed", pre:"CC111" },
-        { code:"CC203",  title:"Discrete Mathematics",            u:3, g:1.50, s:"passed" },
-        { code:"Math201",title:"Calculus 2",                      u:3, g:1.50, s:"passed", pre:"Math102" },
-        { code:"GEC003", title:"The Contemporary World",          u:3, g:1.50, s:"passed" },
-      ]},
-    ]
-  },
-  {
-    id:"2020-0112", name:"Roberto Lim", avatar:"RL", course:"BS Information Systems", yr:4, status:"Irregular", gwa:2.88,
-    alerts:["2 failed subjects in history — retakes completed", "Below average GWA — monitor closely"],
-    semesters:[
-      { label:"1st Year · 1st Semester", gwa:2.50, subjects:[
-        { code:"IS101",  title:"Intro to Information Systems",    u:3, g:2.50, s:"passed" },
-        { code:"CC102",  title:"Computer Programming 1",          u:3, g:2.50, s:"passed" },
-        { code:"Math101",title:"Mathematics in the Modern World", u:3, g:2.75, s:"passed" },
-        { code:"GEC001", title:"Understanding the Self",          u:3, g:2.25, s:"passed" },
-        { code:"PE001",  title:"Physical Education 1",            u:2, g:2.25, s:"passed" },
-      ]},
-      { label:"1st Year · 2nd Semester", gwa:2.88, subjects:[
-        { code:"IS102",  title:"Business Process Management",     u:3, g:2.75, s:"passed" },
-        { code:"CC111",  title:"Computer Programming 2",          u:3, g:3.00, s:"passed", pre:"CC102" },
-        { code:"Math102",title:"Calculus 1",                      u:3, g:5.00, s:"failed" },
-        { code:"GEC002", title:"Readings in Philippine History",  u:3, g:2.50, s:"passed" },
-        { code:"PE002",  title:"Physical Education 2",            u:2, g:2.75, s:"passed" },
-      ]},
-      { label:"2nd Year · 1st Semester", gwa:3.00, subjects:[
-        { code:"IS201",  title:"Systems Analysis & Design",       u:3, g:3.00, s:"passed" },
-        { code:"Math102",title:"Calculus 1 (Retake)",             u:3, g:3.00, s:"passed" },
-        { code:"CC201",  title:"Data Structures & Algorithms",    u:3, g:3.00, s:"passed", pre:"CC111" },
-        { code:"IS202",  title:"Enterprise Architecture",         u:3, g:3.00, s:"passed" },
-      ]},
-      { label:"2nd Year · 2nd Semester", gwa:2.75, subjects:[
-        { code:"IS211",  title:"Database Design",                 u:3, g:2.75, s:"passed", pre:"CC201" },
-        { code:"IS212",  title:"IT Governance",                   u:3, g:2.75, s:"passed" },
-        { code:"IS213",  title:"Project Management",              u:3, g:2.50, s:"passed" },
-        { code:"GEC003", title:"The Contemporary World",          u:3, g:3.00, s:"passed" },
-        { code:"IS214",  title:"Business Intelligence",           u:3, g:2.75, s:"passed" },
-      ]},
-      { label:"3rd Year · 1st Semester", gwa:2.88, subjects:[
-        { code:"IS301",  title:"ERP Systems",                     u:3, g:3.00, s:"passed" },
-        { code:"IS302",  title:"IT Risk Management",              u:3, g:2.75, s:"passed" },
-        { code:"IS303",  title:"Data Analytics",                  u:3, g:2.75, s:"passed" },
-        { code:"IS304",  title:"Cloud Computing",                 u:3, g:5.00, s:"failed" },
-        { code:"GEC004", title:"Art Appreciation",                u:3, g:2.75, s:"passed" },
-      ]},
-      { label:"3rd Year · 2nd Semester", gwa:2.88, subjects:[
-        { code:"IS304",  title:"Cloud Computing (Retake)",        u:3, g:2.75, s:"passed" },
-        { code:"IS311",  title:"Digital Transformation",          u:3, g:3.00, s:"passed" },
-        { code:"IS312",  title:"Information Security Management", u:3, g:2.75, s:"passed" },
-        { code:"GEC005", title:"Ethics",                          u:3, g:3.00, s:"passed" },
-        { code:"IS313",  title:"IS Capstone Planning",            u:3, g:null, s:"incomplete" },
-      ]},
-      { label:"4th Year · 1st Semester", gwa:2.75, subjects:[
-        { code:"IS401",  title:"IS Capstone Project 1",           u:3, g:2.75, s:"passed" },
-        { code:"IS402",  title:"IS Practicum",                    u:6, g:2.75, s:"passed" },
-        { code:"IS403",  title:"Tech Entrepreneurship",           u:3, g:2.75, s:"passed" },
-      ]},
-    ]
-  },
-];
+// ─── Config & Helpers ─────────────────────────────────────────
 
-const STATUS_CONFIG = {
-  passed:     { label:"Passed",     Icon:CheckCircle2, color:"text-[#1a7f37]", bg:"bg-[#dafbe1]", border:"border-[#a4e8b4]" },
-  failed:     { label:"Failed",     Icon:XCircle,      color:"text-[#cf222e]", bg:"bg-[#ffebe9]", border:"border-[#ffb8b0]" },
-  dropped:    { label:"Dropped",    Icon:MinusCircle,  color:"text-[#57606a]", bg:"bg-[#f6f8fa]", border:"border-[#d0d7de]" },
-  incomplete: { label:"Incomplete", Icon:Clock,        color:"text-[#9a6700]", bg:"bg-[#fff8c5]", border:"border-[#f0d070]" },
+const STATUS_CFG = {
+  Passed:     { Icon:CheckCircle2, color:"text-[#1a7f37]", bg:"bg-[#dafbe1]", border:"border-[#a4e8b4]" },
+  Failed:     { Icon:XCircle,      color:"text-[#cf222e]", bg:"bg-[#ffebe9]", border:"border-[#ffb8b0]" },
+  Dropped:    { Icon:MinusCircle,  color:"text-[#57606a]", bg:"bg-[#f6f8fa]", border:"border-[#d0d7de]" },
+  Incomplete: { Icon:Clock,        color:"text-[#9a6700]", bg:"bg-[#fff8c5]", border:"border-[#f0d070]" },
 };
 
 function gwaColor(g) {
@@ -180,20 +23,29 @@ function gwaColor(g) {
 }
 
 function gwaLabel(g) {
-  if (g <= 1.75) return "Excellent";
-  if (g <= 2.50) return "Good";
-  if (g <= 3.00) return "Average";
-  return "At Risk";
+  if (g <= 1.75) return "Excellent Standing";
+  if (g <= 2.50) return "Good Standing";
+  if (g <= 3.00) return "Satisfactory Standing";
+  return "Below Passing Threshold";
 }
 
-function Avatar({ initials, size = "w-11 h-11", text = "text-[13px]" }) {
+function gwaBg(g) {
+  if (g <= 1.75) return "bg-[#dafbe1] border-[#a4e8b4]";
+  if (g <= 2.50) return "bg-[#ddf4ff] border-[#aecbfa]";
+  if (g <= 3.00) return "bg-[#fff8c5] border-[#f0d070]";
+  return "bg-[#ffebe9] border-[#ffb8b0]";
+}
+
+function Avatar({ initials, size = "w-12 h-12", text = "text-[14px]" }) {
   const colors = [
     "bg-[#1f6feb] text-[#cae8ff]",
     "bg-[#1a7f37] text-[#dafbe1]",
     "bg-[#9e6a03] text-[#fff8c5]",
     "bg-[#6e40c9] text-[#ede8ff]",
   ];
-  const idx = (initials.charCodeAt(0) * 7 + initials.charCodeAt(1)) % colors.length;
+  const idx = initials
+    ? (initials.charCodeAt(0) * 7 + (initials.charCodeAt(1) || 0)) % colors.length
+    : 0;
   return (
     <div className={`${size} rounded-full flex items-center justify-center ${text} font-bold flex-shrink-0 ${colors[idx]}`}>
       {initials}
@@ -201,118 +53,268 @@ function Avatar({ initials, size = "w-11 h-11", text = "text-[13px]" }) {
   );
 }
 
-export default function StudentRecord() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const student = STUDENTS.find(s => s.id === id);
 
-  if (!student) return (
-    <div className="p-8 text-[#656d76] text-sm">
-      Student not found.{" "}
-      <button onClick={() => navigate("/students")} className="text-[#1a7f37] underline">Go back</button>
+export default function StudentRecord() {
+  const { id }     = useParams();
+  const navigate   = useNavigate();
+
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+  const [filterSY, setFilterSY] = useState("");
+  const [filterSem, setFilterSem] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data, error } = await supabase
+          .from("students")
+          .select(`
+            id, name, avatar, course, yr, status, gwa,
+            concerns(concern),
+            semesters(id, label, school_year, gwa,
+              subjects(code, title, units, midterm_grade, final_grade, status, prerequisite, prereq_flag, prereq_note)
+            )
+          `)
+          .eq("id", id)
+          .single();
+        if (error) throw error;
+
+        const sortedSemesters = (data.semesters || []).sort((a, b) => {
+          if (a.school_year !== b.school_year) return b.school_year.localeCompare(a.school_year);
+          return b.label.localeCompare(a.label);
+        });
+
+        const formatted = {
+          ...data,
+          gwa: Number(data.gwa),
+          concerns: (data.concerns || []).map(c => c.concern),
+          semesters: sortedSemesters.map(sem => ({
+            ...sem,
+            gwa: Number(sem.gwa),
+            subjects: (sem.subjects || []).map(sub => {
+              // Dynamically compute status from grade
+              let dynamicStatus = sub.status;
+              if (sub.final_grade !== null && sub.final_grade !== undefined) {
+                const g = Number(sub.final_grade);
+                if (g >= 1.0 && g <= 3.0) dynamicStatus = "Passed";
+                else if (g > 3.0) dynamicStatus = "Failed"; // 4.0 or 5.0
+              }
+
+              return {
+                code: sub.code,
+                title: sub.title,
+                u: sub.units,
+                mid: sub.midterm_grade,
+                g: sub.final_grade,
+                s: dynamicStatus,
+                pre: sub.prerequisite,
+                preFlag: sub.prereq_flag,
+                preNote: sub.prereq_note
+              };
+            })
+          }))
+        };
+
+        setStudent(formatted);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (id) load();
+  }, [id]);
+
+  if (loading) return (
+    <div className="p-10 text-center">
+      <p className="text-[16px] text-[#656d76] mb-4">Loading student record…</p>
     </div>
   );
 
-  const allSubjects = student.semesters.flatMap(s => s.subjects);
-  const passed    = allSubjects.filter(s => s.s === "passed").length;
-  const failed    = allSubjects.filter(s => s.s === "failed").length;
-  const dropped   = allSubjects.filter(s => s.s === "dropped").length;
-  const incomplete= allSubjects.filter(s => s.s === "incomplete").length;
-  const units     = allSubjects.filter(s => s.s === "passed").reduce((a, s) => a + s.u, 0);
-  const pct       = Math.round((passed / allSubjects.length) * 100);
-
-  return (
-    <div className="max-w-4xl pb-12">
-
-      {/* Back button */}
+  if (error || !student) return (
+    <div className="p-10 text-center">
+      <p className="text-[16px] text-[#656d76] mb-4">Student record not found. ({error})</p>
       <button
         onClick={() => navigate("/students")}
-        className="flex items-center gap-1.5 text-[12px] text-[#656d76] hover:text-[#1f2328] mb-5 transition-colors"
+        className="bg-[#1a7f37] text-white px-5 py-2.5 rounded-lg font-semibold text-[14px] hover:bg-[#166d30] transition-colors"
       >
-        <ArrowLeft size={13} /> Back to Students
+        Return to Students
+      </button>
+    </div>
+  );
+
+  const allSubjects  = student.semesters.flatMap(s => s.subjects);
+  const passed       = allSubjects.filter(s => s.s === "Passed").length;
+  const failed       = allSubjects.filter(s => s.s === "Failed").length;
+  const dropped      = allSubjects.filter(s => s.s === "Dropped").length;
+  const incomplete   = allSubjects.filter(s => s.s === "Incomplete").length;
+  const totalUnits   = allSubjects.filter(s => s.s === "Passed").reduce((a, s) => a + s.u, 0);
+  const pct          = Math.round((passed / (allSubjects.length || 1)) * 100);
+
+  const uniqueSY = [...new Set(student.semesters.map(s => s.school_year))];
+  const uniqueSem = ["1st Semester", "2nd Semester", "Summer"];
+
+  return (
+    <div className="w-full pb-12">
+
+      {/* Back */}
+      <button
+        onClick={() => navigate("/students")}
+        className="flex items-center gap-2 text-[14px] text-[#656d76] hover:text-[#1f2328] mb-6 transition-colors font-medium"
+      >
+        <ArrowLeft size={16} /> Back to Students
       </button>
 
-      {/* Profile card */}
-      <div className="bg-white border border-[#d0d7de] rounded-lg p-5 mb-4">
+      {/* Profile Card */}
+      <div className="bg-white border-2 border-[#d0d7de] rounded-xl p-6 mb-5">
 
         {/* Top row */}
-        <div className="flex items-start gap-3 mb-4">
+        <div className="flex items-start gap-4 mb-5">
           <Avatar initials={student.avatar} />
           <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h1 className="text-[18px] font-bold text-[#1f2328] tracking-tight">{student.name}</h1>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${student.status === "Regular" ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]" : "bg-[#fff8c5] text-[#9a6700] border-[#f0d070]"}`}>
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              <h1 className="text-[22px] font-bold text-[#1f2328] tracking-tight">{student.name}</h1>
+              <span className={`text-[12px] font-bold px-3 py-1 rounded-lg border-2
+                ${student.status === "Regular"
+                  ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]"
+                  : "bg-[#fff8c5] text-[#9a6700] border-[#f0d070]"}`}>
                 {student.status}
               </span>
-              {student.alerts.length > 0 && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-[#ffebe9] text-[#cf222e] border-[#ffb8b0]">
-                  ⚠ {student.alerts.length} alert{student.alerts.length > 1 ? "s" : ""}
-                </span>
-              )}
             </div>
-            <p className="text-[12px] text-[#656d76]">
-              {student.course} · {["1st","2nd","3rd","4th"][student.yr - 1]} Year ·{" "}
+            <p className="text-[14px] text-[#656d76]">
+              {student.course} &nbsp;·&nbsp;
+              {["1st","2nd","3rd","4th"][student.yr - 1]} Year &nbsp;·&nbsp;
               <span className="font-mono">{student.id}</span>
             </p>
           </div>
-          <span className={`text-[13px] font-bold font-mono px-2.5 py-1 rounded-md border ${gwaColor(student.gwa)} ${student.gwa <= 1.75 ? "bg-[#dafbe1] border-[#a4e8b4]" : student.gwa <= 2.50 ? "bg-[#ddf4ff] border-[#aecbfa]" : student.gwa <= 3.00 ? "bg-[#fff8c5] border-[#f0d070]" : "bg-[#ffebe9] border-[#ffb8b0]"}`}>
-            {student.gwa.toFixed(2)} · {gwaLabel(student.gwa)}
-          </span>
         </div>
 
-        {/* Progress bar */}
-        <div className="mb-4">
-          <div className="flex justify-between mb-1.5">
-            <span className="text-[11px] font-semibold text-[#656d76] uppercase tracking-wide">Curriculum Progress</span>
-            <span className="text-[11px] font-mono text-[#656d76]">{passed}/{allSubjects.length} subjects · {units} units earned</span>
+        {/* Curriculum Progress */}
+        <div className="mb-5">
+          <div className="flex justify-between mb-2">
+            <span className="text-[13px] font-bold text-[#656d76] uppercase tracking-wide">
+              Curriculum Completion
+            </span>
+            <span className="text-[13px] font-mono text-[#656d76]">
+              {passed} of {allSubjects.length} subjects completed · {totalUnits} units earned
+            </span>
           </div>
-          <div className="h-1.5 bg-[#e8ecf0] rounded-full overflow-hidden">
-            <div className="h-full bg-[#2da44e] rounded-full transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-3 bg-[#e8ecf0] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#2da44e] rounded-full transition-all"
+              style={{ width: `${pct}%` }}
+            />
           </div>
+          <p className="text-[12px] text-[#9198a1] mt-1.5">
+            {pct}% of total curriculum subjects completed based on encoded academic records
+          </p>
         </div>
 
-        {/* Tally */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        {/* Subject tally */}
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { label:"Passed",     count:passed,     cfg:STATUS_CONFIG.passed },
-            { label:"Failed",     count:failed,     cfg:STATUS_CONFIG.failed },
-            { label:"Dropped",    count:dropped,    cfg:STATUS_CONFIG.dropped },
-            { label:"Incomplete", count:incomplete, cfg:STATUS_CONFIG.incomplete },
+            { label:"Passed",     count:passed,     cfg:STATUS_CFG.Passed     },
+            { label:"Failed",     count:failed,     cfg:STATUS_CFG.Failed     },
+            { label:"Dropped",    count:dropped,    cfg:STATUS_CFG.Dropped    },
+            { label:"Incomplete", count:incomplete, cfg:STATUS_CFG.Incomplete },
           ].map(item => (
-            <div key={item.label} className={`${item.cfg.bg} border ${item.cfg.border} rounded-md p-2.5 text-center`}>
-              <p className={`text-[20px] font-bold font-mono ${item.cfg.color}`}>{item.count}</p>
-              <p className={`text-[10px] font-medium mt-0.5 ${item.cfg.color}`}>{item.label}</p>
+            <div key={item.label} className={`${item.cfg.bg} border-2 ${item.cfg.border} rounded-xl p-4 text-center`}>
+              <p className={`text-[28px] font-bold font-mono ${item.cfg.color}`}>{item.count}</p>
+              <p className={`text-[12px] font-semibold mt-1 ${item.cfg.color}`}>{item.label}</p>
+              <p className="text-[10px] text-[#9198a1] mt-0.5">subject{item.count !== 1 ? "s" : ""}</p>
             </div>
           ))}
         </div>
 
-        {/* Alerts */}
-        {student.alerts.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {student.alerts.map((a, i) => (
-              <div key={i} className="flex items-start gap-2 bg-[#ffebe9] border border-[#ffb8b0] rounded-md px-3 py-2">
-                <AlertTriangle size={13} className="text-[#cf222e] mt-0.5 flex-shrink-0" />
-                <span className="text-[12px] text-[#1f2328]">{a}</span>
-              </div>
-            ))}
+        {/* Academic Concerns */}
+        {student.concerns.length > 0 && (
+          <div className="border-2 border-[#ffb8b0] rounded-xl overflow-hidden">
+            <div className="bg-[#ffebe9] px-4 py-3 border-b border-[#ffb8b0] flex items-center gap-2">
+              <AlertTriangle size={15} className="text-[#cf222e] flex-shrink-0" />
+              <p className="text-[13px] font-bold text-[#cf222e]">
+                Academic Concerns — {student.concerns.length} item{student.concerns.length > 1 ? "s" : ""} noted
+              </p>
+            </div>
+            <div className="divide-y divide-[#ffb8b0]">
+              {student.concerns.map((c, i) => (
+                <div key={i} className="px-4 py-3 bg-white">
+                  <p className="text-[14px] text-[#1f2328] leading-relaxed">{c}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Semester blocks */}
-      {student.semesters.map((sem, si) => (
-        <div key={si} className="bg-white border border-[#d0d7de] rounded-lg overflow-hidden mb-3">
-          <div className="flex items-center justify-between px-4 py-2.5 bg-[#f6f8fa] border-b border-[#d0d7de]">
-            <span className="text-[12px] font-bold text-[#1f2328]">{sem.label}</span>
-            <span className={`text-[11px] font-bold font-mono ${gwaColor(sem.gwa)}`}>
-              GWA {sem.gwa.toFixed(2)} · {gwaLabel(sem.gwa)}
-            </span>
-          </div>
+      {/* Semester Records */}
+      <div className="mb-4">
+        <h2 className="text-[17px] font-bold text-[#1f2328] mb-1">Semester-by-Semester Academic Record</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="text-[13px] text-[#656d76]">
+            Complete subject history from enrollment to present · GWA is computed per semester based on: sum of (grade × units) ÷ total units
+          </p>
+          {student.semesters.length > 0 && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <select
+                value={filterSY}
+                onChange={(e) => setFilterSY(e.target.value)}
+                className={`h-9 px-3 text-[13px] border-2 border-[#d0d7de] rounded-lg bg-white cursor-pointer outline-none focus:border-[#1a7f37] font-semibold ${!filterSY ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+              >
+                <option value="" disabled hidden>School Year</option>
+                <option value="all">All School Years</option>
+                {uniqueSY.map(sy => (
+                  <option key={sy} value={sy}>SY {sy}</option>
+                ))}
+              </select>
+
+              <select
+                value={filterSem}
+                onChange={(e) => setFilterSem(e.target.value)}
+                className={`h-9 px-3 text-[13px] border-2 border-[#d0d7de] rounded-lg bg-white cursor-pointer outline-none focus:border-[#1a7f37] font-semibold ${!filterSem ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+              >
+                <option value="" disabled hidden>Semester</option>
+                <option value="all">All Semesters</option>
+                {uniqueSem.map(sem => (
+                  <option key={sem} value={sem}>{sem}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        {student.semesters
+          .filter(sem => {
+            const matchSY = !filterSY || filterSY === "all" || sem.school_year === filterSY;
+            const matchSem = !filterSem || filterSem === "all" || sem.label.includes(filterSem);
+            return matchSY && matchSem;
+          })
+          .map((sem, si) => (
+          <div key={si} className="bg-white border-2 border-[#d0d7de] rounded-xl overflow-hidden mb-4">
+            {/* Semester header */}
+            <div className="flex items-center justify-between px-5 py-3 bg-[#f6f8fa] border-b-2 border-[#d0d7de]">
+              <div>
+                <p className="text-[14px] font-bold text-[#1f2328]">{sem.label}</p>
+                <p className="text-[12px] text-[#9198a1]">Academic Year {sem.school_year}</p>
+              </div>
+              <div className={`px-3 py-1.5 rounded-lg border-2 ${gwaBg(sem.gwa)} text-center`}>
+                <p className={`text-[15px] font-bold font-mono ${gwaColor(sem.gwa)}`}>
+                  {sem.gwa.toFixed(2)}
+                </p>
+                <p className={`text-[10px] font-semibold ${gwaColor(sem.gwa)}`}>
+                  Semester GWA
+                </p>
+              </div>
+            </div>
+
+          {/* Subject table */}
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-[#e8ecf0]">
-                {["Code", "Subject Title", "Units", "Grade", "Status"].map((h, i) => (
-                  <th key={i} className={`px-4 py-2 text-[10px] font-semibold text-[#656d76] uppercase tracking-wide ${i >= 2 ? "text-center" : "text-left"}`}>
+                {["Subject Code","Subject Title","Units","Midterm","Finals","Status"].map((h, i) => (
+                  <th key={i} className={`px-5 py-3 text-[11px] font-bold text-[#656d76] uppercase tracking-wide ${i >= 2 ? "text-center" : "text-left"}`}>
                     {h}
                   </th>
                 ))}
@@ -320,33 +322,69 @@ export default function StudentRecord() {
             </thead>
             <tbody>
               {sem.subjects.map((subj, j) => {
-                const cfg = STATUS_CONFIG[subj.s] || STATUS_CONFIG.dropped;
+                const cfg  = STATUS_CFG[subj.s] || STATUS_CFG.Dropped;
                 const Icon = cfg.Icon;
                 return (
-                  <tr key={j} className={`hover:bg-[#f6f8fa] transition-colors ${j < sem.subjects.length - 1 ? "border-b border-[#e8ecf0]" : ""}`}>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-mono text-[#656d76]">{subj.code}</span>
+                  <tr
+                    key={j}
+                    className={`hover:bg-[#f6f8fa] transition-colors ${j < sem.subjects.length - 1 ? "border-b border-[#e8ecf0]" : ""}`}
+                  >
+                    {/* Code */}
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-mono font-semibold text-[#656d76]">{subj.code}</span>
                         {subj.preFlag && (
-                          <span className="text-[9px] font-bold bg-[#ffebe9] text-[#cf222e] border border-[#ffb8b0] rounded px-1">PREREQ!</span>
+                          <span className="text-[10px] font-bold bg-[#ffebe9] text-[#cf222e] border border-[#ffb8b0] rounded px-1.5 py-0.5">
+                            PREREQ NOT MET
+                          </span>
                         )}
                       </div>
+                      {subj.pre && !subj.preFlag && (
+                        <p className="text-[10px] text-[#9198a1] mt-0.5">Prerequisite: {subj.pre}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-2">
-                      <p className="text-[13px] text-[#1f2328]">{subj.title}</p>
-                      {subj.preNote && <p className="text-[10px] text-[#cf222e] mt-0.5">{subj.preNote}</p>}
-                      {subj.pre && !subj.preFlag && <p className="text-[10px] text-[#9198a1] mt-0.5">prereq: {subj.pre}</p>}
+
+                    {/* Title */}
+                    <td className="px-5 py-3">
+                      <p className="text-[14px] text-[#1f2328] font-medium">{subj.title}</p>
+                      {subj.preNote && (
+                        <p className="text-[11px] text-[#cf222e] mt-0.5 font-medium">{subj.preNote}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-2 text-center text-[12px] text-[#656d76]">{subj.u}</td>
-                    <td className="px-4 py-2 text-center">
-                      <span className={`text-[13px] font-bold font-mono ${subj.g === 5.0 ? "text-[#cf222e]" : subj.g ? cfg.color : "text-[#9198a1]"}`}>
-                        {subj.g === 5.0 ? "5.00" : subj.g ? subj.g.toFixed(2) : "—"}
+
+                    {/* Units */}
+                    <td className="px-5 py-3 text-center text-[14px] text-[#656d76]">{subj.u}</td>
+
+                    {/* Midterm Grade */}
+                    <td className="px-5 py-3 text-center">
+                      <span className={`text-[15px] font-bold font-mono
+                        ${subj.mid === 5.0 ? "text-[#cf222e]"
+                          : subj.mid ? cfg.color
+                          : "text-[#9198a1]"}`}>
+                        {subj.mid === 5.0 ? "5.00"
+                          : subj.mid ? subj.mid.toFixed(2)
+                          : "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-center">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border ${cfg.color} ${cfg.bg} ${cfg.border}`}>
-                        <Icon size={10} />
-                        {cfg.label}
+
+                    {/* Final Grade */}
+                    <td className="px-5 py-3 text-center">
+                      <span className={`text-[15px] font-bold font-mono
+                        ${subj.g === 5.0 ? "text-[#cf222e]"
+                          : subj.g ? cfg.color
+                          : "text-[#9198a1]"}`}>
+                        {subj.g === 5.0 ? "5.00"
+                          : subj.g ? subj.g.toFixed(2)
+                          : "—"}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-5 py-3 text-center">
+                      <span className={`inline-flex items-center gap-1.5 text-[12px] font-bold
+                        px-3 py-1.5 rounded-lg border-2 ${cfg.color} ${cfg.bg} ${cfg.border}`}>
+                        <Icon size={13} />
+                        {subj.s}
                       </span>
                     </td>
                   </tr>
@@ -354,8 +392,16 @@ export default function StudentRecord() {
               })}
             </tbody>
           </table>
+
+          {/* GWA formula note */}
+          <div className="px-5 py-2.5 border-t border-[#e8ecf0] bg-[#f6f8fa]">
+            <p className="text-[11px] text-[#9198a1]">
+              Semester GWA computed as: sum of (Final Grade × Units) ÷ Total Units for this semester
+            </p>
+          </div>
         </div>
       ))}
+    </div>
     </div>
   );
 }
