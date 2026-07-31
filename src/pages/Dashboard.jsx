@@ -286,8 +286,8 @@ export default function Dashboard() {
               { label: "Incomplete Grade", count: withIncomplete, total, color: "bg-[#e3a900]", type: "incomplete", desc: "Students with unresolved incomplete grades from a prior semester" },
               { label: "Dropped a Subject", count: withDropped, total, color: "bg-[#57606a]", type: "dropped", desc: "Students who dropped at least one subject this academic year" },
             ].map(r => (
-              <div 
-                key={r.label} 
+              <div
+                key={r.label}
                 onClick={() => r.count > 0 && setSelectedConcern({ label: r.label, type: r.type, desc: r.desc })}
                 className={`p-2 -mx-2 rounded-lg transition-colors ${r.count > 0 ? "cursor-pointer hover:bg-[#f6f8fa]" : "opacity-70"}`}
               >
@@ -451,17 +451,17 @@ export default function Dashboard() {
                 <h3 className="text-[16px] font-bold text-[#1f2328]">{selectedConcern.label}</h3>
                 <p className="text-[12px] text-[#656d76] mt-0.5">{selectedConcern.desc}</p>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedConcern(null)}
                 className="p-1.5 text-[#656d76] hover:bg-[#d0d7de] rounded-md transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
-            
+
             <div className="overflow-y-auto p-2">
               {getConcernStudents(selectedConcern.type).map((s, i) => (
-                <div 
+                <div
                   key={s.id}
                   onClick={() => navigate(`/students/${s.id}`)}
                   className="flex items-center justify-between gap-3 p-3 hover:bg-[#f6f8fa] cursor-pointer rounded-lg transition-colors border-b border-[#e8ecf0] last:border-0 group"

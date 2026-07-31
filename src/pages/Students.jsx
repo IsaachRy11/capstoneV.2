@@ -37,18 +37,18 @@ function Avatar({ initials }) {
 export default function Students() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initAlert  = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "");
-  const initYear   = searchParams.get("year") || "";
+  const initAlert = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "");
+  const initYear = searchParams.get("year") || "";
   const initCourse = searchParams.get("course") || "";
 
   const [students, setStudents] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [q,        setQ]        = useState("");
-  const [yr,       setYr]       = useState(initYear);
-  const [course,   setCourse]   = useState(initCourse);
-  const [status,   setStatus]   = useState("");
+  const [q, setQ] = useState("");
+  const [yr, setYr] = useState(initYear);
+  const [course, setCourse] = useState(initCourse);
+  const [status, setStatus] = useState("");
   const [hasAlert, setHasAlert] = useState(initAlert);
 
   useEffect(() => {
@@ -82,10 +82,10 @@ export default function Students() {
   }
 
   const filtered = useMemo(() => students.filter(s => {
-    const mq = !q        || s.name.toLowerCase().includes(q.toLowerCase()) || s.id.includes(q) || s.course.toLowerCase().includes(q.toLowerCase());
-    const my = !yr       || yr === "all"       || String(s.yr) === yr;
-    const mc = !course   || course === "all"   || s.course === course;
-    const ms = !status   || status === "all"   || s.status === status;
+    const mq = !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.id.includes(q) || s.course.toLowerCase().includes(q.toLowerCase());
+    const my = !yr || yr === "all" || String(s.yr) === yr;
+    const mc = !course || course === "all" || s.course === course;
+    const ms = !status || status === "all" || s.status === status;
     const ma = !hasAlert || hasAlert === "all" || (hasAlert === "yes" ? s.alerts > 0 : (hasAlert === "no" ? s.alerts === 0 : (hasAlert === "top" ? s.gwa <= 1.75 : true)));
     return mq && my && mc && ms && ma;
   }), [students, q, yr, course, status, hasAlert]);
@@ -156,7 +156,7 @@ export default function Students() {
           >
             <option value="" disabled hidden>Academic Standing</option>
             <option value="all">All Students</option>
-            <option value="top">Top Performers (≤ 1.75)</option>
+            <option value="top">Top Performers</option>
             <option value="yes">With Academic Concern</option>
             <option value="no">No Concerns</option>
           </select>
