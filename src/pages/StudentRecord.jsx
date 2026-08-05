@@ -104,9 +104,29 @@ export default function StudentRecord() {
 
   // Filter semesters based on 2-tier clean selection (Year & Semester)
   const displayedSemesters = (student.semesters || []).filter((sem, idx) => {
-    // Determine year level of semester (e.g. index 0-1 = Year 1, 2-3 = Year 2, etc. or label matching)
-    const semYear = String(sem.year || Math.floor(idx / 2) + 1);
-    const semNum = sem.label?.includes("2nd") ? "2" : "1";
+    // Determine year level from sem.year or label string (e.g. "2nd Year · 1st Semester") or index fallback
+    let semYear = String(sem.year || "");
+    if (!semYear) {
+      if (sem.label?.includes("1st Year")) semYear = "1";
+      else if (sem.label?.includes("2nd Year")) semYear = "2";
+      else if (sem.label?.includes("3rd Year")) semYear = "3";
+      else if (sem.label?.includes("4th Year")) semYear = "4";
+      else semYear = String(Math.floor(idx / 2) + 1);
+    }
+
+    // Determine semester number ("1" or "2") from semester portion of label or sem.sem
+    let semNum = String(sem.sem || "");
+    if (!semNum) {
+      const lowerLabel = (sem.label || "").toLowerCase();
+      // Split by '·' to inspect the semester portion only and prevent '2nd Year' from matching as 2nd Sem
+      const parts = lowerLabel.split("·");
+      const semPart = parts.length > 1 ? parts[1] : lowerLabel;
+      if (semPart.includes("2nd") || semPart.includes("second") || lowerLabel.endsWith("2nd semester")) {
+        semNum = "2";
+      } else {
+        semNum = "1";
+      }
+    }
 
     const matchYear = selectedYearFilter === "all" || semYear === selectedYearFilter;
     const matchSem = selectedSemFilter === "all" || semNum === selectedSemFilter;
