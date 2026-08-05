@@ -1,34 +1,31 @@
 import { useEffect, useState, useMemo } from "react";
-import { Search, AlertTriangle, CheckCircle2, ArrowRight, X } from "lucide-react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { Search, AlertTriangle, CheckCircle2, ArrowRight, X, UserPlus } from "lucide-react";
+import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { useData } from "../context/DataContext";
+import { useAuth } from "../context/AuthContext";
 
-const YEAR_LABELS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-
-function gwaColor(g) {
-  if (g <= 1.75) return "text-[#1a7f37]";
-  if (g <= 2.50) return "text-[#0969da]";
-  if (g <= 3.00) return "text-[#9a6700]";
-  return "text-[#cf222e]";
-}
-
-function gwaBg(g) {
-  if (g <= 1.75) return "bg-[#dafbe1] border-[#a4e8b4]";
-  if (g <= 2.50) return "bg-[#ddf4ff] border-[#aecbfa]";
-  if (g <= 3.00) return "bg-[#fff8c5] border-[#f0d070]";
-  return "bg-[#ffebe9] border-[#ffb8b0]";
-}
+const STATUS_BADGES = {
+  Regular: "bg-[#fff7ed] text-[#c2410c] border-[#ffedd5]",
+  Irregular: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
+  Transferee: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]",
+  Returnee: "bg-[#f3e8ff] text-[#6b21a8] border-[#e9d5ff]",
+  Shiftee: "bg-[#fff7ed] text-[#ea580c] border-[#ffedd5]",
+  Inactive: "bg-[#f3f4f6] text-[#4b5563] border-[#e5e7eb]",
+  Dropped: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]",
+  Graduating: "bg-[#ecfdf5] text-[#047857] border-[#a7f3d0]",
+  Graduated: "bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]"
+};
 
 function Avatar({ initials }) {
   const colors = [
-    "bg-[#1f6feb] text-[#cae8ff]",
-    "bg-[#1a7f37] text-[#dafbe1]",
-    "bg-[#9e6a03] text-[#fff8c5]",
-    "bg-[#6e40c9] text-[#ede8ff]",
+    "bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white",
+    "bg-gradient-to-br from-[#ea580c] to-[#c2410c] text-white",
+    "bg-gradient-to-br from-[#fb923c] to-[#f97316] text-white",
+    "bg-gradient-to-br from-[#d97706] to-[#b45309] text-white",
   ];
-  const idx = initials ? (initials.charCodeAt(0) * 7 + initials.charCodeAt(1)) % colors.length : 0;
+  const idx = initials ? (initials.charCodeAt(0) * 7 + (initials.charCodeAt(1) || 0)) % colors.length : 0;
   return (
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${colors[idx]}`}>
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 shadow-sm ${colors[idx]}`}>
       {initials}
     </div>
   );
@@ -36,300 +33,461 @@ function Avatar({ initials }) {
 
 export default function Students() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { students, updateStudent } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initAlert = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "");
-  const initYear = searchParams.get("year") || "";
-  const initCourse = searchParams.get("course") || "";
 
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const [q, setQ] = useState("");
-  const [yr, setYr] = useState(initYear);
-  const [course, setCourse] = useState(initCourse);
-  const [status, setStatus] = useState("");
-  const [hasAlert, setHasAlert] = useState(initAlert);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const { data, error } = await supabase
-          .from("students")
-          .select("id, name, avatar, course, yr, status, gwa, concerns(id)")
-          .order("name");
-        if (error) throw error;
-        const formatted = (data || []).map(s => ({
-          ...s,
-          gwa: Number(s.gwa),
-          alerts: (s.concerns || []).length
-        }));
-        setStudents(formatted);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  const hasActiveFilter = q || (yr && yr !== "all") || (course && course !== "all") || (status && status !== "all") || (hasAlert && hasAlert !== "all");
-
-  function clearAll() {
-    setQ(""); setYr(""); setCourse(""); setStatus(""); setHasAlert("");
-    setSearchParams({}); // Clear query string if present
+  // PRIVACY RULE: If a student tries to access student registry, redirect them to their own record!
+  if (user?.role === "student") {
+    return <Navigate to={`/students/${user.id || "2025-0014"}`} replace />;
   }
 
-  const filtered = useMemo(() => students.filter(s => {
-    const mq = !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.id.includes(q) || s.course.toLowerCase().includes(q.toLowerCase());
-    const my = !yr || yr === "all" || String(s.yr) === yr;
-    const mc = !course || course === "all" || s.course === course;
-    const ms = !status || status === "all" || s.status === status;
-    const ma = !hasAlert || hasAlert === "all" || (hasAlert === "yes" ? s.alerts > 0 : (hasAlert === "no" ? s.alerts === 0 : (hasAlert === "top" ? s.gwa <= 1.75 : true)));
-    return mq && my && mc && ms && ma;
-  }), [students, q, yr, course, status, hasAlert]);
+  const initYear = searchParams.get("year") || "all";
+  const initCourse = searchParams.get("course") || "all";
+  const initAlert = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "all");
 
-  const sel = `h-10 px-3 text-[14px] border-2 border-[#d0d7de] rounded-lg bg-white
-    cursor-pointer outline-none focus:border-[#1a7f37] font-medium`;
+  const [q, setQ] = useState("");
+  const [activeYearTab, setActiveYearTab] = useState(initYear);
+  const [courseFilter, setCourseFilter] = useState(initCourse);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [academicStanding, setAcademicStanding] = useState(initAlert);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    id: "",
+    name: "",
+    course: "BS Information Technology",
+    section: "BSIT 1-A",
+    yr: 1,
+    status: "Regular",
+    avatar: ""
+  });
+
+  const isSecretary = user?.role === "secretary";
+
+  useEffect(() => {
+    const yrParam = searchParams.get("year");
+    if (yrParam) {
+      setActiveYearTab(yrParam);
+    } else {
+      setActiveYearTab("all");
+    }
+  }, [searchParams]);
+
+  // Base filtering without year selection (for accurate tab counts)
+  const filteredBase = useMemo(() => {
+    return students.filter((s) => {
+      const matchQ =
+        !q ||
+        s.name.toLowerCase().includes(q.toLowerCase()) ||
+        s.id.toLowerCase().includes(q.toLowerCase()) ||
+        s.course.toLowerCase().includes(q.toLowerCase()) ||
+        (s.section && s.section.toLowerCase().includes(q.toLowerCase()));
+
+      const matchCourse = courseFilter === "all" || s.course.includes(courseFilter);
+      const matchStatus = statusFilter === "all" || s.status === statusFilter;
+      
+      const hasConcerns = (s.concerns || []).length > 0;
+      const matchStanding =
+        academicStanding === "all" ||
+        (academicStanding === "yes" && hasConcerns) ||
+        (academicStanding === "no" && !hasConcerns) ||
+        (academicStanding === "top" && Number(s.gwa) <= 1.75);
+
+      return matchQ && matchCourse && matchStatus && matchStanding;
+    });
+  }, [students, q, courseFilter, statusFilter, academicStanding]);
+
+  // Categorize base students by Year Level (for tab counts)
+  const groupedByYear = useMemo(() => {
+    const groups = { 1: [], 2: [], 3: [], 4: [] };
+    filteredBase.forEach((s) => {
+      const y = s.yr || 1;
+      if (!groups[y]) groups[y] = [];
+      groups[y].push(s);
+    });
+    return groups;
+  }, [filteredBase]);
+
+  // Final filtered list including active year tab selection
+  const filtered = useMemo(() => {
+    return filteredBase.filter((s) => {
+      return activeYearTab === "all" || String(s.yr) === String(activeYearTab);
+    });
+  }, [filteredBase, activeYearTab]);
+
+  const clearAllFilters = () => {
+    setQ("");
+    setActiveYearTab("all");
+    setCourseFilter("all");
+    setStatusFilter("all");
+    setAcademicStanding("all");
+    setSearchParams({});
+  };
+
+  const handleAddStudentSubmit = (e) => {
+    e.preventDefault();
+    if (!newStudent.id || !newStudent.name) return;
+
+    const initials = newStudent.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+    const created = {
+      ...newStudent,
+      yr: Number(newStudent.yr),
+      status: "Regular", // Status is determined automatically later based on subject grades
+      avatar: initials,
+      gwa: 0,
+      concerns: [],
+      semesters: []
+    };
+
+    updateStudent(created);
+    setShowAddModal(false);
+    setNewStudent({
+      id: "",
+      name: "",
+      course: "BS Information Technology",
+      section: "BSIT 1-A",
+      yr: 1,
+      status: "Regular",
+      avatar: ""
+    });
+  };
 
   return (
-    <div className="w-full pb-12">
+    <div className="w-full pb-12 font-sans">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1f2328] tracking-tight mb-1">Students</h1>
-        <p className="text-[15px] text-[#656d76]">
-          {!loading ? `${filtered.length} of ${students.length} records shown` : "Loading records..."} · Complete student registry
-        </p>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111827] tracking-tight mb-1">Students Registry</h1>
+          <p className="text-[14px] text-[#6b7280]">
+            Categorized by Year Level · Showing {filtered.length} of {students.length} Total Enrolled Records
+          </p>
+        </div>
+
+        {isSecretary && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] text-white text-[13px] font-bold px-4 py-2.5 rounded-xl transition-all shadow-md"
+          >
+            <UserPlus size={16} />
+            Add New Student Record
+          </button>
+        )}
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border-2 border-[#d0d7de] rounded-xl p-4 mb-5">
-        <p className="text-[12px] font-bold text-[#656d76] uppercase tracking-wide mb-3">
-          Filter Students
+      {/* Filter & Search Bar Panel */}
+      <div className="bg-white border-2 border-[#e5e7eb] rounded-2xl p-4 mb-6 shadow-sm">
+        <p className="text-[11px] font-bold text-[#ea580c] uppercase tracking-wider mb-3">
+          Filter & Quick Lookup
         </p>
-        <div className="flex gap-3 flex-wrap items-center">
 
-          {/* Search */}
-          <div className="relative flex-1 min-w-[220px]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#656d76]" />
+        <div className="flex gap-3 flex-wrap items-center">
+          
+          {/* Quick Search */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
             <input
               value={q}
-              onChange={e => setQ(e.target.value)}
-              placeholder="Search by name, student ID, or course..."
-              className="w-full h-10 pl-9 pr-3 text-[14px] border-2 border-[#d0d7de] rounded-lg
-                bg-white text-[#1f2328] outline-none focus:border-[#1a7f37] font-medium"
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search by student name, ID, section, or course..."
+              className="w-full h-10 pl-9 pr-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white text-[#111827] outline-none focus:border-[#ea580c] font-medium transition-colors"
             />
           </div>
 
-          {/* Course */}
+          {/* Program Filter */}
           <select
-            value={course}
-            onChange={e => setCourse(e.target.value)}
-            className={`${sel} ${!course ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+            value={courseFilter}
+            onChange={(e) => setCourseFilter(e.target.value)}
+            className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="" disabled hidden>Course</option>
-            <option value="all">All Courses</option>
-            <option value="BS Computer Science">BS Computer Science</option>
-            <option value="BS Information Technology">BS Information Technology</option>
-            <option value="Associate in Computer Technology">Associate in Computer Technology (A.C.T)</option>
+            <option value="all">All Programs (BSIT, BSCS, ACT)</option>
+            <option value="Information Technology">BS Information Technology</option>
+            <option value="Computer Science">BS Computer Science</option>
+            <option value="Associate in Computer Technology">Associate in Computer Tech (ACT)</option>
           </select>
 
-          {/* Student Status */}
+          {/* Student Status Filter */}
           <select
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            className={`${sel} ${!status ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="" disabled hidden>Student Status</option>
-            <option value="all">All Status</option>
+            <option value="all">All Student Statuses</option>
             <option value="Regular">Regular</option>
             <option value="Irregular">Irregular</option>
+            <option value="Transferee">Transferee</option>
+            <option value="Returnee">Returnee</option>
+            <option value="Shiftee">Shiftee</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Dropped">Dropped</option>
+            <option value="Graduating">Graduating</option>
+            <option value="Graduated">Graduated</option>
           </select>
 
           {/* Academic Standing */}
           <select
-            value={hasAlert}
-            onChange={e => setHasAlert(e.target.value)}
-            className={`${sel} ${!hasAlert ? "text-[#9198a1]" : "text-[#1f2328]"}`}
+            value={academicStanding}
+            onChange={(e) => setAcademicStanding(e.target.value)}
+            className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="" disabled hidden>Academic Standing</option>
-            <option value="all">All Students</option>
-            <option value="top">Top Performers</option>
+            <option value="all">All Academic Standings</option>
             <option value="yes">With Academic Concern</option>
             <option value="no">No Concerns</option>
+            <option value="top">Top Performers (GWA ≤ 1.75)</option>
           </select>
 
-          {/* Clear Filters Button */}
-          {hasActiveFilter && (
+          {(q || courseFilter !== "all" || statusFilter !== "all" || academicStanding !== "all" || activeYearTab !== "all") && (
             <button
-              onClick={clearAll}
-              className="h-10 px-4 flex items-center gap-2 bg-[#cf222e] hover:bg-[#b91c1c]
-                text-white text-[14px] font-bold rounded-lg transition-colors flex-shrink-0"
+              onClick={clearAllFilters}
+              className="h-10 px-3.5 flex items-center gap-1.5 bg-[#ef4444] hover:bg-[#dc2626] text-white text-[13px] font-bold rounded-xl transition-colors flex-shrink-0"
             >
-              <X size={15} />
-              Clear Filters
+              <X size={14} /> Clear Filters
             </button>
           )}
+
         </div>
-
-        {/* Active filter tags */}
-        {hasActiveFilter && (
-          <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-[#e8ecf0]">
-            <span className="text-[12px] font-semibold text-[#656d76]">Active Filters:</span>
-            {hasAlert === "yes" && (
-              <span className="text-[12px] font-semibold bg-[#ffebe9] text-[#cf222e] border border-[#ffb8b0] rounded-full px-2.5 py-0.5 flex items-center gap-1">
-                <AlertTriangle size={10} /> With Academic Concern
-              </span>
-            )}
-            {hasAlert === "no" && (
-              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5 flex items-center gap-1">
-                <CheckCircle2 size={10} /> No Concerns
-              </span>
-            )}
-            {hasAlert === "top" && (
-              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5 flex items-center gap-1">
-                <CheckCircle2 size={10} /> Top Performer
-              </span>
-            )}
-
-            {course && course !== "all" && (
-              <span className="text-[12px] font-semibold bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] rounded-full px-2.5 py-0.5">
-                {course}
-              </span>
-            )}
-            {status && status !== "all" && (
-              <span className="text-[12px] font-semibold bg-[#fff8c5] text-[#9a6700] border border-[#f0d070] rounded-full px-2.5 py-0.5">
-                {status}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Table */}
-      <div className="bg-white border-2 border-[#d0d7de] rounded-xl overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#f6f8fa] border-b-2 border-[#d0d7de]">
-              {[
-                "Student Name",
-                "Student ID",
-                "Course",
-                "Student Status",
-                "Academic Standing",
-                "Action",
-              ].map((h, i) => (
-                <th key={i} className="px-5 py-4 text-[12px] font-bold text-[#656d76] text-left uppercase tracking-wide whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="px-5 py-14 text-center">
-                  <p className="text-[16px] font-semibold text-[#656d76] mb-3">
-                    Loading students...
-                  </p>
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={8} className="px-5 py-14 text-center">
-                  <p className="text-[16px] font-semibold text-[#cf222e] mb-3">
-                    Error loading students: {error}
-                  </p>
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-5 py-14 text-center">
-                  <p className="text-[16px] font-semibold text-[#656d76] mb-3">
-                    No students match your selected filters.
-                  </p>
-                  <button
-                    onClick={clearAll}
-                    className="text-[14px] font-bold text-white bg-[#1a7f37] px-5 py-2.5 rounded-lg hover:bg-[#166d30] transition-colors"
-                  >
-                    Clear All Filters
-                  </button>
-                </td>
-              </tr>
-            ) : filtered.map((s, i) => (
-              <tr
-                key={s.id}
-                className={`transition-colors hover:bg-[#f6f8fa] ${i < filtered.length - 1 ? "border-b border-[#e8ecf0]" : ""}`}
-              >
-                {/* Student Name */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar initials={s.avatar} />
-                    <span className="text-[15px] font-bold text-[#1f2328]">{s.name}</span>
-                  </div>
-                </td>
+      {/* CCS Orange Year-Level Categorization Tabs */}
+      <div className="flex items-center gap-2 mb-6 border-b-2 border-[#e5e7eb] pb-3 overflow-x-auto">
+        <span className="text-[12px] font-bold text-[#ea580c] uppercase tracking-wide mr-2 flex-shrink-0">
+          Select Year Level:
+        </span>
+        {[
+          { key: "all", label: "All Year Levels", count: filteredBase.length },
+          { key: "1", label: "1st Year", count: groupedByYear[1]?.length || 0 },
+          { key: "2", label: "2nd Year", count: groupedByYear[2]?.length || 0 },
+          { key: "3", label: "3rd Year", count: groupedByYear[3]?.length || 0 },
+          { key: "4", label: "4th Year", count: groupedByYear[4]?.length || 0 },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              setActiveYearTab(tab.key);
+              if (tab.key === "all") {
+                setSearchParams({});
+              } else {
+                setSearchParams({ year: tab.key });
+              }
+            }}
+            className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 flex-shrink-0 ${
+              activeYearTab === String(tab.key)
+                ? "bg-gradient-to-r from-[#ea580c] to-[#f97316] text-white shadow-md"
+                : "bg-white border-2 border-[#e5e7eb] text-[#4b5563] hover:border-[#ea580c] hover:text-[#111827]"
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-mono ${
+              activeYearTab === String(tab.key) ? "bg-white/20 text-white" : "bg-[#f3f4f6] text-[#4b5563]"
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
-                {/* Student ID */}
-                <td className="px-5 py-4 text-[13px] font-mono text-[#656d76]">{s.id}</td>
+      {/* Render Tables Categorized by Year Level */}
+      {[1, 2, 3, 4].map((yearNum) => {
+        const yearStudents = groupedByYear[yearNum] || [];
+        if (activeYearTab !== "all" && String(activeYearTab) !== String(yearNum)) return null;
+        if (activeYearTab === "all" && yearStudents.length === 0) return null;
 
-                {/* Course */}
-                <td className="px-5 py-4 text-[14px] text-[#656d76]">{s.course}</td>
+        const yearLabel = ["1st Year", "2nd Year", "3rd Year", "4th Year"][yearNum - 1];
 
+        return (
+          <div key={yearNum} className="mb-8">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#ea580c]" />
+                <h2 className="text-[17px] font-bold text-[#111827]">{yearLabel} Enrolled Students</h2>
+                <span className="text-[12px] font-bold bg-[#fff7ed] text-[#c2410c] border border-[#ffedd5] px-2.5 py-0.5 rounded-full font-mono">
+                  {yearStudents.length} Students
+                </span>
+              </div>
+            </div>
 
-
-                {/* Student Status */}
-                <td className="px-5 py-4">
-                  <span className={`text-[13px] font-semibold px-3 py-1.5 rounded-lg border-2
-                    ${s.status === "Regular"
-                      ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]"
-                      : "bg-[#fff8c5] text-[#9a6700] border-[#f0d070]"}`}>
-                    {s.status}
-                  </span>
-                </td>
-
-                {/* Academic Standing */}
-                <td className="px-5 py-4">
-                  {s.alerts > 0 ? (
-                    <span className="inline-flex items-center gap-2 text-[13px] font-bold text-[#cf222e] bg-[#ffebe9] border border-[#ffb8b0] px-3 py-1.5 rounded-lg">
-                      <AlertTriangle size={14} />
-                      {s.alerts} Concern{s.alerts > 1 ? "s" : ""}
-                    </span>
+            <div className="bg-white border-2 border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#fafafa] border-b-2 border-[#e5e7eb]">
+                    {["Student Name", "Student ID", "Course & Section", "Status", "Academic Standing", "Action"].map((h, i) => (
+                      <th key={i} className="px-5 py-3.5 text-[11px] font-bold text-[#6b7280] text-left uppercase tracking-wide whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {yearStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-8 text-center text-[#6b7280] text-[14px]">
+                        No students found for {yearLabel} matching active filters.
+                      </td>
+                    </tr>
                   ) : (
-                    <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#1a7f37] bg-[#dafbe1] border border-[#a4e8b4] px-3 py-1.5 rounded-lg">
-                      <CheckCircle2 size={14} />
-                      No Concerns
-                    </span>
+                    yearStudents.map((s, idx) => {
+                      const concernsCount = (s.concerns || []).length;
+                      const badgeClass = STATUS_BADGES[s.status] || STATUS_BADGES.Regular;
+
+                      return (
+                        <tr
+                          key={s.id}
+                          className={`transition-colors hover:bg-[#fff7ed]/50 ${idx < yearStudents.length - 1 ? "border-b border-[#f3f4f6]" : ""}`}
+                        >
+                          {/* Student Name */}
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <Avatar initials={s.avatar} />
+                              <div>
+                                <p className="text-[14px] font-bold text-[#111827]">{s.name}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Student ID */}
+                          <td className="px-5 py-3.5 text-[13px] font-mono text-[#6b7280]">{s.id}</td>
+
+                          {/* Course & Section */}
+                          <td className="px-5 py-3.5 text-[13px] text-[#6b7280]">
+                            <p className="font-semibold text-[#111827]">{s.course}</p>
+                            <p className="text-[11px] text-[#9ca3af]">{s.section || "Unassigned Section"}</p>
+                          </td>
+
+                          {/* Status Badge */}
+                          <td className="px-5 py-3.5">
+                            <span className={`text-[12px] font-bold px-2.5 py-1 rounded-lg border ${badgeClass}`}>
+                              {s.status}
+                            </span>
+                          </td>
+
+                          {/* Academic Standing */}
+                          <td className="px-5 py-3.5">
+                            {concernsCount > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] px-2.5 py-1 rounded-lg">
+                                <AlertTriangle size={13} />
+                                {concernsCount} Concern{concernsCount > 1 ? "s" : ""}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#047857] bg-[#ecfdf5] border border-[#a7f3d0] px-2.5 py-1 rounded-lg">
+                                <CheckCircle2 size={13} />
+                                No Concerns
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action */}
+                          <td className="px-5 py-3.5">
+                            <button
+                              onClick={() => navigate(`/students/${s.id}`)}
+                              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] text-white text-[12px] font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-sm whitespace-nowrap"
+                            >
+                              View Record
+                              <ArrowRight size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
-                </td>
-
-                {/* Action */}
-                <td className="px-5 py-4">
-                  <button
-                    onClick={() => navigate(`/students/${s.id}`)}
-                    className="inline-flex items-center gap-2 bg-[#1a7f37] hover:bg-[#166d30]
-                      text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    View Record
-                    <ArrowRight size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Footer */}
-        {filtered.length > 0 && !loading && !error && (
-          <div className="px-5 py-3 border-t border-[#e8ecf0] bg-[#f6f8fa]">
-            <p className="text-[13px] text-[#656d76]">
-              Showing <span className="font-bold text-[#1f2328]">{filtered.length}</span> student{filtered.length !== 1 ? "s" : ""}
-              {hasActiveFilter ? " matching your active filters" : ""} · Use the <span className="font-bold text-[#1a7f37]">View Record</span> button to open a student's full academic history
-            </p>
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })}
+
+      {/* Add Student Modal (Secretary Access) */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border-2 border-[#e5e7eb]">
+            <div className="flex justify-between items-center mb-4 border-b border-[#f3f4f6] pb-3">
+              <h3 className="text-[17px] font-bold text-[#111827]">Add New Student Record</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-[#6b7280] hover:text-[#111827]">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddStudentSubmit} className="flex flex-col gap-3.5">
+              <div>
+                <label className="block text-[11px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">
+                  Student ID Number
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={newStudent.id}
+                  onChange={(e) => setNewStudent({ ...newStudent, id: e.target.value })}
+                  placeholder="e.g. 2026-0099"
+                  className="w-full h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl outline-none focus:border-[#ea580c]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">
+                  Full Student Name
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={newStudent.name}
+                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                  placeholder="e.g. Maria Clara Santos"
+                  className="w-full h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl outline-none focus:border-[#ea580c]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">
+                  Year Level
+                </label>
+                <select
+                  value={newStudent.yr}
+                  onChange={(e) => setNewStudent({ ...newStudent, yr: Number(e.target.value) })}
+                  className="w-full h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl outline-none focus:border-[#ea580c]"
+                >
+                  <option value={1}>1st Year</option>
+                  <option value={2}>2nd Year</option>
+                  <option value={3}>3rd Year</option>
+                  <option value={4}>4th Year</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">
+                  Academic Program
+                </label>
+                <select
+                  value={newStudent.course}
+                  onChange={(e) => setNewStudent({ ...newStudent, course: e.target.value })}
+                  className="w-full h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl outline-none focus:border-[#ea580c]"
+                >
+                  <option value="BS Information Technology">BS Information Technology</option>
+                  <option value="BS Computer Science">BS Computer Science</option>
+                  <option value="Associate in Computer Technology">Associate in Computer Technology</option>
+                </select>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-[13px] font-semibold text-[#6b7280] hover:bg-[#fafafa] rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-[13px] font-bold text-white bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] rounded-xl shadow-md"
+                >
+                  Create Student Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
