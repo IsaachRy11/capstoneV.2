@@ -291,7 +291,7 @@ export default function EnrollmentSections() {
                   {selectedCourseDetail.code}
                 </span>
                 <span className="text-[12px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 flex items-center gap-1.5">
-                  <Calendar size={13} /> AY 2026-2027 · 2nd Semester
+                  <Calendar size={13} /> SY 2026-2027 · 2nd Semester
                 </span>
                 <span className="text-[12px] font-bold text-gray-300 bg-white/10 px-3 py-1 rounded-full">
                   {selectedCourseDetail.yearLevel}th Year · {selectedCourseDetail.semNum}nd Sem Course
@@ -405,7 +405,7 @@ export default function EnrollmentSections() {
               <p className="text-[13px] text-[#6b7280]">
                 {showEnrollPanel
                   ? `Search and add eligible database students to ${selectedCourseDetail.code}`
-                  : `${filteredRoster.length} students currently taking ${selectedCourseDetail.code} in AY 2026-2027 2nd Semester`}
+                  : `${filteredRoster.length} students currently taking ${selectedCourseDetail.code} in SY 2026-2027 2nd Semester`}
               </p>
             </div>
 
@@ -693,7 +693,7 @@ export default function EnrollmentSections() {
             Subject Enrolment &amp; Assigned Sections
           </h1>
           <p className="text-[14px] text-[#6b7280]">
-            Current Academic Term: <strong className="text-[#ea580c]">AY 2026-2027 · 2nd Semester</strong> (Click any course card to open full-page section allocations &amp; roster)
+            Current Academic Term: <strong className="text-[#ea580c]">SY 2026-2027 · 2nd Semester</strong> (Click any course card to open full-page section allocations &amp; roster)
           </p>
         </div>
       </div>

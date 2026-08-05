@@ -352,7 +352,7 @@ export default function StudentRecord() {
                 <div className="flex items-center justify-between px-8 py-5 bg-[#fafafa] border-b-2 border-[#e5e7eb]">
                   <div>
                     <h3 className="text-[17px] font-extrabold text-[#111827]">
-                      Academic Year {sem.school_year} :: {sem.label}
+                      School Year {sem.school_year} :: {sem.label}
                     </h3>
                     <p className="text-[12px] font-semibold text-[#ea580c] mt-0.5">
                       {sem.subjects?.length || 0} Total Enrolled Subjects
