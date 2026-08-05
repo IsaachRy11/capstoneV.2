@@ -206,8 +206,9 @@ export default function Dashboard() {
                           {s.course} ({s.yr}yr)
                         </span>
                       </div>
-                      <p className="text-[12px] text-[#cf222e] font-semibold">
-                        ⚠️ {s.concerns[0] || "Academic concern noted"}
+                      <p className="text-[12px] text-[#cf222e] font-semibold flex items-center gap-1.5">
+                        <AlertTriangle size={13} className="flex-shrink-0" />
+                        <span>{s.concerns[0] || "Academic concern noted"}</span>
                       </p>
                     </div>
                     <ChevronRight size={18} className="text-[#9198a1] group-hover:text-[#1a7f37]" />

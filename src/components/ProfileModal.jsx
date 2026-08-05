@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { X, User, Key, CheckCircle2, Save, Lock, LogOut } from "lucide-react";
+import { X, User, Key, CheckCircle2, Save, Lock, LogOut, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function ProfileModal({ isOpen, onClose }) {
@@ -190,8 +190,8 @@ export default function ProfileModal({ isOpen, onClose }) {
               )}
 
               {passwordError && (
-                <div className="p-3 bg-[#ffebe9] border border-[#ffb8b0] rounded-xl text-[#cf222e] text-[12px] font-bold">
-                  ⚠️ {passwordError}
+                <div className="p-3 bg-[#ffebe9] border border-[#ffb8b0] rounded-xl text-[#cf222e] text-[12px] font-bold flex items-center gap-2">
+                  <AlertCircle size={16} /> {passwordError}
                 </div>
               )}
 

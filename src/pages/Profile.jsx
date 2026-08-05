@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { User, Key, CheckCircle2, ShieldCheck, Mail, Save, Lock, GraduationCap } from "lucide-react";
+import { User, Key, CheckCircle2, ShieldCheck, Mail, Save, Lock, GraduationCap, AlertCircle } from "lucide-react";
 
 export default function Profile() {
   const { user, updateUserProfile } = useAuth();
@@ -168,8 +168,8 @@ export default function Profile() {
           )}
 
           {passwordError && (
-            <div className="mb-4 p-3 bg-[#ffebe9] border border-[#ffb8b0] rounded-xl text-[#cf222e] text-[13px] font-bold">
-              ⚠️ {passwordError}
+            <div className="mb-4 p-3 bg-[#ffebe9] border border-[#ffb8b0] rounded-xl text-[#cf222e] text-[13px] font-bold flex items-center gap-2">
+              <AlertCircle size={16} /> {passwordError}
             </div>
           )}
 
