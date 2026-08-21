@@ -47,7 +47,7 @@ export default function Dashboard() {
             {isStudent ? "Student Academic Portal" : isAdviser ? "Adviser Academic Dashboard" : "Department Secretary Dashboard"}
           </h1>
           <p className="text-[14px] text-[#656d76]">
-            College of Computer Studies · Saint Joseph College · SY 2026–2027
+            High  of Computer Studies · Saint Joseph College · SY 2026–2027
           </p>
         </div>
 
