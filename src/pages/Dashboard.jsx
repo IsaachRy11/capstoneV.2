@@ -6,7 +6,8 @@ import {
   Users,
   ArrowRight,
   Layers,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -60,14 +61,20 @@ export default function Dashboard() {
         const yearLabels = ["", "1st Year", "2nd Year", "3rd Year", "4th Year"];
         const yearLabel = yearLabels[studentProfile.yr] || `Year ${studentProfile.yr}`;
 
-        // Find the most recent semester that has subjects
-        const currentSem = studentProfile.semesters
-          ? [...studentProfile.semesters].reverse().find((s) => s.subjects && s.subjects.length > 0)
-          : null;
-        const enrolledSubjects = currentSem
-          ? currentSem.subjects.filter((s) => s.status === "Enrolled")
-          : [];
-        const totalUnits = enrolledSubjects.reduce((sum, s) => sum + (Number(s.units) || 0), 0);
+        // Collect all history subjects across all semesters to detect deficiencies (Failed, Dropped, Incomplete)
+        const allHistorySubjects = (studentProfile.semesters || []).flatMap((sem) =>
+          (sem.subjects || []).map((sub) => ({
+            ...sub,
+            semesterLabel: sem.label,
+            schoolYear: sem.school_year,
+          }))
+        );
+
+        const deficiencies = allHistorySubjects.filter((sub) => {
+          const st = (sub.status || "").toLowerCase();
+          const fg = Number(sub.final_grade);
+          return st === "failed" || fg === 5.0 || st === "dropped" || st === "incomplete" || st === "inc";
+        });
 
         return (
           <div className="flex flex-col gap-5">
@@ -103,39 +110,94 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Enrolled Subjects This Semester */}
-            <div className="bg-white border-2 border-[#e5e7eb] rounded-2xl overflow-hidden shadow-sm">
-              <div className="px-5 py-4 border-b border-[#e5e7eb]">
-                <h3 className="text-[15px] font-bold text-[#1f2328]">
-                  {currentSem ? `${currentSem.label} — ${currentSem.school_year}` : "Current Semester"}
-                </h3>
-                <p className="text-[12px] text-[#656d76] mt-0.5">
-                  {enrolledSubjects.length > 0
-                    ? `${enrolledSubjects.length} subject${enrolledSubjects.length !== 1 ? "s" : ""} · ${totalUnits} units enrolled this semester`
-                    : "No subjects enrolled this semester"}
-                </p>
-              </div>
-
-              {enrolledSubjects.length === 0 ? (
-                <div className="px-5 py-8 text-center text-[13px] text-[#9ca3af]">
-                  No enrolled subjects found for this semester.
-                </div>
-              ) : (
-                <div className="divide-y divide-[#f3f4f6]">
-                  {enrolledSubjects.map((sub, i) => (
-                    <div key={i} className="px-5 py-3.5 flex items-center justify-between">
-                      <div>
-                        <p className="text-[13px] font-bold text-[#1f2328]">{sub.title}</p>
-                        <p className="text-[11px] text-[#9ca3af] font-mono mt-0.5">{sub.code} · {sub.units} units</p>
-                      </div>
-                      <span className="text-[11px] font-bold px-2.5 py-1 bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] rounded-lg flex-shrink-0">
-                        Enrolled
-                      </span>
+            {/* Academic Deficiencies & Alerts Section */}
+            {deficiencies.length > 0 ? (
+              <div className="bg-white border-2 border-[#fecaca] rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-5 py-4 bg-[#fef2f2] border-b border-[#fee2e2] flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#fee2e2] text-[#dc2626] flex items-center justify-center font-bold">
+                      <AlertTriangle size={18} />
                     </div>
-                  ))}
+                    <div>
+                      <h3 className="text-[15px] font-bold text-[#991b1b]">
+                        Academic Alerts &amp; Deficiencies
+                      </h3>
+                      <p className="text-[12px] text-[#b91c1c] mt-0.5">
+                        {deficiencies.length} subject{deficiencies.length !== 1 ? "s" : ""} requiring retake or grade resolution
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] rounded-full">
+                    Action Required
+                  </span>
                 </div>
-              )}
-            </div>
+
+                <div className="divide-y divide-[#f3f4f6]">
+                  {deficiencies.map((sub, i) => {
+                    const isFailed = (sub.status || "").toLowerCase() === "failed" || Number(sub.final_grade) === 5.0;
+                    const isDropped = (sub.status || "").toLowerCase() === "dropped";
+
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => navigate(`/students/${studentProfile.id}`)}
+                        className="px-5 py-3.5 flex items-center justify-between hover:bg-[#fff7ed] cursor-pointer transition-colors group"
+                        title="Click to view details in Academic Record"
+                      >
+                        <div className="min-w-0 flex-1 pr-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-mono font-bold text-[#ea580c]">{sub.code}</span>
+                            <span className="text-[13px] font-bold text-[#111827] truncate group-hover:text-[#ea580c] transition-colors">{sub.title}</span>
+                          </div>
+                          <p className="text-[11px] text-[#6b7280] mt-0.5">
+                            {sub.semesterLabel || "Past Term"} {sub.schoolYear ? `· SY ${sub.schoolYear}` : ""} · {sub.units} units
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                            isFailed
+                              ? "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]"
+                              : isDropped
+                              ? "bg-[#f4f4f5] text-[#71717a] border-[#e4e4e7]"
+                              : "bg-[#fffbeb] text-[#d97706] border-[#fde68a]"
+                          }`}>
+                            {isFailed ? "Failed (5.00)" : isDropped ? "Dropped" : "Incomplete (INC)"}
+                          </span>
+                          <ChevronRight size={16} className="text-[#9ca3af] group-hover:text-[#ea580c] transition-colors" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => navigate(`/students/${studentProfile.id}`)}
+                className="bg-white border-2 border-[#bbf7d0] hover:border-[#16a34a] rounded-2xl p-5 shadow-sm cursor-pointer transition-all hover:bg-[#f0fdf4]/50 group"
+                title="Click to view full Academic Record"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#dcfce7] text-[#16a34a] flex items-center justify-center font-bold flex-shrink-0">
+                      <CheckCircle2 size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-bold text-[#166534] group-hover:text-[#15803d] transition-colors">
+                        No Back Subjects or Deficiencies
+                      </h3>
+                      <p className="text-[12px] text-[#4b5563] mt-0.5">
+                        All taken courses are in good standing with zero failed, dropped, or incomplete subjects.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[12px] font-bold text-[#16a34a] group-hover:translate-x-1 transition-all flex-shrink-0">
+                    <span>View Record</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* View Full Record CTA */}
             <button
