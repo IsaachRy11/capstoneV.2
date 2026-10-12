@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, MinusCircle, AlertTriangle,
-  Edit3, Printer, BookOpen, Award, Filter, Calendar
+  Edit3, Printer, BookOpen, Award, Calendar
 } from "lucide-react";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
@@ -13,20 +13,6 @@ const STATUS_CFG = {
   Dropped:    { Icon: MinusCircle,  color: "text-[#4b5563]", bg: "bg-[#f3f4f6]", border: "border-[#e5e7eb]" },
   Incomplete: { Icon: Clock,        color: "text-[#b45309]", bg: "bg-[#fef3c7]", border: "border-[#fde68a]" },
 };
-
-function gwaColor(g) {
-  if (g <= 1.75) return "text-[#047857]";
-  if (g <= 2.50) return "text-[#1d4ed8]";
-  if (g <= 3.00) return "text-[#b45309]";
-  return "text-[#dc2626]";
-}
-
-function gwaBg(g) {
-  if (g <= 1.75) return "bg-[#ecfdf5] border-[#a7f3d0]";
-  if (g <= 2.50) return "bg-[#eff6ff] border-[#bfdbfe]";
-  if (g <= 3.00) return "bg-[#fef3c7] border-[#fde68a]";
-  return "bg-[#fef2f2] border-[#fecaca]";
-}
 
 function Avatar({ initials, size = "w-16 h-16", text = "text-[18px]" }) {
   return (
@@ -45,6 +31,13 @@ export default function StudentRecord() {
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'history'
   const [selectedYearFilter, setSelectedYearFilter] = useState("all"); // 'all' | '1' | '2' | '3' | '4'
   const [selectedSemFilter, setSelectedSemFilter] = useState("all"); // 'all' | '1' | '2'
+  const [editingGradeSub, setEditingGradeSub] = useState(null);
+  const [gradeInput, setGradeInput] = useState("");
+  const [remarkInput, setRemarkInput] = useState("");
+
+  const isStudentRole = user?.role === "student";
+  const isAdviserRole = user?.role === "adviser";
+  const isSecretaryRole = user?.role === "secretary";
 
   // PRIVACY RULE: If a student tries to view another student's record, force redirect to their own record!
   if (user?.role === "student" && id && user.id && id !== user.id) {
@@ -53,14 +46,6 @@ export default function StudentRecord() {
 
   const activeStudentId = user?.role === "student" ? (user.id || "2025-0014") : id;
   const student = students.find((s) => s.id === activeStudentId) || students[0];
-
-  const [editingGradeSub, setEditingGradeSub] = useState(null);
-  const [gradeInput, setGradeInput] = useState("");
-  const [remarkInput, setRemarkInput] = useState("");
-
-  const isStudentRole = user?.role === "student";
-  const isAdviserRole = user?.role === "adviser";
-  const isSecretaryRole = user?.role === "secretary";
 
   if (!student) {
     return (

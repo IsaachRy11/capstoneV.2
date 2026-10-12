@@ -1,17 +1,11 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import {
   AlertTriangle,
   Users,
-  CheckCircle2,
   ArrowRight,
   Layers,
-  BookOpen,
-  UserCheck,
-  ShieldCheck,
-  Clock,
   ChevronRight
 } from "lucide-react";
 
@@ -22,14 +16,12 @@ export default function Dashboard() {
 
   const isStudent = user?.role === "student";
   const isAdviser = user?.role === "adviser";
-  const isSecretary = user?.role === "secretary";
 
   // Shared Stats
   const totalStudents = students.length;
   const regularStudents = students.filter((s) => s.status === "Regular").length;
   const irregularStudents = students.filter((s) => s.status === "Irregular").length;
   const flaggedStudents = students.filter((s) => (s.concerns || []).length > 0);
-  const topPerformers = students.filter((s) => Number(s.gwa) > 0 && Number(s.gwa) <= 1.75);
 
   // Active student object if logged in as student
   const studentProfile = (students && students.length > 0)

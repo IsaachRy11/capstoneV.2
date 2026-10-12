@@ -14,7 +14,6 @@ import {
   Plus,
   UserPlus,
   Trash2,
-  AlertCircle,
   ChevronRight,
   ArrowLeft,
   CheckCircle,

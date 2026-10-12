@@ -37,11 +37,6 @@ export default function Students() {
   const { students, updateStudent } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // PRIVACY RULE: If a student tries to access student registry, redirect them to their own record!
-  if (user?.role === "student") {
-    return <Navigate to={`/students/${user.id || "2025-0014"}`} replace />;
-  }
-
   const initYear = searchParams.get("year") || "all";
   const initCourse = searchParams.get("course") || "all";
   const initAlert = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "all");
@@ -152,6 +147,11 @@ export default function Students() {
       avatar: ""
     });
   };
+
+  // PRIVACY RULE: If a student tries to access student registry, redirect them to their own record!
+  if (user?.role === "student") {
+    return <Navigate to={`/students/${user.id || "2025-0014"}`} replace />;
+  }
 
   return (
     <div className="w-full pb-12 font-sans">
