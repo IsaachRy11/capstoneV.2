@@ -106,6 +106,23 @@ export default function MainLayout() {
             {isStudent ? (
               <>
                 <NavLink
+                  to={`/students/${user?.id || "2025-0014"}`}
+                  title={!isOpen ? "Academic Record" : undefined}
+                  className={({ isActive }) =>
+                    `flex items-center rounded-xl text-[14px] transition-all duration-150 ${
+                      isOpen ? "px-3 py-2.5 gap-2.5 border-l-2" : "p-2.5 justify-center border-l-2 mx-1"
+                    } ${
+                      isActive
+                        ? "bg-[#fff7ed] text-[#ea580c] font-bold border-[#ea580c] shadow-sm"
+                        : "text-[#4b5563] font-medium border-transparent hover:bg-[#fafafa] hover:text-[#111827]"
+                    }`
+                  }
+                >
+                  <BookOpen size={isOpen ? 17 : 20} className="flex-shrink-0" />
+                  {isOpen && <span className="whitespace-nowrap overflow-hidden">Academic Record</span>}
+                </NavLink>
+
+                <NavLink
                   to="/subjects"
                   title={!isOpen ? "Curriculum" : undefined}
                   className={({ isActive }) =>

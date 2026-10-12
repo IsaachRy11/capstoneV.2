@@ -5,11 +5,9 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Subjects() {
   const { user } = useAuth();
-  const { curriculum, addSubjectToCurriculum } = useData();
+  const { students, curriculum, addSubjectToCurriculum } = useData();
 
-  const [selectedProgram, setSelectedProgram] = useState("BSIT");
-  const [selectedYear, setSelectedYear] = useState("1");
-  const [searchQuery, setSearchQuery] = useState("");
+  const isSecretary = user?.role === "secretary";
 
   // Secretary Add Subject Modal
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
@@ -26,8 +24,28 @@ export default function Subjects() {
     desc: ""
   });
 
-  const isSecretary = user?.role === "secretary";
-  const activeProgData = curriculum[selectedProgram] || curriculum["BSIT"];
+  // Derive the student's program if logged in as student
+  const studentProfile = useMemo(() => {
+    if (user?.role === "student" && students && students.length > 0) {
+      return students.find((s) => s.id === user?.id) || students[0];
+    }
+    return null;
+  }, [user, students]);
+
+  const studentProgramKey = useMemo(() => {
+    if (!studentProfile) return "BSIT";
+    const course = (studentProfile.course || "").toLowerCase();
+    if (course.includes("computer science") || course.includes("bscs")) return "BSCS";
+    if (course.includes("associate") || course.includes("act")) return "ACT";
+    return "BSIT";
+  }, [studentProfile]);
+
+  const [selectedProgram, setSelectedProgram] = useState("BSIT");
+  const [selectedYear, setSelectedYear] = useState("1");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const effectiveProgram = isSecretary ? selectedProgram : studentProgramKey;
+  const activeProgData = curriculum[effectiveProgram] || curriculum["BSIT"];
 
   const filteredCurriculum = useMemo(() => {
     return activeProgData.years.map((yearObj) => {
@@ -98,7 +116,9 @@ export default function Subjects() {
             Curriculum
           </h1>
           <p className="text-[14px] text-[#6b7280]">
-            Master curriculum for BSIT, BSCS, and ACT degree programs
+            {isSecretary
+              ? "Master curriculum for BSIT, BSCS, and ACT degree programs"
+              : `Official curriculum catalog for ${activeProgData.programName}`}
           </p>
         </div>
 
@@ -113,41 +133,43 @@ export default function Subjects() {
         )}
       </div>
 
-      {/* Program Selector Tabs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        {[
-          { key: "BSIT", name: "BS Information Technology", desc: "BSIT Curriculum", icon: Laptop, color: "from-[#ea580c] to-[#c2410c]", activeBorder: "border-[#ea580c]", ringColor: "ring-[#ea580c]/10" },
-          { key: "BSCS", name: "BS Computer Science", desc: "BSCS Curriculum", icon: Terminal, color: "from-[#2563eb] to-[#1d4ed8]", activeBorder: "border-[#2563eb]", ringColor: "ring-[#2563eb]/10" },
-          { key: "ACT", name: "Associate in Computer Tech", desc: "ACT Curriculum", icon: Wrench, color: "from-[#059669] to-[#047857]", activeBorder: "border-[#059669]", ringColor: "ring-[#059669]/10" }
-        ].map((prog) => {
-          const isSelected = selectedProgram === prog.key;
-          const Icon = prog.icon;
-          return (
-            <button
-              key={prog.key}
-              type="button"
-              onClick={() => setSelectedProgram(prog.key)}
-              className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
-                isSelected
-                  ? `bg-white ${prog.activeBorder} shadow-md ring-2 ${prog.ringColor}`
-                  : "bg-white/70 border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-white"
-              }`}
-            >
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm bg-gradient-to-br ${
-                  isSelected ? prog.color : "from-gray-400 to-gray-500 opacity-60"
+      {/* Program Selector Tabs - Only visible to Secretary */}
+      {isSecretary && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          {[
+            { key: "BSIT", name: "BS Information Technology", desc: "BSIT Curriculum", icon: Laptop, color: "from-[#ea580c] to-[#c2410c]", activeBorder: "border-[#ea580c]", ringColor: "ring-[#ea580c]/10" },
+            { key: "BSCS", name: "BS Computer Science", desc: "BSCS Curriculum", icon: Terminal, color: "from-[#2563eb] to-[#1d4ed8]", activeBorder: "border-[#2563eb]", ringColor: "ring-[#2563eb]/10" },
+            { key: "ACT", name: "Associate in Computer Tech", desc: "ACT Curriculum", icon: Wrench, color: "from-[#059669] to-[#047857]", activeBorder: "border-[#059669]", ringColor: "ring-[#059669]/10" }
+          ].map((prog) => {
+            const isSelected = selectedProgram === prog.key;
+            const Icon = prog.icon;
+            return (
+              <button
+                key={prog.key}
+                type="button"
+                onClick={() => setSelectedProgram(prog.key)}
+                className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
+                  isSelected
+                    ? `bg-white ${prog.activeBorder} shadow-md ring-2 ${prog.ringColor}`
+                    : "bg-white/70 border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-white"
                 }`}
               >
-                <Icon size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold text-[#111827] truncate">{prog.name}</p>
-                <p className="text-[12px] text-[#6b7280]">{prog.desc}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm bg-gradient-to-br ${
+                    isSelected ? prog.color : "from-gray-400 to-gray-500 opacity-60"
+                  }`}
+                >
+                  <Icon size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-bold text-[#111827] truncate">{prog.name}</p>
+                  <p className="text-[12px] text-[#6b7280]">{prog.desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Program Summary Banner */}
       <div className="bg-white border-2 border-[#e5e7eb] rounded-3xl p-6 mb-8 shadow-sm">
@@ -187,7 +209,7 @@ export default function Subjects() {
             {[
               { key: "1", label: "1st Year" },
               { key: "2", label: "2nd Year" },
-              ...(selectedProgram !== "ACT" ? [{ key: "3", label: "3rd Year" }, { key: "4", label: "4th Year" }] : [])
+              ...(effectiveProgram !== "ACT" ? [{ key: "3", label: "3rd Year" }, { key: "4", label: "4th Year" }] : [])
             ].map((y) => (
               <button
                 key={y.key}
@@ -239,8 +261,8 @@ export default function Subjects() {
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="bg-[#fafafa]/50 border-b border-[#e5e7eb]">
-                            {["Code", "Course Title", "Lec", "Lab", "Units", "Prerequisite"].map((h, i) => (
-                              <th key={i} className={`px-6 py-3.5 text-[11px] font-bold text-[#6b7280] uppercase tracking-wide ${i >= 2 && i <= 4 ? "text-center" : "text-left"}`}>
+                            {["Code", "Course Title", "Units", "Prerequisite"].map((h, i) => (
+                              <th key={i} className={`px-6 py-3.5 text-[11px] font-bold text-[#6b7280] uppercase tracking-wide ${i === 2 ? "text-center" : "text-left"}`}>
                                 {h}
                               </th>
                             ))}
@@ -254,12 +276,6 @@ export default function Subjects() {
                               </td>
                               <td className="px-6 py-4 text-[14px] font-bold text-[#111827]">
                                 {sub.title}
-                              </td>
-                              <td className="px-6 py-4 text-[13px] font-bold text-[#4b5563] text-center">
-                                {sub.lec ?? 0}
-                              </td>
-                              <td className="px-6 py-4 text-[13px] font-bold text-[#4b5563] text-center">
-                                {sub.lab ?? 0}
                               </td>
                               <td className="px-6 py-4 text-[13px] font-bold text-[#111827] text-center">
                                 {sub.units}
