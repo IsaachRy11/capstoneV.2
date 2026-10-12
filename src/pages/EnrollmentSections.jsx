@@ -42,7 +42,7 @@ export default function EnrollmentSections() {
   // Debounced search query state (150ms smooth transition to eliminate layout jitter)
   const [debouncedEnrollSearch, setDebouncedEnrollSearch] = useState("");
 
-  const isSecretary = user?.role === "secretary" || user?.role === "adviser";
+  const isSecretary = user?.role === "secretary";
 
   // Debounce search query updates by 150ms for buttery-smooth typing without layout jumps
   useEffect(() => {
@@ -462,7 +462,7 @@ export default function EnrollmentSections() {
             </div>
           </div>
 
-          {/* DYNAMIC REAL-TIME LIVE SEARCH ENROLLMENT PANEL (FOR SECRETARY / ADVISER) */}
+          {/* DYNAMIC REAL-TIME LIVE SEARCH ENROLLMENT PANEL (FOR SECRETARY) */}
           {showEnrollPanel && isSecretary ? (
             <div className="bg-[#fff7ed] border-2 border-[#ffedd5] rounded-2xl p-6 mb-2 animate-in fade-in duration-200">
               <div className="flex items-center justify-between gap-4 mb-3">

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { GraduationCap, ShieldCheck, UserCheck, BookOpen, ArrowRight } from "lucide-react";
+import { GraduationCap, ShieldCheck, BookOpen, ArrowRight } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -56,7 +56,6 @@ export default function Login() {
               <div className="flex flex-col gap-2.5">
                 {[
                   { key: "student", label: "Student Role", sub: "Read-only personal academic record & GWA", icon: BookOpen },
-                  { key: "adviser", label: "Academic Adviser / Teacher", sub: "Encode grades & advising reports", icon: UserCheck },
                   { key: "secretary", label: "Department Secretary", sub: "Full admin & section capacity controls", icon: ShieldCheck }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -112,7 +111,7 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={selectedRole === "student" ? "e.g., 2025-0014" : selectedRole === "adviser" ? "e.g., ADV-101" : "e.g., SEC-001"}
+                  placeholder={selectedRole === "student" ? "e.g., 2025-0014" : "e.g., SEC-001"}
                   className="w-full h-11 px-3.5 border-2 border-[#e5e7eb] rounded-xl text-[14px] outline-none focus:border-[#ea580c] font-medium transition-colors"
                 />
               </div>
@@ -134,7 +133,7 @@ export default function Login() {
                 type="submit"
                 className="w-full h-11 bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] text-white text-[14px] font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-2"
               >
-                Sign In as {selectedRole === "student" ? "Student" : selectedRole === "adviser" ? "Adviser" : "Secretary"}
+                Sign In as {selectedRole === "student" ? "Student" : "Secretary"}
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -147,21 +146,13 @@ export default function Login() {
             </div>
 
             {/* Quick Demo Switcher */}
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={() => quickDemoLogin("student")}
                 className="p-3 bg-[#fafafa] hover:bg-[#fff7ed] border-2 border-[#e5e7eb] hover:border-[#ea580c] rounded-2xl text-center transition-all group"
               >
                 <p className="text-[12px] font-bold text-[#111827] group-hover:text-[#ea580c]">Student Demo</p>
                 <p className="text-[10px] text-[#6b7280] mt-0.5">Andrea Tan</p>
-              </button>
-
-              <button
-                onClick={() => quickDemoLogin("adviser")}
-                className="p-3 bg-[#fafafa] hover:bg-[#fff7ed] border-2 border-[#e5e7eb] hover:border-[#ea580c] rounded-2xl text-center transition-all group"
-              >
-                <p className="text-[12px] font-bold text-[#111827] group-hover:text-[#ea580c]">Adviser Demo</p>
-                <p className="text-[10px] text-[#6b7280] mt-0.5">Dr. A. Reyes</p>
               </button>
 
               <button

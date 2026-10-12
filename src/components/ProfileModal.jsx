@@ -78,7 +78,7 @@ export default function ProfileModal({ isOpen, onClose }) {
             <div>
               <h3 className="text-[16px] font-bold text-[#1f2328] leading-tight">{user?.name}</h3>
               <p className="text-[11px] text-[#656d76] uppercase tracking-wider font-semibold">
-                {user?.role === "secretary" ? "Dept. Secretary" : user?.role === "adviser" ? "Academic Adviser" : "Student View"} · ID: {user?.id}
+                {user?.role === "secretary" ? "Dept. Secretary" : "Student View"} · ID: {user?.id}
               </p>
             </div>
           </div>

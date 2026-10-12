@@ -67,7 +67,7 @@ export default function Profile() {
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-[20px] font-bold text-[#1f2328]">{user?.name}</h2>
               <span className="text-[11px] font-bold uppercase tracking-wider bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] px-2.5 py-0.5 rounded-md">
-                {user?.role === "secretary" ? "Department Secretary" : user?.role === "adviser" ? "Academic Adviser" : "Enrolled Student"}
+                {user?.role === "secretary" ? "Department Secretary" : "Enrolled Student"}
               </span>
             </div>
             <p className="text-[13px] text-[#656d76]">
@@ -126,7 +126,7 @@ export default function Profile() {
               <input
                 disabled
                 type="text"
-                value={user?.role === "secretary" ? "Department Secretary (Admin)" : user?.role === "adviser" ? "Academic Adviser & Teacher" : "Enrolled Student (Read-only)"}
+                value={user?.role === "secretary" ? "Department Secretary (Admin)" : "Enrolled Student (Read-only)"}
                 className="w-full h-10 px-3.5 border-2 border-[#e8ecf0] bg-[#f6f8fa] text-[#656d76] rounded-xl text-[13px] font-semibold cursor-not-allowed"
               />
             </div>

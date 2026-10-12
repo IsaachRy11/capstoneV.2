@@ -140,7 +140,7 @@ export default function MainLayout() {
                 </NavLink>
               </>
             ) : (
-              /* ADVISER / SECRETARY NAV */
+              /* SECRETARY NAV */
               <>
                 <div>
                   <button
@@ -310,7 +310,7 @@ export default function MainLayout() {
                   {user?.name || "Guest User"}
                 </p>
                 <p className="text-[10px] font-bold text-[#ea580c] uppercase tracking-wider truncate">
-                  {user?.role === "secretary" ? "Dept. Secretary" : user?.role === "adviser" ? "Academic Adviser" : "Student View"}
+                  {user?.role === "secretary" ? "Dept. Secretary" : "Student View"}
                 </p>
               </div>
             )}

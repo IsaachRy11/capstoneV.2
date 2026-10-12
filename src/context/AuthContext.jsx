@@ -14,15 +14,7 @@ export const DEFAULT_USERS = {
     section: "BSIT 2-A",
     yr: 2
   },
-  adviser: {
-    id: "ADV-101",
-    name: "Dr. A. Reyes",
-    email: "a.reyes@sjc.edu.ph",
-    role: "adviser",
-    title: "CCS Academic Adviser & Teacher",
-    avatar: "AR",
-    department: "College of Computer Studies"
-  },
+
   secretary: {
     id: "SEC-001",
     name: "Engr. M. Cruz",

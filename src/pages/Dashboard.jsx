@@ -15,7 +15,6 @@ export default function Dashboard() {
   const { students, sections } = useData();
 
   const isStudent = user?.role === "student";
-  const isAdviser = user?.role === "adviser";
 
   // Shared Stats
   const totalStudents = students.length;
@@ -36,7 +35,7 @@ export default function Dashboard() {
       <div className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1f2328] tracking-tight mb-1">
-            {isStudent ? "Student Academic Portal" : isAdviser ? "Adviser Academic Dashboard" : "Department Secretary Dashboard"}
+            {isStudent ? "Student Academic Portal" : "Department Secretary Dashboard"}
           </h1>
           <p className="text-[14px] text-[#656d76]">
             College of Computer Studies · Saint Joseph College · SY 2026–2027
@@ -51,7 +50,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[13px] font-bold text-[#1f2328] leading-tight">{user?.name}</p>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#1a7f37]">
-              {user?.role === "secretary" ? "Dept Secretary" : user?.role === "adviser" ? "Academic Adviser" : "Student View"}
+              {user?.role === "secretary" ? "Dept Secretary" : "Student View"}
             </p>
           </div>
         </div>

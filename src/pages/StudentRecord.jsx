@@ -36,7 +36,6 @@ export default function StudentRecord() {
   const [remarkInput, setRemarkInput] = useState("");
 
   const isStudentRole = user?.role === "student";
-  const isAdviserRole = user?.role === "adviser";
   const isSecretaryRole = user?.role === "secretary";
 
   // PRIVACY RULE: If a student tries to view another student's record, force redirect to their own record!
@@ -136,7 +135,7 @@ export default function StudentRecord() {
         )}
 
         <div className="flex items-center gap-3">
-          {(isAdviserRole || isSecretaryRole) && (
+          {isSecretaryRole && (
             <button
               onClick={handlePrintAdvisingReport}
               className="flex items-center gap-2 bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] text-white px-4 py-2 rounded-xl text-[13px] font-bold shadow-md transition-all"
