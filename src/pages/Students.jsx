@@ -37,7 +37,7 @@ export default function Students() {
   const { students, updateStudent } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initYear = searchParams.get("year") || "all";
+  const initYear = searchParams.get("year") || "1";
   const initCourse = searchParams.get("course") || "all";
   const initAlert = searchParams.get("filter") === "concerns" ? "yes" : (searchParams.get("filter") === "top" ? "top" : "all");
 
@@ -65,7 +65,7 @@ export default function Students() {
     if (yrParam) {
       setActiveYearTab(yrParam);
     } else {
-      setActiveYearTab("all");
+      setActiveYearTab("1");
     }
   }, [searchParams]);
 
@@ -113,11 +113,11 @@ export default function Students() {
 
   const clearAllFilters = () => {
     setQ("");
-    setActiveYearTab("all");
+    setActiveYearTab("1");
     setCourseFilter("all");
     setStatusFilter("all");
     setAcademicStanding("all");
-    setSearchParams({});
+    setSearchParams({ year: "1" });
   };
 
   const handleAddStudentSubmit = (e) => {
@@ -201,7 +201,7 @@ export default function Students() {
             onChange={(e) => setCourseFilter(e.target.value)}
             className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="all">All Programs (BSIT, BSCS, ACT)</option>
+            <option value="all">Program (BSIT, BSCS, ACT)</option>
             <option value="Information Technology">BS Information Technology</option>
             <option value="Computer Science">BS Computer Science</option>
             <option value="Associate in Computer Technology">Associate in Computer Tech (ACT)</option>
@@ -213,7 +213,7 @@ export default function Students() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="all">All Student Statuses</option>
+            <option value="all">Student Status (Any)</option>
             <option value="Regular">Regular</option>
             <option value="Irregular">Irregular</option>
             <option value="Transferee">Transferee</option>
@@ -231,13 +231,13 @@ export default function Students() {
             onChange={(e) => setAcademicStanding(e.target.value)}
             className="h-10 px-3 text-[13px] border-2 border-[#e5e7eb] rounded-xl bg-white outline-none focus:border-[#ea580c] font-semibold text-[#111827] cursor-pointer"
           >
-            <option value="all">All Academic Standings</option>
+            <option value="all">Academic Standing (Any)</option>
             <option value="yes">With Academic Concern</option>
             <option value="no">No Concerns</option>
             <option value="top">Top Performers (GWA ≤ 1.75)</option>
           </select>
 
-          {(q || courseFilter !== "all" || statusFilter !== "all" || academicStanding !== "all" || activeYearTab !== "all") && (
+          {(q || courseFilter !== "all" || statusFilter !== "all" || academicStanding !== "all" || activeYearTab !== "1") && (
             <button
               onClick={clearAllFilters}
               className="h-10 px-3.5 flex items-center gap-1.5 bg-[#ef4444] hover:bg-[#dc2626] text-white text-[13px] font-bold rounded-xl transition-colors flex-shrink-0"
@@ -255,7 +255,6 @@ export default function Students() {
           Select Year Level:
         </span>
         {[
-          { key: "all", label: "All Year Levels", count: filteredBase.length },
           { key: "1", label: "1st Year", count: groupedByYear[1]?.length || 0 },
           { key: "2", label: "2nd Year", count: groupedByYear[2]?.length || 0 },
           { key: "3", label: "3rd Year", count: groupedByYear[3]?.length || 0 },
@@ -265,11 +264,7 @@ export default function Students() {
             key={tab.key}
             onClick={() => {
               setActiveYearTab(tab.key);
-              if (tab.key === "all") {
-                setSearchParams({});
-              } else {
-                setSearchParams({ year: tab.key });
-              }
+              setSearchParams({ year: tab.key });
             }}
             className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 flex-shrink-0 ${
               activeYearTab === String(tab.key)

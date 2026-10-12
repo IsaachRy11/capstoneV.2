@@ -99,32 +99,15 @@ export default function MainLayout() {
               }
             >
               <LayoutDashboard size={isOpen ? 17 : 20} className="flex-shrink-0" />
-              {isOpen && <span className="whitespace-nowrap overflow-hidden">{isStudent ? "My Dashboard" : "Dashboard"}</span>}
+              {isOpen && <span className="whitespace-nowrap overflow-hidden">Dashboard</span>}
             </NavLink>
 
             {/* STUDENT ROLE NAV */}
             {isStudent ? (
               <>
                 <NavLink
-                  to={`/students/${user?.id || "2025-0014"}`}
-                  title={!isOpen ? "My Academic Record" : undefined}
-                  className={({ isActive }) =>
-                    `flex items-center rounded-xl text-[14px] transition-all duration-150 ${
-                      isOpen ? "px-3 py-2.5 gap-2.5 border-l-2" : "p-2.5 justify-center border-l-2 mx-1"
-                    } ${
-                      isActive
-                        ? "bg-[#fff7ed] text-[#ea580c] font-bold border-[#ea580c] shadow-sm"
-                        : "text-[#4b5563] font-medium border-transparent hover:bg-[#fafafa] hover:text-[#111827]"
-                    }`
-                  }
-                >
-                  <BookOpen size={isOpen ? 17 : 20} className="flex-shrink-0" />
-                  {isOpen && <span className="whitespace-nowrap overflow-hidden">My Academic Record</span>}
-                </NavLink>
-
-                <NavLink
                   to="/subjects"
-                  title={!isOpen ? "Curriculum & Subjects" : undefined}
+                  title={!isOpen ? "Curriculum" : undefined}
                   className={({ isActive }) =>
                     `flex items-center rounded-xl text-[14px] transition-all duration-150 ${
                       isOpen ? "px-3 py-2.5 gap-2.5 border-l-2" : "p-2.5 justify-center border-l-2 mx-1"
@@ -136,7 +119,7 @@ export default function MainLayout() {
                   }
                 >
                   <BookMarked size={isOpen ? 17 : 20} className="flex-shrink-0" />
-                  {isOpen && <span className="whitespace-nowrap overflow-hidden">Curriculum & Subjects</span>}
+                  {isOpen && <span className="whitespace-nowrap overflow-hidden">Curriculum</span>}
                 </NavLink>
               </>
             ) : (
@@ -269,10 +252,10 @@ export default function MainLayout() {
                   {isOpen && <span className="whitespace-nowrap overflow-hidden">Section Allocations</span>}
                 </NavLink>
 
-                {/* Curriculum & Subjects Link */}
+                {/* Curriculum Link */}
                 <NavLink
                   to="/subjects"
-                  title={!isOpen ? "Curriculum & Subjects" : undefined}
+                  title={!isOpen ? "Curriculum" : undefined}
                   className={({ isActive }) =>
                     `flex items-center rounded-xl text-[14px] transition-all duration-150 ${
                       isOpen ? "px-3 py-2.5 gap-2.5 border-l-2" : "p-2.5 justify-center border-l-2 mx-1"
@@ -284,7 +267,7 @@ export default function MainLayout() {
                   }
                 >
                   <BookMarked size={isOpen ? 17 : 20} className="flex-shrink-0" />
-                  {isOpen && <span className="whitespace-nowrap overflow-hidden">Curriculum & Subjects</span>}
+                  {isOpen && <span className="whitespace-nowrap overflow-hidden">Curriculum</span>}
                 </NavLink>
               </>
             )}

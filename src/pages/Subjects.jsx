@@ -8,7 +8,7 @@ export default function Subjects() {
   const { curriculum, addSubjectToCurriculum } = useData();
 
   const [selectedProgram, setSelectedProgram] = useState("BSIT");
-  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("1");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Secretary Add Subject Modal
@@ -95,10 +95,10 @@ export default function Subjects() {
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-[#111827] tracking-tight mb-1">
-            Curriculum &amp; Academic Course Catalog
+            Curriculum
           </h1>
           <p className="text-[14px] text-[#6b7280]">
-            Master course catalog for BSIT, BSCS, and ACT degree programs
+            Master curriculum for BSIT, BSCS, and ACT degree programs
           </p>
         </div>
 
@@ -185,7 +185,6 @@ export default function Subjects() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[12px] font-bold text-[#ea580c] uppercase tracking-wide mr-1">Filter Year:</span>
             {[
-              { key: "all", label: "All Years" },
               { key: "1", label: "1st Year" },
               { key: "2", label: "2nd Year" },
               ...(selectedProgram !== "ACT" ? [{ key: "3", label: "3rd Year" }, { key: "4", label: "4th Year" }] : [])
@@ -240,8 +239,8 @@ export default function Subjects() {
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="bg-[#fafafa]/50 border-b border-[#e5e7eb]">
-                            {["Code", "Course Title", "Units", "Lec / Lab", "Prerequisite", "Course Description"].map((h, i) => (
-                              <th key={i} className={`px-6 py-3.5 text-[11px] font-bold text-[#6b7280] uppercase tracking-wide ${i === 2 || i === 3 ? "text-center" : "text-left"}`}>
+                            {["Code", "Course Title", "Lec", "Lab", "Units", "Prerequisite"].map((h, i) => (
+                              <th key={i} className={`px-6 py-3.5 text-[11px] font-bold text-[#6b7280] uppercase tracking-wide ${i >= 2 && i <= 4 ? "text-center" : "text-left"}`}>
                                 {h}
                               </th>
                             ))}
@@ -256,11 +255,14 @@ export default function Subjects() {
                               <td className="px-6 py-4 text-[14px] font-bold text-[#111827]">
                                 {sub.title}
                               </td>
+                              <td className="px-6 py-4 text-[13px] font-bold text-[#4b5563] text-center">
+                                {sub.lec ?? 0}
+                              </td>
+                              <td className="px-6 py-4 text-[13px] font-bold text-[#4b5563] text-center">
+                                {sub.lab ?? 0}
+                              </td>
                               <td className="px-6 py-4 text-[13px] font-bold text-[#111827] text-center">
                                 {sub.units}
-                              </td>
-                              <td className="px-6 py-4 text-[12px] font-medium text-[#4b5563] text-center whitespace-nowrap">
-                                {sub.lec}h Lec / {sub.lab}h Lab
                               </td>
                               <td className="px-6 py-4 text-[12px] font-semibold text-[#6b7280] whitespace-nowrap">
                                 {sub.prereq === "None" ? (
@@ -270,9 +272,6 @@ export default function Subjects() {
                                     {sub.prereq}
                                   </span>
                                 )}
-                              </td>
-                              <td className="px-6 py-4 text-[12px] text-[#4b5563] max-w-md leading-snug">
-                                {sub.desc}
                               </td>
                             </tr>
                           ))}

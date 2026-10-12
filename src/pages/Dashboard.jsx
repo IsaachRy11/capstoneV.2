@@ -144,7 +144,7 @@ export default function Dashboard() {
             >
               <div className="text-left">
                 <p className="text-[14px] font-bold text-[#1f2328] group-hover:text-[#ea580c] transition-colors">
-                  View My Full Academic Record
+                  View Academic Record
                 </p>
                 <p className="text-[12px] text-[#9ca3af] mt-0.5">
                   See all subjects, grades, and completed courses

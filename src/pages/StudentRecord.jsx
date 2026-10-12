@@ -29,8 +29,8 @@ export default function StudentRecord() {
   const { students, updateStudentGrade, updateStudent } = useData();
 
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'history'
-  const [selectedYearFilter, setSelectedYearFilter] = useState("all"); // 'all' | '1' | '2' | '3' | '4'
-  const [selectedSemFilter, setSelectedSemFilter] = useState("all"); // 'all' | '1' | '2'
+  const [selectedYearFilter, setSelectedYearFilter] = useState("1"); // '1' | '2' | '3' | '4'
+  const [selectedSemFilter, setSelectedSemFilter] = useState("1"); // '1' | '2'
   const [editingGradeSub, setEditingGradeSub] = useState(null);
   const [gradeInput, setGradeInput] = useState("");
   const [remarkInput, setRemarkInput] = useState("");
@@ -277,7 +277,6 @@ export default function StudentRecord() {
                 <Calendar size={14} /> Year Level:
               </span>
               {[
-                { key: "all", label: "All Years" },
                 { key: "1", label: "1st Year" },
                 { key: "2", label: "2nd Year" },
                 { key: "3", label: "3rd Year" },
@@ -302,7 +301,6 @@ export default function StudentRecord() {
               <span className="text-[12px] font-bold text-[#ea580c] uppercase tracking-wide">Semester:</span>
               <div className="bg-[#fafafa] border border-[#e5e7eb] p-1 rounded-xl flex items-center gap-1">
                 {[
-                  { key: "all", label: "All Semesters" },
                   { key: "1", label: "1st Sem" },
                   { key: "2", label: "2nd Sem" },
                 ].map((s) => (

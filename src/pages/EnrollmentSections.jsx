@@ -27,8 +27,8 @@ export default function EnrollmentSections() {
   const { students, sections, curriculum, updateStudent } = useData();
 
   const [selectedProgram, setSelectedProgram] = useState("BSIT"); // 'BSIT' | 'BSCS' | 'ACT'
-  const [activeYear, setActiveYear] = useState("all"); // 'all' | '1' | '2' | '3' | '4'
-  const [activeSem, setActiveSem] = useState("all"); // 'all' | '1' | '2'
+  const [activeYear, setActiveYear] = useState("1"); // '1' | '2' | '3' | '4'
+  const [activeSem, setActiveSem] = useState("1"); // '1' | '2'
   const [searchQuery, setSearchQuery] = useState("");
 
   // Dedicated Course Detail View State (Full-page expansive view)
@@ -420,7 +420,7 @@ export default function EnrollmentSections() {
                         : "text-[#4b5563] hover:bg-gray-200/50"
                     }`}
                   >
-                    All Sections
+                    Complete Roster
                   </button>
                   {selectedCourseDetail.sectionsList.map((sec) => (
                     <button
@@ -753,7 +753,7 @@ export default function EnrollmentSections() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#ea580c] px-2 flex items-center gap-1">
               <Calendar size={13} /> Year Level:
             </span>
-            {["all", "1", "2", "3", "4"].map((yr) => (
+            {["1", "2", "3", "4"].map((yr) => (
               <button
                 key={yr}
                 onClick={() => setActiveYear(yr)}
@@ -763,7 +763,7 @@ export default function EnrollmentSections() {
                     : "text-[#4b5563] hover:text-[#111827] hover:bg-gray-100"
                 }`}
               >
-                {yr === "all" ? "All Years" : `${yr}${yr === "1" ? "st" : yr === "2" ? "nd" : yr === "3" ? "rd" : "th"} Year`}
+                {`${yr}${yr === "1" ? "st" : yr === "2" ? "nd" : yr === "3" ? "rd" : "th"} Year`}
               </button>
             ))}
           </div>
@@ -773,7 +773,7 @@ export default function EnrollmentSections() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#ea580c] px-2 flex items-center gap-1">
               <Filter size={13} /> Semester:
             </span>
-            {["all", "1", "2"].map((sem) => (
+            {["1", "2"].map((sem) => (
               <button
                 key={sem}
                 onClick={() => setActiveSem(sem)}
@@ -783,7 +783,7 @@ export default function EnrollmentSections() {
                     : "text-[#4b5563] hover:text-[#111827] hover:bg-gray-100"
                 }`}
               >
-                {sem === "all" ? "All Semesters" : `${sem}${sem === "1" ? "st" : "nd"} Sem`}
+                {`${sem}${sem === "1" ? "st" : "nd"} Sem`}
               </button>
             ))}
           </div>
