@@ -652,15 +652,15 @@ export default function EnrollmentSections() {
 
 
 
-                          {/* Action (Unenroll) */}
+                          {/* Action (Unenroll) - Environmental Trash Button */}
                           {isSecretary && (
                             <td className="px-6 py-4 text-right">
                               <button
                                 onClick={() => handleUnenrollStudent(st.id)}
                                 title="Unenroll student from this course"
-                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                className="btn-trash group"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={15} className="group-hover:scale-105 transition-transform duration-150" />
                               </button>
                             </td>
                           )}

@@ -29,27 +29,27 @@ export default function Dashboard() {
     : { id: "2025-0014", name: "Andrea Tan", course: "BS Information Technology", section: "BSIT 2-A", status: "Regular", yr: 2 };
 
   return (
-    <div className="w-full pb-12">
+    <div className="w-full pb-12 font-sans selection:bg-orange-100 selection:text-orange-900">
 
       {/* Dashboard Header */}
       <div className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1f2328] tracking-tight mb-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">
             {isStudent ? "Student Academic Portal" : "Department Secretary Dashboard"}
           </h1>
-          <p className="text-[14px] text-[#656d76]">
+          <p className="text-[13.5px] text-slate-500 font-normal">
             College of Computer Studies · Saint Joseph College · SY 2026–2027
           </p>
         </div>
 
         {/* User Active Persona Badge */}
-        <div className="flex items-center gap-3 bg-white border-2 border-[#d0d7de] rounded-xl px-4 py-2 shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-[#dafbe1] text-[#1a7f37] flex items-center justify-center font-bold text-[12px]">
+        <div className="flex items-center gap-3 bg-white border border-slate-200/90 rounded-xl px-3.5 py-1.5 shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[12px] shadow-xs">
             {user?.avatar || "US"}
           </div>
           <div>
-            <p className="text-[13px] font-bold text-[#1f2328] leading-tight">{user?.name}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#1a7f37]">
+            <p className="text-[13px] font-semibold text-slate-900 leading-tight">{user?.name}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-orange-600">
               {user?.role === "secretary" ? "Dept Secretary" : "Student View"}
             </p>
           </div>
@@ -80,31 +80,30 @@ export default function Dashboard() {
           <div className="flex flex-col gap-5">
 
             {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] rounded-2xl px-6 py-5">
-              <p className="text-[12px] font-bold text-[#ea580c] uppercase tracking-widest mb-1">Welcome back</p>
-              <h2 className="text-[22px] font-bold text-[#1f2328] mb-1">{studentProfile.name}</h2>
-              <p className="text-[13px] text-[#656d76]">
-                {studentProfile.course} · {yearLabel} · {studentProfile.section}
-              </p>
+            <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 text-white rounded-xl px-6 py-5 shadow-sm shadow-orange-500/10 relative overflow-hidden">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] opacity-15 pointer-events-none" />
+              <div className="relative z-10">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-orange-100 mb-1">Welcome back</p>
+                <h2 className="text-[22px] font-bold tracking-tight mb-1">{studentProfile.name}</h2>
+                <p className="text-[13px] text-orange-100/90 font-medium">
+                  {studentProfile.course} · {yearLabel} · Section {studentProfile.section}
+                </p>
+              </div>
             </div>
 
-            {/* Quick Info Cards */}
+            {/* Quick Info Cards - Refined Proportional Corners */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white border-2 border-[#e5e7eb] rounded-xl p-4 shadow-sm">
-                <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider mb-1">Program</p>
-                <p className="text-[14px] font-bold text-[#1f2328] leading-snug">{studentProfile.course}</p>
+              <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Program</p>
+                <p className="text-[14px] font-semibold text-slate-800 leading-snug">{studentProfile.course}</p>
               </div>
-              <div className="bg-white border-2 border-[#e5e7eb] rounded-xl p-4 shadow-sm">
-                <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider mb-1">Section</p>
-                <p className="text-[14px] font-bold text-[#1f2328]">{studentProfile.section}</p>
+              <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Section</p>
+                <p className="text-[14px] font-semibold text-slate-800">{studentProfile.section}</p>
               </div>
-              <div className="bg-white border-2 border-[#e5e7eb] rounded-xl p-4 shadow-sm">
-                <p className="text-[11px] font-bold text-[#9ca3af] uppercase tracking-wider mb-1">Academic Standing</p>
-                <span className={`inline-block text-[13px] font-bold px-2.5 py-0.5 rounded-lg border ${
-                  studentProfile.status === "Regular"
-                    ? "bg-[#dafbe1] text-[#1a7f37] border-[#a4e8b4]"
-                    : "bg-[#fff3cd] text-[#92400e] border-[#fcd34d]"
-                }`}>
+              <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-xs">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Academic Standing</p>
+                <span className={studentProfile.status === "Regular" ? "badge-regular" : "badge-irregular"}>
                   {studentProfile.status}
                 </span>
               </div>
@@ -112,27 +111,27 @@ export default function Dashboard() {
 
             {/* Academic Deficiencies & Alerts Section */}
             {deficiencies.length > 0 ? (
-              <div className="bg-white border-2 border-[#fecaca] rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-5 py-4 bg-[#fef2f2] border-b border-[#fee2e2] flex items-center justify-between">
+              <div className="bg-white border border-rose-200/90 rounded-xl overflow-hidden shadow-xs">
+                <div className="px-5 py-3.5 bg-rose-50/70 border-b border-rose-100 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#fee2e2] text-[#dc2626] flex items-center justify-center font-bold">
-                      <AlertTriangle size={18} />
+                    <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                      <AlertTriangle size={16} />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-[#991b1b]">
+                      <h3 className="text-[14.5px] font-bold text-rose-900">
                         Academic Alerts &amp; Deficiencies
                       </h3>
-                      <p className="text-[12px] text-[#b91c1c] mt-0.5">
+                      <p className="text-[12px] text-rose-600/90 mt-0.5">
                         {deficiencies.length} subject{deficiencies.length !== 1 ? "s" : ""} requiring retake or grade resolution
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold px-2.5 py-1 bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] rounded-full">
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 bg-rose-100 text-rose-700 border border-rose-200 rounded-full">
                     Action Required
                   </span>
                 </div>
 
-                <div className="divide-y divide-[#f3f4f6]">
+                <div className="divide-y divide-slate-100">
                   {deficiencies.map((sub, i) => {
                     const isFailed = (sub.status || "").toLowerCase() === "failed" || Number(sub.final_grade) === 5.0;
                     const isDropped = (sub.status || "").toLowerCase() === "dropped";
@@ -141,30 +140,30 @@ export default function Dashboard() {
                       <div
                         key={i}
                         onClick={() => navigate(`/students/${studentProfile.id}`)}
-                        className="px-5 py-3.5 flex items-center justify-between hover:bg-[#fff7ed] cursor-pointer transition-colors group"
+                        className="px-5 py-3.5 flex items-center justify-between hover:bg-orange-50/40 cursor-pointer transition-colors group"
                         title="Click to view details in Academic Record"
                       >
                         <div className="min-w-0 flex-1 pr-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-mono font-bold text-[#ea580c]">{sub.code}</span>
-                            <span className="text-[13px] font-bold text-[#111827] truncate group-hover:text-[#ea580c] transition-colors">{sub.title}</span>
+                            <span className="text-[13px] font-mono font-semibold text-orange-600">{sub.code}</span>
+                            <span className="text-[13px] font-semibold text-slate-800 truncate group-hover:text-orange-600 transition-colors">{sub.title}</span>
                           </div>
-                          <p className="text-[11px] text-[#6b7280] mt-0.5">
+                          <p className="text-[11px] text-slate-500 mt-0.5">
                             {sub.semesterLabel || "Past Term"} {sub.schoolYear ? `· SY ${sub.schoolYear}` : ""} · {sub.units} units
                           </p>
                         </div>
 
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                             isFailed
-                              ? "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]"
+                              ? "bg-rose-50 text-rose-700 border-rose-200/80"
                               : isDropped
-                              ? "bg-[#f4f4f5] text-[#71717a] border-[#e4e4e7]"
-                              : "bg-[#fffbeb] text-[#d97706] border-[#fde68a]"
+                              ? "bg-slate-100 text-slate-600 border-slate-200/80"
+                              : "bg-amber-50 text-amber-700 border-amber-200/80"
                           }`}>
                             {isFailed ? "Failed (5.00)" : isDropped ? "Dropped" : "Incomplete (INC)"}
                           </span>
-                          <ChevronRight size={16} className="text-[#9ca3af] group-hover:text-[#ea580c] transition-colors" />
+                          <ChevronRight size={16} className="text-slate-400 group-hover:text-orange-600 transition-colors" />
                         </div>
                       </div>
                     );
@@ -174,26 +173,26 @@ export default function Dashboard() {
             ) : (
               <div
                 onClick={() => navigate(`/students/${studentProfile.id}`)}
-                className="bg-white border-2 border-[#bbf7d0] hover:border-[#16a34a] rounded-2xl p-5 shadow-sm cursor-pointer transition-all hover:bg-[#f0fdf4]/50 group"
+                className="bg-white border border-emerald-200/80 hover:border-emerald-400 rounded-xl p-5 shadow-xs cursor-pointer transition-all hover:bg-emerald-50/20 group"
                 title="Click to view full Academic Record"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-[#dcfce7] text-[#16a34a] flex items-center justify-center font-bold flex-shrink-0">
-                      <CheckCircle2 size={22} />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold flex-shrink-0">
+                      <CheckCircle2 size={18} />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-[#166534] group-hover:text-[#15803d] transition-colors">
+                      <h3 className="text-[14.5px] font-bold text-emerald-900 group-hover:text-emerald-800 transition-colors">
                         No Back Subjects or Deficiencies
                       </h3>
-                      <p className="text-[12px] text-[#4b5563] mt-0.5">
+                      <p className="text-[12px] text-slate-500 mt-0.5">
                         All taken courses are in good standing with zero failed, dropped, or incomplete subjects.
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-[12px] font-bold text-[#16a34a] group-hover:translate-x-1 transition-all flex-shrink-0">
+                  <div className="flex items-center gap-1 text-[12px] font-semibold text-emerald-700 group-hover:translate-x-1 transition-all flex-shrink-0">
                     <span>View Record</span>
-                    <ChevronRight size={16} />
+                    <ChevronRight size={15} />
                   </div>
                 </div>
               </div>
@@ -202,17 +201,17 @@ export default function Dashboard() {
             {/* View Full Record CTA */}
             <button
               onClick={() => navigate(`/students/${studentProfile.id}`)}
-              className="w-full flex items-center justify-between bg-white hover:bg-[#fff7ed] border-2 border-[#e5e7eb] hover:border-[#ea580c] rounded-xl px-5 py-4 transition-all group shadow-sm"
+              className="w-full flex items-center justify-between bg-white hover:bg-orange-50/40 border border-slate-200/90 hover:border-orange-300 rounded-xl px-5 py-3.5 transition-all group shadow-xs active:scale-[0.99]"
             >
               <div className="text-left">
-                <p className="text-[14px] font-bold text-[#1f2328] group-hover:text-[#ea580c] transition-colors">
+                <p className="text-[13.5px] font-semibold text-slate-800 group-hover:text-orange-600 transition-colors">
                   View Academic Record
                 </p>
-                <p className="text-[12px] text-[#9ca3af] mt-0.5">
+                <p className="text-[11.5px] text-slate-400 mt-0.5">
                   See all subjects, grades, and completed courses
                 </p>
               </div>
-              <ArrowRight size={18} className="text-[#9ca3af] group-hover:text-[#ea580c] transition-colors flex-shrink-0" />
+              <ArrowRight size={17} className="text-slate-400 group-hover:text-orange-600 transition-colors flex-shrink-0" />
             </button>
 
           </div>
@@ -227,69 +226,69 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
               onClick={() => navigate("/students")}
-              className="bg-white border-2 border-[#d0d7de] hover:border-[#1a7f37] rounded-xl p-5 shadow-sm cursor-pointer transition-all group"
+              className="bg-white border border-slate-200/90 hover:border-orange-300 rounded-xl p-5 shadow-xs cursor-pointer transition-all hover:-translate-y-0.5 group"
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wide text-[#656d76]">Enrolled CCS Students</p>
-                <div className="w-8 h-8 rounded-lg bg-[#f6f8fa] flex items-center justify-center text-[#656d76]">
-                  <Users size={18} />
+                <p className="text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Enrolled CCS Students</p>
+                <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-orange-50 flex items-center justify-center text-slate-600 group-hover:text-orange-600 transition-colors">
+                  <Users size={17} />
                 </div>
               </div>
-              <p className="text-[34px] font-bold font-mono text-[#1f2328]">{totalStudents}</p>
-              <p className="text-[12px] text-[#656d76]">
-                {regularStudents} Regular · {irregularStudents} Irregular & Special Statuses
+              <p className="text-[32px] font-bold font-mono tracking-tight text-slate-900">{totalStudents}</p>
+              <p className="text-[12px] text-slate-500 mt-1">
+                {regularStudents} Regular · {irregularStudents} Irregular & Special
               </p>
             </div>
 
             <div
               onClick={() => navigate("/students?filter=concerns")}
-              className="bg-white border-2 border-[#d0d7de] hover:border-[#cf222e] rounded-xl p-5 shadow-sm cursor-pointer transition-all group"
+              className="bg-white border border-rose-200/80 hover:border-rose-300 rounded-xl p-5 shadow-xs cursor-pointer transition-all hover:-translate-y-0.5 group"
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wide text-[#656d76]">Students with Concerns</p>
-                <div className="w-8 h-8 rounded-lg bg-[#ffebe9] flex items-center justify-center text-[#cf222e]">
-                  <AlertTriangle size={18} />
+                <p className="text-[11.5px] font-semibold uppercase tracking-wider text-rose-600">Students with Concerns</p>
+                <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                  <AlertTriangle size={17} />
                 </div>
               </div>
-              <p className="text-[34px] font-bold font-mono text-[#cf222e]">{flaggedStudents.length}</p>
-              <p className="text-[12px] text-[#656d76]">Require review or grade resolution</p>
+              <p className="text-[32px] font-bold font-mono tracking-tight text-rose-600">{flaggedStudents.length}</p>
+              <p className="text-[12px] text-slate-500 mt-1">Require review or grade resolution</p>
             </div>
 
             <div
               onClick={() => navigate("/sections")}
-              className="bg-white border-2 border-[#d0d7de] hover:border-[#1a7f37] rounded-xl p-5 shadow-sm cursor-pointer transition-all group"
+              className="bg-white border border-slate-200/90 hover:border-orange-300 rounded-xl p-5 shadow-xs cursor-pointer transition-all hover:-translate-y-0.5 group"
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wide text-[#656d76]">Section Allocations</p>
-                <div className="w-8 h-8 rounded-lg bg-[#dafbe1] flex items-center justify-center text-[#1a7f37]">
-                  <Layers size={18} />
+                <p className="text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Section Allocations</p>
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                  <Layers size={17} />
                 </div>
               </div>
-              <p className="text-[34px] font-bold font-mono text-[#1a7f37]">{sections.length}</p>
-              <p className="text-[12px] text-[#656d76]">SJC RGDPD Portal structure & capacities</p>
+              <p className="text-[32px] font-bold font-mono tracking-tight text-slate-900">{sections.length}</p>
+              <p className="text-[12px] text-slate-500 mt-1">SJC RGDPD Portal structure & capacities</p>
             </div>
           </div>
 
           {/* Flagged Students List */}
-          <div className="bg-white border-2 border-[#d0d7de] rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-[#fffbeb] px-5 py-4 border-b border-[#d0d7de] flex items-center justify-between">
+          <div className="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-slate-50/70 px-5 py-3.5 border-b border-slate-200/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-[#cf222e]" />
-                <h3 className="text-[16px] font-bold text-[#1f2328]">
+                <AlertTriangle size={16} className="text-amber-600" />
+                <h3 className="text-[14.5px] font-bold text-slate-800">
                   Students Flagged for Immediate Academic Concern ({flaggedStudents.length})
                 </h3>
               </div>
               <button
                 onClick={() => navigate("/students?filter=concerns")}
-                className="text-[13px] font-bold text-[#1a7f37] hover:underline flex items-center gap-1"
+                className="text-[12.5px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors"
               >
-                View Complete List <ArrowRight size={14} />
+                View Complete List <ArrowRight size={13} />
               </button>
             </div>
 
-            <div className="divide-y divide-[#e8ecf0]">
+            <div className="divide-y divide-slate-100">
               {flaggedStudents.length === 0 ? (
-                <div className="p-6 text-center text-[14px] text-[#656d76]">
+                <div className="p-6 text-center text-[13px] text-slate-400">
                   No students currently flagged for academic concerns.
                 </div>
               ) : (
@@ -297,24 +296,24 @@ export default function Dashboard() {
                   <div
                     key={s.id}
                     onClick={() => navigate(`/students/${s.id}`)}
-                    className="p-4 hover:bg-[#f6f8fa] flex items-center justify-between cursor-pointer transition-colors group"
+                    className="p-4 hover:bg-slate-50/80 flex items-center justify-between cursor-pointer transition-colors group"
                   >
                     <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-[15px] font-bold text-[#1f2328] group-hover:text-[#1a7f37] transition-colors">
+                      <div className="flex items-center gap-2.5 mb-1">
+                        <span className="text-[14px] font-semibold text-slate-900 group-hover:text-orange-600 transition-colors">
                           {s.name}
                         </span>
-                        <span className="text-[12px] font-mono text-[#656d76]">{s.id}</span>
-                        <span className="text-[11px] font-bold bg-[#f6f8fa] border border-[#d0d7de] px-2 py-0.5 rounded">
+                        <span className="text-[11.5px] font-mono text-slate-400">{s.id}</span>
+                        <span className="text-[10.5px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/70 px-2 py-0.5 rounded-full">
                           {s.course} ({s.yr}yr)
                         </span>
                       </div>
-                      <p className="text-[12px] text-[#cf222e] font-semibold flex items-center gap-1.5">
-                        <AlertTriangle size={13} className="flex-shrink-0" />
+                      <p className="text-[11.5px] text-rose-600 font-medium flex items-center gap-1.5">
+                        <AlertTriangle size={12} className="flex-shrink-0" />
                         <span>{s.concerns[0] || "Academic concern noted"}</span>
                       </p>
                     </div>
-                    <ChevronRight size={18} className="text-[#9198a1] group-hover:text-[#1a7f37]" />
+                    <ChevronRight size={16} className="text-slate-300 group-hover:text-orange-600 transition-colors" />
                   </div>
                 ))
               )}

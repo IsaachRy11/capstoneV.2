@@ -5,15 +5,15 @@ import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
 
 const STATUS_BADGES = {
-  Regular: "bg-[#fff7ed] text-[#c2410c] border-[#ffedd5]",
-  Irregular: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
-  Transferee: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]",
-  Returnee: "bg-[#f3e8ff] text-[#6b21a8] border-[#e9d5ff]",
-  Shiftee: "bg-[#fff7ed] text-[#ea580c] border-[#ffedd5]",
-  Inactive: "bg-[#f3f4f6] text-[#4b5563] border-[#e5e7eb]",
-  Dropped: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]",
-  Graduating: "bg-[#ecfdf5] text-[#047857] border-[#a7f3d0]",
-  Graduated: "bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]"
+  Regular: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+  Irregular: "bg-amber-50 text-amber-700 border-amber-200/80",
+  Transferee: "bg-blue-50 text-blue-700 border-blue-200/80",
+  Returnee: "bg-purple-50 text-purple-700 border-purple-200/80",
+  Shiftee: "bg-orange-50 text-orange-700 border-orange-200/80",
+  Inactive: "bg-slate-100 text-slate-600 border-slate-200/80",
+  Dropped: "bg-rose-50 text-rose-700 border-rose-200/80",
+  Graduating: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+  Graduated: "bg-teal-50 text-teal-700 border-teal-200/80"
 };
 
 function Avatar({ initials }) {

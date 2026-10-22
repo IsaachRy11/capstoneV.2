@@ -8,10 +8,10 @@ import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
 
 const STATUS_CFG = {
-  Passed:     { Icon: CheckCircle2, color: "text-[#047857]", bg: "bg-[#ecfdf5]", border: "border-[#a7f3d0]" },
-  Failed:     { Icon: XCircle,      color: "text-[#dc2626]", bg: "bg-[#fef2f2]", border: "border-[#fecaca]" },
-  Dropped:    { Icon: MinusCircle,  color: "text-[#4b5563]", bg: "bg-[#f3f4f6]", border: "border-[#e5e7eb]" },
-  Incomplete: { Icon: Clock,        color: "text-[#b45309]", bg: "bg-[#fef3c7]", border: "border-[#fde68a]" },
+  Passed:     { Icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200/80" },
+  Failed:     { Icon: XCircle,      color: "text-rose-700",    bg: "bg-rose-50",    border: "border-rose-200/80" },
+  Dropped:    { Icon: MinusCircle,  color: "text-slate-600",   bg: "bg-slate-100",  border: "border-slate-200/80" },
+  Incomplete: { Icon: Clock,        color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200/80" },
 };
 
 function Avatar({ initials, size = "w-16 h-16", text = "text-[18px]" }) {
