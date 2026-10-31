@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { AlertTriangle, Pencil, Printer } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
-import { getHistory, getSectionInfo, getStudent, updateGrade } from "../services/students";
+import { getHistory, getStudent, updateGrade } from "../services/students";
 import { supabase, unwrap } from "../lib/supabase";
 import { Avatar, Badge, ErrorState, FormError, GradeLegend, LoadingState, StandingBadge, StatusBadge } from "../components/ui";
 import { GRADE_OPTIONS, STUDENT_TYPE, formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
@@ -131,8 +131,7 @@ export default function StudentRecord() {
       getStudent(id), getHistory(id),
       unwrap(supabase.from("v_student_deficiencies").select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year").eq("student_id", id)),
     ]);
-    const section = student ? await getSectionInfo(student.section_id) : null;
-    return { student, history, deficiencies, section };
+    return { student, history, deficiencies };
   }, [id]);
 
   if (loading) return <LoadingState />;
@@ -141,7 +140,7 @@ export default function StudentRecord() {
     return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const { student, history, deficiencies, section } = data;
+  const { student, history, deficiencies } = data;
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
   const current = history.filter((r) => r.is_current && r.status !== "dropped");
@@ -172,7 +171,6 @@ export default function StudentRecord() {
         <dl className="grid gap-4 border-t border-line-2 pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
           {[
             ["Section", student.section_name || "Not registered"],
-            ["Room", section?.rooms?.name || "TBA"],
             ["Units this term", `${sumUnits(current)} units`],
             ["Units earned", `${earned} units`],
             ["Student type", STUDENT_TYPE[student.admission_type]],
