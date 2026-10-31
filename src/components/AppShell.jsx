@@ -24,10 +24,10 @@ const PAGE_TITLES = [
 function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-5 pb-4 pt-5">
-      <SealLogo size={36} />
+      <SealLogo size={44} />
       <div>
-        <div className="font-display text-[15px] font-bold text-ink">CCS Monitor</div>
-        <div className="text-[12px] text-ink-3">Saint Joseph College</div>
+        <div className="font-display text-[17px] font-bold leading-tight text-ink">CCS Monitor</div>
+        <div className="text-[13px] text-ink-3">Saint Joseph College</div>
       </div>
     </div>
   );
@@ -39,26 +39,26 @@ function Sidebar({ onNavigate }) {
   const link = ({ isActive }) => `nav-link ${isActive ? "active" : ""}`;
 
   return (
-    <aside className="flex h-full w-[248px] flex-col border-r border-line bg-surface">
+    <aside className="flex h-full w-[280px] flex-col border-r border-line bg-surface">
       <Brand />
       <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2" onClick={onNavigate}>
         {isSecretary ? (
           <>
-            <NavLink to="/" end className={link}><LayoutDashboard size={18} aria-hidden="true" />Dashboard</NavLink>
-            <div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">Records</div>
+            <NavLink to="/" end className={link}><LayoutDashboard size={20} aria-hidden="true" />Dashboard</NavLink>
+            <div className="px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">Records</div>
             <NavLink to="/students" className={link}>
-              <Users size={18} aria-hidden="true" />Students
+              <Users size={20} aria-hidden="true" />Students
             </NavLink>
-            <NavLink to="/sections" className={link}><Layers size={18} aria-hidden="true" />Section allocations</NavLink>
-            <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
+            <NavLink to="/sections" className={link}><Layers size={20} aria-hidden="true" />Section allocations</NavLink>
+            <NavLink to="/curriculum" className={link}><BookOpen size={20} aria-hidden="true" />Curriculum</NavLink>
           </>
         ) : (
           <>
-            <NavLink to="/" end className={link}><Home size={18} aria-hidden="true" />Home</NavLink>
-            <NavLink to="/schedule" className={link}><CalendarClock size={18} aria-hidden="true" />Schedule</NavLink>
-            <NavLink to="/progress" className={link}><ListChecks size={18} aria-hidden="true" />Subject tracker</NavLink>
-            <NavLink to="/record" className={link}><FileText size={18} aria-hidden="true" />Academic record</NavLink>
-            <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
+            <NavLink to="/" end className={link}><Home size={20} aria-hidden="true" />Home</NavLink>
+            <NavLink to="/schedule" className={link}><CalendarClock size={20} aria-hidden="true" />Schedule</NavLink>
+            <NavLink to="/progress" className={link}><ListChecks size={20} aria-hidden="true" />Subject tracker</NavLink>
+            <NavLink to="/record" className={link}><FileText size={20} aria-hidden="true" />Academic record</NavLink>
+            <NavLink to="/curriculum" className={link}><BookOpen size={20} aria-hidden="true" />Curriculum</NavLink>
           </>
         )}
       </nav>
@@ -107,9 +107,27 @@ export default function AppShell() {
           <UserMenu />
         </header>
 
-        <main className="flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
+        <main className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
           <Outlet context={{ term: term.data, termLoading: term.loading }} />
         </main>
+
+        <footer className="no-print border-t border-line bg-surface px-4 py-6 sm:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-5">
+            <div className="flex max-w-[520px] items-start gap-3">
+              <SealLogo size={36} />
+              <div>
+                <div className="font-display text-[15px] font-bold text-ink">CCS Monitor</div>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
+                  Subject monitoring for the College of Computer Studies, Saint Joseph College, Maasin City, Southern Leyte.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
+              <span>Questions about your records? Visit the CCS office.</span>
+              <span>© {new Date().getFullYear()} CCS Monitor · Capstone project</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

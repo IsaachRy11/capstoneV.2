@@ -15,7 +15,7 @@ export function Avatar({ name, url, size = 40, className = "" }) {
 }
 
 export function SealLogo({ size = 34, className = "" }) {
-  return <img src="/sjc-seal.png" alt="" width={size} height={size} className={`shrink-0 rounded-full ${className}`} />;
+  return <img src="/ccs.png" alt="" width={size} height={size} className={`shrink-0 rounded-full ${className}`} />;
 }
 
 export function Badge({ tone = "neutral", dot = false, children, className = "" }) {

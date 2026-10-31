@@ -152,8 +152,8 @@
   .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 
   .nav-link {
-    display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px;
-    border-radius: 8px; color: var(--ink-2); font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 14px;
+    border-radius: 10px; color: var(--ink-2); font-size: 15px; font-weight: 500;
   }
   .nav-link:hover { background: var(--hover); color: var(--ink); }
   .nav-link.active { background: var(--tint); color: var(--tint-ink); font-weight: 600; }
