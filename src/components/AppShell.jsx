@@ -26,7 +26,7 @@ function Brand() {
     <div className="flex items-center gap-2.5 px-5 pb-4 pt-5">
       <SealLogo size={44} />
       <div>
-        <div className="font-display text-[17px] font-bold leading-tight text-ink">CCS Monitor</div>
+        <div className="font-display text-[16px] font-bold leading-tight text-ink">CCS Subject Monitoring System</div>
         <div className="text-[13px] text-ink-3">Saint Joseph College</div>
       </div>
     </div>
@@ -41,7 +41,7 @@ function Sidebar({ onNavigate }) {
   return (
     <aside className="flex h-full w-[280px] flex-col border-r border-line bg-surface">
       <Brand />
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2" onClick={onNavigate}>
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-3" onClick={onNavigate}>
         {isSecretary ? (
           <>
             <NavLink to="/" end className={link}><LayoutDashboard size={20} aria-hidden="true" />Dashboard</NavLink>
@@ -81,7 +81,8 @@ export default function AppShell() {
   };
 
   return (
-    <div className="flex min-h-screen bg-ground">
+    <div className="flex min-h-screen flex-col bg-ground">
+    <div className="flex flex-1">
       <div className="no-print sticky top-0 hidden h-screen lg:block">
         <Sidebar />
       </div>
@@ -110,25 +111,25 @@ export default function AppShell() {
         <main className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
           <Outlet context={{ term: term.data, termLoading: term.loading }} />
         </main>
+      </div>
+    </div>
 
-        <footer className="no-print border-t border-line bg-surface px-4 py-6 sm:px-8">
-          <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-5">
-            <div className="flex max-w-[520px] items-start gap-3">
-              <SealLogo size={36} />
-              <div>
-                <div className="font-display text-[15px] font-bold text-ink">CCS Monitor</div>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
-                  Subject monitoring for the College of Computer Studies, Saint Joseph College, Maasin City, Southern Leyte.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
-              <span>Questions about your records? Visit the CCS office.</span>
-              <span>© {new Date().getFullYear()} CCS Monitor · Capstone project</span>
+      {/* Full-width footer, under the sidebar too */}
+      <footer className="no-print border-t border-line bg-surface px-6 py-7 sm:px-10">
+        <div className="flex flex-wrap items-center justify-between gap-x-12 gap-y-5">
+          <div className="flex items-center gap-4">
+            <SealLogo size={44} />
+            <div>
+              <div className="font-display text-[16px] font-bold text-ink">CCS Subject Monitoring System</div>
+              <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
             </div>
           </div>
-        </footer>
-      </div>
+          <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
+            <span>Questions about your records? Visit the CCS office.</span>
+            <span>© {new Date().getFullYear()} CCS Subject Monitoring System · Capstone project</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

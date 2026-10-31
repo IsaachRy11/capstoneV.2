@@ -41,7 +41,6 @@ function AddSubjectModal({ program, onClose, onSaved }) {
         <div><label className="label" htmlFor="cc">Code</label><input id="cc" className="field font-mono" placeholder="IT 307" value={form.code} onChange={set("code")} required /></div>
         <div><label className="label" htmlFor="cu">Units</label><input id="cu" type="number" min={0.5} step={0.5} className="field font-mono" value={form.units} onChange={set("units")} required /></div>
         <div className="col-span-2"><label className="label" htmlFor="ct">Title</label><input id="ct" className="field" value={form.title} onChange={set("title")} required /></div>
-        <p className="col-span-2 text-[13px] text-ink-3">Only add subjects that are in SJC's approved curriculum.</p>
         <div className="col-span-2"><FormError error={error} /></div>
       </form>
     </Modal>
@@ -73,7 +72,7 @@ export default function Curriculum() {
     <>
       <PageHeader
         title={program.name}
-        subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years · from SJC's official curriculum checklist`}
+        subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years`}
         actions={isSecretary && <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Add subject</button>}
       />
 

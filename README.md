@@ -1,4 +1,4 @@
-# CCS Monitor · Saint Joseph College
+# CCS Subject Monitoring System · Saint Joseph College
 
 Subject, section and academic-standing monitor for the **College of Computer Studies, Saint Joseph College** (Maasin City, Southern Leyte). It covers the BSIT, BSCS and ACT programs.
 

@@ -99,7 +99,7 @@ export default function Dashboard() {
           <div className="flex items-start justify-between gap-3 pb-3">
             <div>
               <h2 className="text-[17px] font-bold">Curriculum</h2>
-              <p className="mt-1 text-[13px] text-ink-3">Official SJC checklist</p>
+              <p className="mt-1 text-[13px] text-ink-3">Subjects and units per program</p>
             </div>
             <Link to="/curriculum" className="text-[14px] font-semibold">View</Link>
           </div>

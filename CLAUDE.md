@@ -1,4 +1,4 @@
-# CCS Monitor
+# CCS Subject Monitoring System
 
 Subject monitoring system for Saint Joseph College, College of Computer Studies (BSIT, BSCS, ACT).
 Tracks students, enrolment per section, grades, back subjects and prerequisite compliance.

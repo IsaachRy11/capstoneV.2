@@ -38,7 +38,7 @@ export default function Login() {
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
           <div>
-            <div className="font-display text-[16px] font-bold">CCS Monitor</div>
+            <div className="font-display text-[16px] font-bold">CCS Subject Monitoring System</div>
             <div className="text-[13px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College</div>
           </div>
         </div>
