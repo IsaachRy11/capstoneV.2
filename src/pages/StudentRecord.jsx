@@ -1,470 +1,209 @@
 import { useState } from "react";
-import { useParams, useNavigate, Navigate } from "react-router-dom";
-import {
-  ArrowLeft, CheckCircle2, XCircle, Clock, MinusCircle, AlertTriangle,
-  Edit3, Printer, BookOpen, Award, Calendar
-} from "lucide-react";
-import { useData } from "../context/DataContext";
+import { Link, useParams } from "react-router-dom";
+import { AlertTriangle, Pencil, Printer } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useAsync } from "../hooks/useAsync";
+import { getHistory, getSectionInfo, getStudent, updateGrade } from "../services/students";
+import { supabase, unwrap } from "../lib/supabase";
+import { Avatar, Badge, ErrorState, FormError, LoadingState, StandingBadge, StatusBadge } from "../components/ui";
+import { GRADE_OPTIONS, formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
 
-const STATUS_CFG = {
-  Passed:     { Icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200/80" },
-  Failed:     { Icon: XCircle,      color: "text-rose-700",    bg: "bg-rose-50",    border: "border-rose-200/80" },
-  Dropped:    { Icon: MinusCircle,  color: "text-slate-600",   bg: "bg-slate-100",  border: "border-slate-200/80" },
-  Incomplete: { Icon: Clock,        color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200/80" },
-};
+const ADMISSION = { new: "New student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
-function Avatar({ initials, size = "w-16 h-16", text = "text-[18px]" }) {
+function TermTable({ term, rows, canEdit, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const start = () => {
+    setDraft(Object.fromEntries(rows.map((r) => [r.enrollment_id, {
+      midterm: r.midterm_grade ?? "", final: r.final_grade ?? "",
+      status: r.status === "incomplete" || r.status === "dropped" ? r.status : "auto",
+    }])));
+    setEditing(true);
+    setError("");
+  };
+  const set = (id, k, v) => setDraft((d) => ({ ...d, [id]: { ...d[id], [k]: v } }));
+
+  const save = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const changed = rows.filter((r) => {
+        const d = draft[r.enrollment_id];
+        const st = r.status === "incomplete" || r.status === "dropped" ? r.status : "auto";
+        return String(d.midterm) !== String(r.midterm_grade ?? "") || String(d.final) !== String(r.final_grade ?? "") || d.status !== st;
+      });
+      await Promise.all(changed.map((r) => {
+        const d = draft[r.enrollment_id];
+        return updateGrade(r.enrollment_id, { midterm: d.midterm === "" ? null : Number(d.midterm), final: d.final === "" ? null : Number(d.final), status: d.status });
+      }));
+      setEditing(false);
+      onSaved();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const gradeSelect = (id, k, label) => (
+    <select aria-label={label} className="field h-9 w-[88px] px-2 font-mono text-[13px]" value={draft[id][k]} onChange={(e) => set(id, k, e.target.value)}
+      disabled={k === "final" && draft[id].status !== "auto"}>
+      <option value="">—</option>
+      {GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g.toFixed(2)}</option>)}
+    </select>
+  );
+
+  const termAvg = (() => {
+    const graded = rows.filter((r) => r.final_grade !== null);
+    const u = sumUnits(graded);
+    return u ? (graded.reduce((t, r) => t + r.final_grade * r.units, 0) / u).toFixed(2) : null;
+  })();
+
   return (
-    <div className={`${size} rounded-2xl bg-gradient-to-br from-[#f97316] to-[#ea580c] text-white flex items-center justify-center ${text} font-bold flex-shrink-0 shadow-md`}>
-      {initials}
-    </div>
+    <section className="card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+        <div>
+          <h2 className="text-[17px] font-bold">{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</h2>
+          <p className="mt-1 text-[13px] text-ink-3">SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units · {term.section_name}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {term.is_current && <Badge tone="info" dot>Current term</Badge>}
+          {termAvg && <span className="text-[13px] text-ink-2">Term average <span className="font-mono font-semibold text-ink">{termAvg}</span></span>}
+          {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="data-table">
+          <thead><tr><th>Code</th><th>Subject</th><th className="!text-center">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th>{editing ? "Mark as" : "Status"}</th></tr></thead>
+          <tbody>
+            {rows.map((r) => {
+              const bad = r.status === "failed";
+              return (
+                <tr key={r.enrollment_id} style={bad && !editing ? { background: "var(--bad-bg)" } : undefined}>
+                  <td className="whitespace-nowrap font-mono text-[13px] text-accent">{r.code}</td>
+                  <td className="font-medium">{r.title}</td>
+                  <td className="num">{Number(r.units)}</td>
+                  {editing ? (
+                    <>
+                      <td className="text-center">{gradeSelect(r.enrollment_id, "midterm", `Midterm grade for ${r.code}`)}</td>
+                      <td className="text-center">{gradeSelect(r.enrollment_id, "final", `Final grade for ${r.code}`)}</td>
+                      <td>
+                        <select aria-label={`Status for ${r.code}`} className="field h-9 w-[150px] text-[13px]" value={draft[r.enrollment_id].status} onChange={(e) => set(r.enrollment_id, "status", e.target.value)}>
+                          <option value="auto">From final grade</option><option value="incomplete">INC</option><option value="dropped">Dropped</option>
+                        </select>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="num" style={r.midterm_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.midterm_grade)}</td>
+                      <td className={`num font-semibold ${bad ? "text-bad" : ""}`} style={r.final_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.final_grade)}</td>
+                      <td><StatusBadge status={r.status} /></td>
+                    </>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {editing && (
+        <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-line px-5 py-3">
+          <div className="mr-auto"><FormError error={error} /></div>
+          <p className="text-[13px] text-ink-3">1.00 is highest, 3.00 is passing, 5.00 is failed.</p>
+          <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save grades"}</button>
+        </div>
+      )}
+    </section>
   );
 }
 
 export default function StudentRecord() {
-  const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { students, updateStudentGrade, updateStudent } = useData();
+  const params = useParams();
+  const id = params.id || user.studentId;
+  const isSecretary = user.role === "secretary";
 
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'history'
-  const [selectedYearFilter, setSelectedYearFilter] = useState("1"); // '1' | '2' | '3' | '4'
-  const [selectedSemFilter, setSelectedSemFilter] = useState("1"); // '1' | '2'
-  const [editingGradeSub, setEditingGradeSub] = useState(null);
-  const [gradeInput, setGradeInput] = useState("");
-  const [remarkInput, setRemarkInput] = useState("");
+  const { data, error, loading, reload } = useAsync(async () => {
+    const [student, history, deficiencies] = await Promise.all([
+      getStudent(id), getHistory(id),
+      unwrap(supabase.from("v_student_deficiencies").select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year").eq("student_id", id)),
+    ]);
+    const section = student ? await getSectionInfo(student.section_id) : null;
+    return { student, history, deficiencies, section };
+  }, [id]);
 
-  const isStudentRole = user?.role === "student";
-  const isSecretaryRole = user?.role === "secretary";
-
-  // PRIVACY RULE: If a student tries to view another student's record, force redirect to their own record!
-  if (user?.role === "student" && id && user.id && id !== user.id) {
-    return <Navigate to={`/students/${user.id}`} replace />;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (!data.student) {
+    return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const activeStudentId = user?.role === "student" ? (user.id || "2025-0014") : id;
-  const student = students.find((s) => s.id === activeStudentId) || students[0];
-
-  if (!student) {
-    return (
-      <div className="p-12 text-center bg-white border-2 border-[#e5e7eb] rounded-3xl shadow-sm my-8 max-w-lg mx-auto font-sans">
-        <p className="text-[16px] text-[#4b5563] mb-4 font-semibold">Student record not found.</p>
-        <button
-          onClick={() => navigate(isStudentRole ? "/" : "/students")}
-          className="bg-gradient-to-r from-[#ea580c] to-[#f97316] text-white px-5 py-2.5 rounded-xl font-bold text-[14px] shadow-sm"
-        >
-          Return to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  const allSubjects = (student.semesters || []).flatMap((s) => s.subjects || []);
-  const passedSubjects = allSubjects.filter((s) => s.status === "Passed");
-  const passedCount = passedSubjects.length;
-  const failedCount = allSubjects.filter((s) => s.status === "Failed").length;
-  const droppedCount = allSubjects.filter((s) => s.status === "Dropped").length;
-  const incompleteCount = allSubjects.filter((s) => s.status === "Incomplete").length;
-
-  const handleSaveGrade = (semId, subjectCode) => {
-    if (gradeInput !== "") {
-      updateStudentGrade(student.id, semId, subjectCode, gradeInput, undefined, remarkInput);
-      setEditingGradeSub(null);
-      setGradeInput("");
-      setRemarkInput("");
-    }
-  };
-
-  const handleStatusChange = (newStatus) => {
-    if (isSecretaryRole) {
-      updateStudent({ ...student, status: newStatus });
-    }
-  };
-
-  const handlePrintAdvisingReport = () => {
-    window.print();
-  };
-
-  // Filter semesters based on 2-tier clean selection (Year & Semester)
-  const displayedSemesters = (student.semesters || []).filter((sem, idx) => {
-    // Determine year level from sem.year or label string (e.g. "2nd Year · 1st Semester") or index fallback
-    let semYear = String(sem.year || "");
-    if (!semYear) {
-      if (sem.label?.includes("1st Year")) semYear = "1";
-      else if (sem.label?.includes("2nd Year")) semYear = "2";
-      else if (sem.label?.includes("3rd Year")) semYear = "3";
-      else if (sem.label?.includes("4th Year")) semYear = "4";
-      else semYear = String(Math.floor(idx / 2) + 1);
-    }
-
-    // Determine semester number ("1" or "2") from semester portion of label or sem.sem
-    let semNum = String(sem.sem || "");
-    if (!semNum) {
-      const lowerLabel = (sem.label || "").toLowerCase();
-      // Split by '·' to inspect the semester portion only and prevent '2nd Year' from matching as 2nd Sem
-      const parts = lowerLabel.split("·");
-      const semPart = parts.length > 1 ? parts[1] : lowerLabel;
-      if (semPart.includes("2nd") || semPart.includes("second") || lowerLabel.endsWith("2nd semester")) {
-        semNum = "2";
-      } else {
-        semNum = "1";
-      }
-    }
-
-    const matchYear = selectedYearFilter === "all" || semYear === selectedYearFilter;
-    const matchSem = selectedSemFilter === "all" || semNum === selectedSemFilter;
-
-    return matchYear && matchSem;
-  });
+  const { student, history, deficiencies, section } = data;
+  const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
+    .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
+  const current = history.filter((r) => r.is_current && r.status !== "dropped");
+  const earned = sumUnits(history.filter((r) => r.status === "passed"));
 
   return (
-    <div className="w-full pb-16 font-sans print:p-0 print:bg-white">
-
-      {/* Navigation & Header Controls */}
-      <div className="flex items-center justify-between mb-8 print:hidden">
-        {!isStudentRole ? (
-          <button
-            onClick={() => navigate("/students")}
-            className="flex items-center gap-2 text-[14px] text-[#6b7280] hover:text-[#111827] font-semibold transition-colors bg-white border border-[#e5e7eb] px-4 py-2 rounded-xl shadow-sm"
-          >
-            <ArrowLeft size={16} /> Back to Student List
-          </button>
-        ) : (
-          <div />
-        )}
-
-        <div className="flex items-center gap-3">
-          {isSecretaryRole && (
-            <button
-              onClick={handlePrintAdvisingReport}
-              className="flex items-center gap-2 bg-gradient-to-r from-[#ea580c] to-[#f97316] hover:from-[#c2410c] hover:to-[#ea580c] text-white px-4 py-2 rounded-xl text-[13px] font-bold shadow-md transition-all"
-            >
-              <Printer size={15} /> Print Advising & Academic History
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Profile Header Hero Banner (Spacious & Clean) */}
-      <div className="bg-white border-2 border-[#e5e7eb] rounded-3xl p-8 mb-8 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          
-          <div className="flex items-center gap-5">
-            <Avatar initials={student.avatar} size="w-16 h-16" text="text-[18px]" />
-            <div>
-              <div className="flex items-center gap-3 flex-wrap mb-2">
-                <h1 className="text-2xl font-black text-[#111827] tracking-tight">{student.name}</h1>
-
-                {/* Status Dropdown for Secretary vs Badge for others */}
-                {isSecretaryRole ? (
-                  <select
-                    value={student.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className="text-[12px] font-bold px-3 py-1 rounded-xl border-2 bg-white cursor-pointer outline-none border-[#ea580c] text-[#ea580c]"
-                  >
-                    <option value="Regular">Regular</option>
-                    <option value="Irregular">Irregular</option>
-                    <option value="Transferee">Transferee</option>
-                    <option value="Returnee">Returnee</option>
-                    <option value="Shiftee">Shiftee</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Dropped">Dropped</option>
-                    <option value="Graduating">Graduating</option>
-                    <option value="Graduated">Graduated</option>
-                  </select>
-                ) : (
-                  <span className={`text-[12px] font-bold px-3 py-1 rounded-xl border ${
-                    student.status === "Regular"
-                      ? "bg-[#fff7ed] text-[#c2410c] border-[#ffedd5]"
-                      : "bg-[#fef3c7] text-[#b45309] border-[#fde68a]"
-                  }`}>
-                    {student.status}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-[14px] text-[#4b5563]">
-                <span className="font-bold text-[#111827]">{student.course}</span> &nbsp;·&nbsp;
-                Section: <span className="font-bold text-[#ea580c]">{student.section || "BSIT 2-A"}</span> &nbsp;·&nbsp;
-                {["1st","2nd","3rd","4th"][student.yr - 1]} Year &nbsp;·&nbsp;
-                ID: <span className="font-mono font-bold text-[#111827]">{student.id}</span>
-              </p>
-            </div>
-          </div>
-
-
-        </div>
-      </div>
-
-      {/* CLEAN 2-TAB NAVIGATION */}
-      <div className="flex items-center gap-3 mb-8 border-b-2 border-[#e5e7eb] pb-3">
-        {[
-          { key: "overview", label: "Academic Overview", icon: Award },
-          { key: "history", label: "Semester Subject Records", icon: BookOpen },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-5 py-2.5 rounded-2xl text-[14px] font-bold transition-all flex items-center gap-2 ${
-                active
-                  ? "bg-gradient-to-r from-[#ea580c] to-[#f97316] text-white shadow-md"
-                  : "bg-white border-2 border-[#e5e7eb] text-[#4b5563] hover:border-[#ea580c] hover:text-[#111827]"
-              }`}
-            >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* TAB 1: ACADEMIC OVERVIEW */}
-      {activeTab === "overview" && (
-        <div className="flex flex-col gap-8">
-          
-          {/* Subject Tally Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { label: "Passed Subjects", count: passedCount, cfg: STATUS_CFG.Passed },
-              { label: "Failed Subjects", count: failedCount, cfg: STATUS_CFG.Failed },
-              { label: "Dropped Subjects", count: droppedCount, cfg: STATUS_CFG.Dropped },
-              { label: "Incomplete Grades", count: incompleteCount, cfg: STATUS_CFG.Incomplete },
-            ].map((item) => (
-              <div key={item.label} className={`${item.cfg.bg} border-2 ${item.cfg.border} rounded-3xl p-6 text-center shadow-sm`}>
-                <p className={`text-[32px] font-black font-mono ${item.cfg.color}`}>{item.count}</p>
-                <p className={`text-[13px] font-bold mt-1 ${item.cfg.color}`}>{item.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Academic Concern Alerts */}
-          {(student.concerns || []).length > 0 && (
-            <div className="border-2 border-[#fecaca] rounded-3xl overflow-hidden shadow-sm">
-              <div className="bg-[#fef2f2] px-6 py-4 border-b border-[#fecaca] flex items-center gap-2">
-                <AlertTriangle size={18} className="text-[#dc2626]" />
-                <h4 className="text-[14px] font-bold text-[#dc2626]">
-                  Academic Concern Flags ({student.concerns.length})
-                </h4>
-              </div>
-              <div className="divide-y divide-[#fecaca] bg-white text-[14px] text-[#111827]">
-                {student.concerns.map((c, i) => (
-                  <div key={i} className="px-6 py-4 flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
-                    <span className="font-semibold">{c}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
+    <>
+      {isSecretary && (
+        <nav aria-label="Breadcrumb" className="no-print -mb-2 text-[14px] text-ink-3">
+          <Link to="/students" className="text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
+        </nav>
       )}
 
-      {/* TAB 2: SEMESTER SUBJECT RECORDS (2-TIER CLEAN FILTER) */}
-      {activeTab === "history" && (
-        <div className="flex flex-col gap-6">
-          
-          {/* CLEAN 2-TIER YEAR & SEMESTER FILTER CARD */}
-          <div className="bg-white border-2 border-[#e5e7eb] rounded-3xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            
-            {/* Year Level Selection */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[12px] font-bold text-[#ea580c] uppercase tracking-wide mr-1 flex items-center gap-1">
-                <Calendar size={14} /> Year Level:
-              </span>
-              {[
-                { key: "1", label: "1st Year" },
-                { key: "2", label: "2nd Year" },
-                { key: "3", label: "3rd Year" },
-                { key: "4", label: "4th Year" },
-              ].map((y) => (
-                <button
-                  key={y.key}
-                  onClick={() => setSelectedYearFilter(y.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all ${
-                    selectedYearFilter === y.key
-                      ? "bg-gradient-to-r from-[#ea580c] to-[#f97316] text-white shadow-sm"
-                      : "bg-[#fafafa] text-[#4b5563] border border-[#e5e7eb] hover:border-[#ea580c] hover:text-[#111827]"
-                  }`}
-                >
-                  {y.label}
-                </button>
+      <section className="card flex flex-col gap-6 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <Avatar name={student.full_name} size={64} />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-[26px] font-bold tracking-tight">{student.full_name}</h1>
+                <StandingBadge standing={student.standing} />
+              </div>
+              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name} · {yearLabel(student.year_level)}</div>
+            </div>
+          </div>
+          <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print record</button>
+        </div>
+        <dl className="grid gap-4 border-t border-line-2 pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+          {[
+            ["Section", student.section_name || "Not registered"],
+            ["Home room", section?.rooms?.name || "TBA"],
+            ["Units this term", `${sumUnits(current)} units`],
+            ["Units earned", `${earned} units`],
+            ["Admission", ADMISSION[student.admission_type]],
+          ].map(([k, v]) => (
+            <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
+          ))}
+          <div><dt className="text-[12px] font-semibold text-ink-3">Back subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length}</dd></div>
+        </dl>
+      </section>
+
+      {deficiencies.length > 0 && (
+        <div role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
+          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
+          <div className="flex flex-col gap-1">
+            <div className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 back subject" : `${deficiencies.length} back subjects`} to resolve</div>
+            <ul className="text-[14px] leading-relaxed text-ink-2">
+              {deficiencies.map((d) => (
+                <li key={d.enrollment_id}>
+                  <span className="font-mono">{d.code}</span> {d.title}: {d.status === "failed" ? "failed (5.00)" : d.status === "incomplete" ? "incomplete (INC)" : "dropped"} in {yearLabel(d.curriculum_year)}, {semesterLabel(d.semester)}, SY {d.school_year.replace("-", "–")}
+                </li>
               ))}
-            </div>
-
-            {/* Semester Sub-Filter */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-[12px] font-bold text-[#ea580c] uppercase tracking-wide">Semester:</span>
-              <div className="bg-[#fafafa] border border-[#e5e7eb] p-1 rounded-xl flex items-center gap-1">
-                {[
-                  { key: "1", label: "1st Sem" },
-                  { key: "2", label: "2nd Sem" },
-                ].map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => setSelectedSemFilter(s.key)}
-                    className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${
-                      selectedSemFilter === s.key
-                        ? "bg-[#ea580c] text-white shadow-sm"
-                        : "text-[#4b5563] hover:text-[#111827]"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
+            </ul>
           </div>
-
-          {/* Render Semester Tables */}
-          {displayedSemesters.length === 0 ? (
-            <div className="bg-white border-2 border-[#e5e7eb] rounded-3xl p-10 text-center text-[#6b7280]">
-              <p className="text-[14px] font-semibold">No subject records found matching selected year and semester filter.</p>
-            </div>
-          ) : (
-            displayedSemesters.map((sem) => (
-              <div key={sem.id} className="bg-white border-2 border-[#e5e7eb] rounded-3xl overflow-hidden shadow-sm">
-                
-                {/* Semester Header */}
-                <div className="flex items-center justify-between px-8 py-5 bg-[#fafafa] border-b-2 border-[#e5e7eb]">
-                  <div>
-                    <h3 className="text-[17px] font-extrabold text-[#111827]">
-                      School Year {sem.school_year} :: {sem.label}
-                    </h3>
-                    <p className="text-[12px] font-semibold text-[#ea580c] mt-0.5">
-                      {sem.subjects?.length || 0} Total Enrolled Subjects
-                    </p>
-                  </div>
-                </div>
-
-                {/* Subject Table */}
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#e5e7eb] bg-[#fafafa]/60">
-                      {(isStudentRole
-                        ? ["Subject Code", "Subject Title", "Units", "Midterm", "Final Grade", "Status", "Prerequisite Check"]
-                        : ["Subject Code", "Subject Title", "Units", "Midterm", "Final Grade", "Status", "Prerequisite Check", "Actions"]
-                      ).map((h, i) => (
-                        <th key={i} className={`px-6 py-4 text-[11px] font-bold text-[#6b7280] uppercase tracking-wide ${i >= 2 && i <= 5 ? "text-center" : "text-left"}`}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(sem.subjects || []).map((subj, sjIdx) => {
-                      const cfg = STATUS_CFG[subj.status] || STATUS_CFG.Dropped;
-                      const isEditing = editingGradeSub?.semId === sem.id && editingGradeSub?.code === subj.code;
-
-                      return (
-                        <tr key={sjIdx} className="border-b border-[#f3f4f6] hover:bg-[#fff7ed]/40 transition-colors">
-                          
-                          {/* Subject Code */}
-                          <td className="px-6 py-4">
-                            <span className="text-[14px] font-mono font-bold text-[#111827]">{subj.code}</span>
-                          </td>
-
-                          {/* Title */}
-                          <td className="px-6 py-4">
-                            <p className="text-[14px] font-semibold text-[#111827]">{subj.title}</p>
-                          </td>
-
-                          {/* Units */}
-                          <td className="px-6 py-4 text-center text-[14px] font-mono text-[#4b5563]">{subj.units}</td>
-
-                          {/* Midterm */}
-                          <td className="px-6 py-4 text-center text-[14px] font-mono text-[#6b7280]">
-                            {subj.midterm_grade ? Number(subj.midterm_grade).toFixed(2) : "—"}
-                          </td>
-
-                          {/* Final Grade */}
-                          <td className="px-6 py-4 text-center">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.25"
-                                value={gradeInput}
-                                onChange={(e) => setGradeInput(e.target.value)}
-                                className="w-16 h-9 px-2 text-[14px] font-mono font-bold border-2 border-[#ea580c] rounded-xl outline-none text-center"
-                              />
-                            ) : (
-                              <span className={`text-[16px] font-black font-mono ${subj.final_grade === 5.0 ? "text-[#dc2626]" : cfg.color}`}>
-                                {subj.final_grade !== null && subj.final_grade !== undefined ? Number(subj.final_grade).toFixed(2) : "—"}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-xl border ${cfg.color} ${cfg.bg} ${cfg.border}`}>
-                              {subj.status}
-                            </span>
-                          </td>
-
-                          {/* Prerequisite */}
-                          <td className="px-6 py-4">
-                            {subj.prereq_flag ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] px-2.5 py-1 rounded-lg">
-                                <AlertTriangle size={12} /> PREREQ NOT MET
-                              </span>
-                            ) : subj.prerequisite ? (
-                              <span className="text-[12px] text-[#6b7280]">
-                                Prereq: <span className="font-mono font-semibold">{subj.prerequisite}</span> (Passed)
-                              </span>
-                            ) : (
-                              <span className="text-[12px] text-[#9ca3af]">None required</span>
-                            )}
-                          </td>
-
-                          {/* Actions (HIDDEN ENTIRELY FOR STUDENT ROLE!) */}
-                          {!isStudentRole && (
-                            <td className="px-6 py-4">
-                              {isEditing ? (
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleSaveGrade(sem.id, subj.code)}
-                                    className="px-3 py-1 bg-[#ea580c] text-white text-[12px] font-bold rounded-lg shadow-sm"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingGradeSub(null)}
-                                    className="px-2 py-1 text-[#6b7280] text-[12px] font-semibold"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    setEditingGradeSub({ semId: sem.id, code: subj.code });
-                                    setGradeInput(subj.final_grade || "");
-                                  }}
-                                  className="text-[13px] font-bold text-[#ea580c] hover:underline flex items-center gap-1"
-                                >
-                                  <Edit3 size={14} /> Encode Grade
-                                </button>
-                              )}
-                            </td>
-                          )}
-
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-              </div>
-            ))
-          )}
         </div>
       )}
 
-    </div>
+      {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
+      {terms.map((t) => (
+        <TermTable key={t.school_term_id} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
+      ))}
+    </>
   );
 }
