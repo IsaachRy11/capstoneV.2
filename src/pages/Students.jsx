@@ -117,7 +117,7 @@ export default function Students() {
     <>
       <PageHeader
         title="Students"
-        subtitle={`${data.students.length} students across ${data.programs.map((p) => p.code).join(", ")}`}
+        subtitle={`${year === "all" ? "All year levels" : yearLabel(Number(year))} · ${rows.length} of ${data.students.length} students`}
         actions={<>
           <button className="btn btn-secondary" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
           <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Add student</button>
@@ -132,8 +132,9 @@ export default function Students() {
             const on = year === k;
             return (
               <button key={k} role="tab" aria-selected={on} onClick={() => setParam("year", k)}
-                className={`-mb-px inline-flex h-11 items-center gap-2 whitespace-nowrap border-b-2 px-1 text-[14px] font-semibold ${on ? "border-accent text-tint-ink" : "border-transparent text-ink-2 hover:text-ink"}`}>
-                {label}<span className="rounded-full bg-hover px-2 py-0.5 font-mono text-[12px] font-medium text-ink-2">{n}</span>
+                className={`-mb-px inline-flex h-12 items-center gap-2 whitespace-nowrap border-b-[3px] px-1 text-[14px] ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
+                {label}
+                <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] font-semibold ${on ? "text-white" : "bg-hover text-ink-3"}`} style={on ? { background: "var(--btn)" } : undefined}>{n}</span>
               </button>
             );
           })}
