@@ -14,21 +14,23 @@ jobs:
         run: |
           URL="${{ secrets.SUPABASE_URL }}"
           KEY="${{ secrets.SUPABASE_ANON_KEY }}"
-          
-          # Fallback values from project .env if secrets are omitted
-          if [ -z "$URL" ]; then
-            URL="https://ljgpxsuqlchtgqwfkvah.supabase.co"
-          fi
-          if [ -z "$KEY" ]; then
-            KEY="sb_publishable_KQbshBGYDjiCYAgzK5aPRg_aX5t1dvY"
+
+          # Values come only from repo secrets (Settings → Secrets and variables → Actions).
+          # Never hard-code them here: this file is public on GitHub.
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_ANON_KEY repository secret."
+            exit 1
           fi
 
-          echo "Pinging Supabase at $URL/rest/v1/..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY" "$URL/rest/v1/")
+          # A real (tiny) table read, so it counts as database activity.
+          # Logged-out requests get [] because of RLS, but Postgres still runs the query.
+          echo "Pinging Supabase database..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" "$URL/rest/v1/school_terms?select=id&limit=1")
           echo "Response HTTP Status: $HTTP_STATUS"
           
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
             echo "Successfully pinged Supabase!"
           else
-            echo "Warning: Received HTTP status $HTTP_STATUS"
+            echo "Ping failed with HTTP status $HTTP_STATUS (project paused, or secrets wrong?)"
+            exit 1
           fi

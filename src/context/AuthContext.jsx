@@ -1,80 +1,90 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { getAvatarUrl } from "../services/account";
 
-const AuthContext = createContext();
+// Two roles only: "secretary" (row in public.secretaries) and "student" (row in public.students).
+// The role comes from the database, never from the client.
+const AuthContext = createContext(null);
 
-export const DEFAULT_USERS = {
-  student: {
-    id: "2025-0014",
-    name: "Andrea Tan",
-    email: "andrea.tan@sjc.edu.ph",
-    role: "student",
-    title: "BSIT Student (2nd Year)",
-    avatar: "AT",
-    course: "BS Information Technology",
-    section: "BSIT 2-A",
-    yr: 2
-  },
+async function loadProfile(authUser) {
+  const uid = authUser.id;
+  const avatarPromise = getAvatarUrl(authUser.user_metadata?.avatar_path);
 
-  secretary: {
-    id: "SEC-001",
-    name: "Engr. M. Cruz",
-    email: "m.cruz@sjc.edu.ph",
-    role: "secretary",
-    title: "Department Secretary",
-    avatar: "MC",
-    department: "CCS Administrative Office"
+  const { data: sec, error: secErr } = await supabase
+    .from("secretaries").select("id, full_name, email").eq("auth_user_id", uid).maybeSingle();
+  if (secErr) throw secErr;
+  if (sec) return { role: "secretary", name: sec.full_name, email: sec.email, avatarUrl: await avatarPromise };
+
+  const { data: stu, error: stuErr } = await supabase
+    .from("students").select("id, first_name, last_name, email, year_level").eq("auth_user_id", uid).maybeSingle();
+  if (stuErr) throw stuErr;
+  if (stu) {
+    return {
+      role: "student", studentId: stu.id, name: `${stu.first_name} ${stu.last_name}`,
+      email: stu.email, yearLevel: stu.year_level, avatarUrl: await avatarPromise,
+    };
   }
-};
+  return null;
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("ccs_auth_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [session, setSession] = useState(undefined); // undefined = still checking
+  const [loaded, setLoaded] = useState({ uid: null, profile: null, failed: false });
+  const [version, setVersion] = useState(0); // bump to reload the profile after an edit
 
-  const loginAs = (roleKey, customId) => {
-    let selectedUser = DEFAULT_USERS[roleKey] || DEFAULT_USERS.secretary;
-    if (roleKey === "student" && customId) {
-      selectedUser = {
-        ...DEFAULT_USERS.student,
-        id: customId
-      };
-    }
-    setUser(selectedUser);
-    localStorage.setItem("ccs_auth_user", JSON.stringify(selectedUser));
-  };
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
-  const updateUserProfile = (updatedFields) => {
-    const nextUser = { ...user, ...updatedFields };
-    if (updatedFields.name) {
-      const initials = updatedFields.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .substring(0, 2)
-        .toUpperCase();
-      nextUser.avatar = initials;
-    }
-    setUser(nextUser);
-    localStorage.setItem("ccs_auth_user", JSON.stringify(nextUser));
-  };
+  // Resolve the role outside the auth callback (Supabase recommends not awaiting inside it).
+  const uid = session?.user?.id;
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    supabase.auth.getUser()
+      .then(({ data, error }) => { if (error) throw error; return loadProfile(data.user); })
+      .then((profile) => alive && setLoaded({ uid, profile, failed: false }))
+      .catch(() => alive && setLoaded({ uid, profile: null, failed: true }));
+    return () => {
+      alive = false;
+    };
+  }, [uid, version]);
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("ccs_auth_user");
-  };
+  const refreshProfile = useCallback(() => setVersion((v) => v + 1), []);
+
+  // loading | signed-out | ready | unlinked | error
+  const status =
+    session === undefined ? "loading"
+    : !uid ? "signed-out"
+    : loaded.uid !== uid ? "loading"
+    : loaded.failed ? "error"
+    : loaded.profile ? "ready" : "unlinked";
+  const profile = status === "ready" ? loaded.profile : null;
+
+  const signIn = useCallback(async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw error;
+  }, []);
+
+  const signOut = useCallback(() => supabase.auth.signOut(), []);
+
+  const changePassword = useCallback(async (password) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loginAs, logout, updateUserProfile, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ status, user: profile, email: session?.user?.email, signIn, signOut, changePassword, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
 }

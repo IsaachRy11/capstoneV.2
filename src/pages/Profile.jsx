@@ -1,231 +1,145 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Camera, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { User, Key, CheckCircle2, Save, Lock, AlertCircle } from "lucide-react";
+import { useAsync } from "../hooks/useAsync";
+import { getStudent } from "../services/students";
+import { removeAvatar, updateSecretaryName, uploadAvatar } from "../services/account";
+import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StandingBadge } from "../components/ui";
+import { yearLabel } from "../lib/format";
 
-export default function Profile() {
-  const { user, updateUserProfile } = useAuth();
+const ADMISSION = { new: "New student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
-  // Profile Form State
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [profileSuccess, setProfileSuccess] = useState(false);
+function Row({ label, children }) {
+  return (
+    <div className="grid gap-1 border-t border-line-2 px-5 py-4 sm:grid-cols-[200px_1fr] sm:gap-6">
+      <dt className="text-[13px] font-semibold text-ink-3">{label}</dt>
+      <dd className="text-[15px] text-ink">{children}</dd>
+    </div>
+  );
+}
 
-  // Password Form State
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
+function PhotoSection() {
+  const { user, refreshProfile } = useAuth();
+  const input = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    updateUserProfile({ name, email });
-    setProfileSuccess(true);
-    setTimeout(() => setProfileSuccess(false), 3000);
-  };
-
-  const handleChangePassword = (e) => {
-    e.preventDefault();
-    setPasswordError("");
-    setPasswordSuccess(false);
-
-    if (newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters long.");
-      return;
+  const run = async (fn) => {
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+      refreshProfile();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = "";
     }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New password and confirm password do not match.");
-      return;
-    }
-
-    setPasswordSuccess(true);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setTimeout(() => setPasswordSuccess(false), 4000);
   };
 
   return (
-    <div className="w-full max-w-4xl pb-12">
-      
-      {/* Header */}
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-[#1f2328] tracking-tight mb-1">Account & Profile Settings</h1>
-        <p className="text-[14px] text-[#656d76]">
-          Manage your personal details, contact information, and account security passwords
-        </p>
-      </div>
-
-      {/* Main Profile Summary Card */}
-      <div className="bg-white border-2 border-[#d0d7de] rounded-2xl p-6 mb-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#dafbe1] border-2 border-[#a4e8b4] text-[#1a7f37] font-bold text-[22px] flex items-center justify-center flex-shrink-0 shadow-sm">
-            {user?.avatar || "US"}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-[20px] font-bold text-[#1f2328]">{user?.name}</h2>
-              <span className="text-[11px] font-bold uppercase tracking-wider bg-[#dafbe1] text-[#1a7f37] border border-[#a4e8b4] px-2.5 py-0.5 rounded-md">
-                {user?.role === "secretary" ? "Department Secretary" : "Enrolled Student"}
-              </span>
-            </div>
-            <p className="text-[13px] text-[#656d76]">
-              {user?.email} &nbsp;·&nbsp; ID: <span className="font-mono font-bold text-[#1f2328]">{user?.id}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Personal Details Card */}
-        <div className="bg-white border-2 border-[#d0d7de] rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#e8ecf0]">
-            <User size={18} className="text-[#1a7f37]" />
-            <h3 className="text-[16px] font-bold text-[#1f2328]">Personal Information</h3>
-          </div>
-
-          {profileSuccess && (
-            <div className="mb-4 p-3 bg-[#dafbe1] border border-[#a4e8b4] rounded-xl text-[#1a7f37] text-[13px] font-bold flex items-center gap-2">
-              <CheckCircle2 size={16} /> Profile details saved successfully!
-            </div>
+    <div className="flex flex-wrap items-center gap-5 px-5 py-5">
+      <Avatar name={user.name} url={user.avatarUrl} size={80} />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
+          <input ref={input} id="photo" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
+            onChange={(e) => e.target.files[0] && run(() => uploadAvatar(e.target.files[0]))} />
+          <label htmlFor="photo" className={`btn btn-secondary btn-sm ${busy ? "pointer-events-none opacity-55" : ""}`}>
+            <Camera size={15} aria-hidden="true" />{busy ? "Saving…" : user.avatarUrl ? "Change photo" : "Upload photo"}
+          </label>
+          {user.avatarUrl && (
+            <button className="btn btn-secondary btn-sm" onClick={() => run(removeAvatar)} disabled={busy}><Trash2 size={15} aria-hidden="true" />Remove</button>
           )}
-
-          <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                Full Display Name
-              </label>
-              <input
-                required
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full h-10 px-3.5 border-2 border-[#d0d7de] rounded-xl text-[14px] outline-none focus:border-[#1a7f37] font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                Email Address
-              </label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3.5 border-2 border-[#d0d7de] rounded-xl text-[14px] outline-none focus:border-[#1a7f37] font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                System Assigned Role
-              </label>
-              <input
-                disabled
-                type="text"
-                value={user?.role === "secretary" ? "Department Secretary (Admin)" : "Enrolled Student (Read-only)"}
-                className="w-full h-10 px-3.5 border-2 border-[#e8ecf0] bg-[#f6f8fa] text-[#656d76] rounded-xl text-[13px] font-semibold cursor-not-allowed"
-              />
-            </div>
-
-            {user?.course && (
-              <div>
-                <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                  Academic Program
-                </label>
-                <input
-                  disabled
-                  type="text"
-                  value={user.course}
-                  className="w-full h-10 px-3.5 border-2 border-[#e8ecf0] bg-[#f6f8fa] text-[#656d76] rounded-xl text-[13px] font-semibold cursor-not-allowed"
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="mt-2 w-full h-10 bg-[#1a7f37] hover:bg-[#166d30] text-white text-[13px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-            >
-              <Save size={15} /> Save Profile Changes
-            </button>
-          </form>
         </div>
-
-        {/* Security & Password Management Card */}
-        <div className="bg-white border-2 border-[#d0d7de] rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#e8ecf0]">
-            <Key size={18} className="text-[#1a7f37]" />
-            <h3 className="text-[16px] font-bold text-[#1f2328]">Security & Password</h3>
-          </div>
-
-          {passwordSuccess && (
-            <div className="mb-4 p-3 bg-[#dafbe1] border border-[#a4e8b4] rounded-xl text-[#1a7f37] text-[13px] font-bold flex items-center gap-2">
-              <CheckCircle2 size={16} /> Account password updated successfully!
-            </div>
-          )}
-
-          {passwordError && (
-            <div className="mb-4 p-3 bg-[#ffebe9] border border-[#ffb8b0] rounded-xl text-[#cf222e] text-[13px] font-bold flex items-center gap-2">
-              <AlertCircle size={16} /> {passwordError}
-            </div>
-          )}
-
-          <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                Current Password
-              </label>
-              <input
-                required
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full h-10 px-3.5 border-2 border-[#d0d7de] rounded-xl text-[14px] outline-none focus:border-[#1a7f37] font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                New Password
-              </label>
-              <input
-                required
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full h-10 px-3.5 border-2 border-[#d0d7de] rounded-xl text-[14px] outline-none focus:border-[#1a7f37] font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-[#656d76] uppercase tracking-wide mb-1.5">
-                Confirm New Password
-              </label>
-              <input
-                required
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full h-10 px-3.5 border-2 border-[#d0d7de] rounded-xl text-[14px] outline-none focus:border-[#1a7f37] font-medium"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="mt-2 w-full h-10 bg-[#1f2328] hover:bg-[#000000] text-white text-[13px] font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-            >
-              <Lock size={15} /> Update Password
-            </button>
-          </form>
-        </div>
-
+        <p className="text-[13px] text-ink-3">JPG, PNG or WebP. It's cropped to a square and resized automatically.</p>
+        <FormError error={error} />
       </div>
     </div>
+  );
+}
+
+function SecretaryName() {
+  const { user, refreshProfile } = useAuth();
+  const [name, setName] = useState(user.name);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) return setError("Enter your name.");
+    setBusy(true);
+    setError("");
+    setSaved(false);
+    try {
+      await updateSecretaryName(name);
+      refreshProfile();
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={save} className="flex max-w-md flex-col gap-3 border-t border-line-2 px-5 py-5">
+      <label className="label !mb-0" htmlFor="full-name">Display name</label>
+      <div className="flex gap-2.5">
+        <input id="full-name" className="field" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }} />
+        <button className="btn btn-primary" type="submit" disabled={busy || name.trim() === user.name}>{busy ? "Saving…" : "Save"}</button>
+      </div>
+      <FormError error={error} />
+      {saved && <p role="status" className="text-[13px] text-ok">Name saved.</p>}
+    </form>
+  );
+}
+
+export default function Profile() {
+  const { user, email } = useAuth();
+  const isStudent = user.role === "student";
+  const { data: student, error, loading, reload } = useAsync(
+    () => (isStudent ? getStudent(user.studentId) : Promise.resolve(null)),
+    [isStudent, user.studentId]
+  );
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+
+  return (
+    <>
+      <PageHeader title="Profile"
+        subtitle={isStudent
+          ? "Your photo is yours to change. For any other correction, contact the CCS office."
+          : "Your photo and display name."} />
+
+      <section className="card overflow-hidden">
+        <SectionHeader title="Photo" subtitle="Shown in the top bar. Only signed-in users can see it." />
+        <PhotoSection />
+        {!isStudent && <SecretaryName />}
+      </section>
+
+      <section className="card overflow-hidden">
+        <SectionHeader title="Account" />
+        <dl>
+          <Row label="Sign-in email">
+            {email}
+            {!isStudent && <p className="mt-1 text-[13px] text-ink-3">Changing it needs email confirmation, which isn't set up yet. See the note in supabase/README.md.</p>}
+          </Row>
+          {isStudent && student && (
+            <>
+              <Row label="Student ID"><span className="font-mono">{student.id}</span></Row>
+              <Row label="Program">{student.program_name}</Row>
+              <Row label="Year level">{yearLabel(student.year_level)}</Row>
+              <Row label="Section">{student.section_name || "Not registered this semester"}</Row>
+              <Row label="Admission">{ADMISSION[student.admission_type]}</Row>
+              <Row label="Standing"><StandingBadge standing={student.standing} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
+            </>
+          )}
+        </dl>
+      </section>
+    </>
   );
 }

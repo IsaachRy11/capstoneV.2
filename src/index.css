@@ -2,67 +2,187 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme tokens ──────────────────────────────────────────────────────────
+   Light: warm neutrals, SJC orange as the signal color.
+   Dark ("ink-navy"): no orange anywhere; periwinkle-blue accent.          */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --ground: #f7f6f3;
+  --surface: #ffffff;
+  --surface-2: #fafaf9;
+  --line: #e7e5e0;
+  --line-2: #f0eeea;
+  --ink: #1a1714;
+  --ink-2: #57534e;
+  --ink-3: #6b6560;
+  --accent: #c2410c;
+  --btn: #c2410c;
+  --btn-hover: #9a3412;
+  --tint: #fff1e8;
+  --tint-ink: #9a3412;
+  --track: #efede9;
+  --hover: #f5f5f4;
+  --row-hover: #fffaf5;
+  --field-bg: #ffffff;
+  --field-line: #d6d3ce;
+  --focus: #fed7bf;
+  --panel: #c2410c;
+  --panel-ink: #ffffff;
+  --panel-soft: #ffe4d4;
+  --ok: #166534;     --ok-bg: #ecfdf3;   --ok-line: #bbf7d0;
+  --warn: #92400e;   --warn-bg: #fff4e0;
+  --bad: #b91c1c;    --bad-bg: #fef2f2;  --bad-line: #fecaca;
+  --info: #1e40af;   --info-bg: #eff4ff;
+  --neutral: #44403c; --neutral-bg: #f5f5f4;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0e1320;
+  --surface: #151b2b;
+  --surface-2: #1a2133;
+  --line: #263049;
+  --line-2: #1f2740;
+  --ink: #e6eaf2;
+  --ink-2: #b4bccd;
+  --ink-3: #97a1b6;
+  --accent: #8fa8ff;
+  --btn: #4361d8;
+  --btn-hover: #3651c0;
+  --tint: rgba(143, 168, 255, 0.14);
+  --tint-ink: #c3d0ff;
+  --track: #232c44;
+  --hover: #1c2438;
+  --row-hover: #1a2235;
+  --field-bg: #11172a;
+  --field-line: #2e3854;
+  --focus: rgba(143, 168, 255, 0.35);
+  --panel: #1b2440;
+  --panel-ink: #e6eaf2;
+  --panel-soft: #b4bccd;
+  --ok: #6ee7a8;     --ok-bg: rgba(16, 185, 129, 0.14);  --ok-line: rgba(16, 185, 129, 0.3);
+  --warn: #fcd34d;   --warn-bg: rgba(245, 158, 11, 0.14);
+  --bad: #fca5a5;    --bad-bg: rgba(239, 68, 68, 0.14);  --bad-line: rgba(239, 68, 68, 0.35);
+  --info: #a5c4ff;   --info-bg: rgba(96, 140, 255, 0.16);
+  --neutral: #b4bccd; --neutral-bg: rgba(148, 163, 184, 0.14);
+}
+
 @layer base {
   html {
-    color-scheme: light;
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: var(--ground);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
   }
-
-  /* Custom subtle scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  h1, h2, h3 {
+    font-family: "Plus Jakarta Sans", Inter, sans-serif;
+    color: var(--ink);
   }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  ::selection { background: var(--tint); color: var(--tint-ink); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 }
 
 @layer components {
-  /* Environmental Action: Sleek Trash / Delete button that integrates seamlessly with table/card environment */
-  .btn-trash {
-    @apply inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 
-           hover:text-rose-600 hover:bg-rose-50/90 active:bg-rose-100 
-           border border-transparent hover:border-rose-200/60
-           transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-500/20;
-  }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 
-  /* Environmental Status Badges */
-  .badge-regular {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-emerald-50 text-emerald-700 border border-emerald-200/80;
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid transparent;
+    font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
   }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-sm { height: 34px; padding: 0 12px; font-size: 13px; }
+  .btn-primary { background: var(--btn); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--btn-hover); color: #fff; }
+  .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--field-line); }
+  .btn-secondary:hover:not(:disabled) { background: var(--hover); }
+  .btn-danger { background: var(--bad-bg); color: var(--bad); border-color: var(--bad-line); }
+  .btn-danger:hover:not(:disabled) { filter: brightness(.97); }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 8px; color: var(--ink-3);
+    background: transparent; border: 1px solid transparent; cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--hover); color: var(--ink); }
+  .icon-btn-danger:hover { background: var(--bad-bg); color: var(--bad); }
 
-  .badge-irregular {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-amber-50 text-amber-700 border border-amber-200/80;
+  .field {
+    height: 40px; width: 100%; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--field-line); background: var(--field-bg);
+    color: var(--ink); font-size: 14px;
   }
+  .field::placeholder { color: var(--ink-3); }
+  .field:focus { outline: 3px solid var(--focus); border-color: var(--accent); }
+  select.field { padding-right: 32px; }
+  .label { display: block; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
 
-  .badge-danger {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-rose-50 text-rose-700 border border-rose-200/80;
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+    border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
   }
+  .badge-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .tone-ok { background: var(--ok-bg); color: var(--ok); }
+  .tone-warn { background: var(--warn-bg); color: var(--warn); }
+  .tone-bad { background: var(--bad-bg); color: var(--bad); }
+  .tone-info { background: var(--info-bg); color: var(--info); }
+  .tone-neutral { background: var(--neutral-bg); color: var(--neutral); }
 
-  .badge-neutral {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-slate-100 text-slate-700 border border-slate-200/80;
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-3);
+    padding: 10px 20px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap;
   }
+  .data-table td {
+    padding: 12px 20px; font-size: 14px; color: var(--ink);
+    border-bottom: 1px solid var(--line-2); vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: 0; }
+  .data-table tbody tr:hover td { background: var(--row-hover); }
+  .data-table .num { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 13px; }
+
+  .bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+
+  .nav-link {
+    display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px;
+    border-radius: 8px; color: var(--ink-2); font-size: 14px; font-weight: 500;
+  }
+  .nav-link:hover { background: var(--hover); color: var(--ink); }
+  .nav-link.active { background: var(--tint); color: var(--tint-ink); font-weight: 600; }
+
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--track); }
+  .seg button {
+    height: 34px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+}
+
+/* Initials avatars: 6 soft colors per theme, picked from the name so a person keeps theirs.
+   Dark theme avoids orange. Text on each background passes 4.5:1. */
+.av-1 { background: #fed7c3; color: #7c2d12; }
+.av-2 { background: #d9e7ff; color: #1e3a8a; }
+.av-3 { background: #d1f2e4; color: #14532d; }
+.av-4 { background: #ebddfb; color: #4c1d95; }
+.av-5 { background: #fde8b0; color: #713f12; }
+.av-6 { background: #e2e8f0; color: #1e293b; }
+[data-theme="dark"] .av-1 { background: #2b3a66; color: #c3d0ff; }
+[data-theme="dark"] .av-2 { background: #173f4a; color: #9ee6f2; }
+[data-theme="dark"] .av-3 { background: #1f3d33; color: #a7f3d0; }
+[data-theme="dark"] .av-4 { background: #352a5c; color: #ddd0ff; }
+[data-theme="dark"] .av-5 { background: #4a2335; color: #fbcfe8; }
+[data-theme="dark"] .av-6 { background: #2a3245; color: #cbd5e1; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .card { border-color: #ddd; }
 }
