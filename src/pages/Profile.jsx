@@ -6,9 +6,8 @@ import { useAsync } from "../hooks/useAsync";
 import { getStudent } from "../services/students";
 import { removeAvatar, updateSecretaryName, uploadAvatar } from "../services/account";
 import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StandingBadge } from "../components/ui";
-import { yearLabel } from "../lib/format";
+import { STUDENT_TYPE, yearLabel } from "../lib/format";
 
-const ADMISSION = { new: "New student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
 function Row({ label, children }) {
   return (
@@ -134,7 +133,7 @@ export default function Profile() {
               <Row label="Program">{student.program_name}</Row>
               <Row label="Year level">{yearLabel(student.year_level)}</Row>
               <Row label="Section">{student.section_name || "Not registered this semester"}</Row>
-              <Row label="Admission">{ADMISSION[student.admission_type]}</Row>
+              <Row label="Student type">{STUDENT_TYPE[student.admission_type]}</Row>
               <Row label="Standing"><StandingBadge standing={student.standing} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
             </>
           )}

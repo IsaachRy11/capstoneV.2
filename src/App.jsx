@@ -13,6 +13,7 @@ const Sections = lazy(() => import("./pages/Sections"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Progress = lazy(() => import("./pages/Progress"));
+const Schedule = lazy(() => import("./pages/Schedule"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 function SecretaryOnly({ children }) {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="sections" element={<SecretaryOnly><Sections /></SecretaryOnly>} />
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
+            <Route path="schedule" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Schedule />} />
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

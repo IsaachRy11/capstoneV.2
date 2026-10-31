@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getHistory, getStudent } from "../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../services/catalog";
-import { Badge, ErrorState, LoadingState, PageHeader } from "../components/ui";
+import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../components/ui";
 import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
 import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../lib/progress";
 
@@ -116,10 +116,11 @@ export default function Progress() {
         )}
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="seg" role="group" aria-label="Show subjects">
+      <div className="flex flex-col gap-3">
+        <div className="seg self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
+        <GradeLegend className="card px-5 py-3.5" />
       </div>
 
       {years.map((y) => {

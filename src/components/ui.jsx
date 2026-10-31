@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
-import { STATUS_LABEL, STATUS_TONE, initials } from "../lib/format";
-
-// Same name → same color (av-1 … av-6 in index.css).
-const avatarTone = (name = "") => (([...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 6) + 1);
+import { STATUS_LABEL, STATUS_TONE, colorIndex, initials } from "../lib/format";
 
 // Profile photo if there is one, otherwise initials on a colored circle. `size` in px.
 export function Avatar({ name, url, size = 40, className = "" }) {
@@ -11,7 +8,7 @@ export function Avatar({ name, url, size = 40, className = "" }) {
   return url ? (
     <img src={url} alt="" style={style} className={`shrink-0 rounded-full object-cover ${className}`} />
   ) : (
-    <span style={style} className={`av-${avatarTone(name)} flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide ${className}`} aria-hidden="true">
+    <span style={style} className={`av-${colorIndex(name)} flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide ${className}`} aria-hidden="true">
       {initials(name)}
     </span>
   );
@@ -29,6 +26,20 @@ export const StandingBadge = ({ standing }) =>
   standing === "irregular" ? <Badge tone="warn" dot>Irregular</Badge> : <Badge tone="ok" dot>Regular</Badge>;
 
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
+
+// How to read SJC grades: 1.00 is highest, 3.00 is the lowest passing grade, past 3.00 (5.00) fails.
+export function GradeLegend({ className = "" }) {
+  const item = "inline-flex items-center gap-2";
+  return (
+    <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ink-2 ${className}`} aria-label="How grades work">
+      <span className="font-semibold text-ink">How grades work:</span>
+      <span className={item}><Badge tone="ok">1.00 – 3.00</Badge>Passed (1.00 is the highest)</span>
+      <span className={item}><Badge tone="bad">5.00</Badge>Failed</span>
+      <span className={item}><Badge tone="warn">INC</Badge>Incomplete</span>
+      <span className={item}><Badge tone="neutral">Dropped</Badge>Withdrawn from the class</span>
+    </div>
+  );
+}
 
 export function PageHeader({ title, subtitle, actions }) {
   return (

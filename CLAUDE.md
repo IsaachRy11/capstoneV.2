@@ -25,13 +25,14 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - `src/components/AppShell.jsx` (sidebar nav, top bar), `TermCalendar.jsx` (term chip → month calendar from `school_terms` dates only; never invent events), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
 - `src/lib/progress.js` — per-subject curriculum progress (passed / taking now / back subject / not taken), next-semester subjects, midterm early warnings. Pure functions; used by the student tracker and home page.
 - Product direction: the student finds out first (tracker, midterm warnings, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
-- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
+- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
 
 ## Data rules
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 passing, 5.00 failed; INC and Dropped are statuses, not grades.
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Only a failing midterm (> 3.00) triggers a warning. Show `<GradeLegend />` wherever grades appear for students.
+- Wording: say "Student type" (Student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)
 - Schema, RLS and the official SJC curriculum are migrations in `supabase/migrations/`. Demo students/sections/schedules/grades are in `supabase/seed.sql`.

@@ -116,10 +116,10 @@ export default function Dashboard() {
       </div>
 
       <section className="card overflow-hidden">
-        <SectionHeader title="Sections this semester" subtitle="Block sections, home rooms and seats" action={<Link to="/sections" className="whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
+        <SectionHeader title="Sections this semester" subtitle="Block sections, rooms and seats" action={<Link to="/sections" className="whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Home room</th><th className="w-[32%]">Seats</th></tr></thead>
+            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Room</th><th className="w-[32%]">Seats</th></tr></thead>
             <tbody>
               {sections.map((s) => (
                 <tr key={s.id}>

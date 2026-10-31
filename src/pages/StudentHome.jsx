@@ -1,11 +1,11 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
 import { midtermWarning } from "../lib/progress";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getSectionInfo, getStudent, getTermClasses } from "../services/students";
 import { supabase, unwrap } from "../lib/supabase";
-import { ErrorState, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
+import { ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
 import { formatGrade, scheduleLines, sumUnits, yearLabel } from "../lib/format";
 
 export default function StudentHome() {
@@ -48,7 +48,7 @@ export default function StudentHome() {
           {[
             ["Year level", yearLabel(student.year_level)],
             ["Section", student.section_name || "Not registered"],
-            ["Home room", section?.rooms?.name || "TBA"],
+            ["Room", section?.rooms?.name || "TBA"],
             ["Subjects this term", `${active.length} subjects`],
             ["Units this term", `${units} units`],
           ].map(([k, v]) => (
@@ -102,6 +102,7 @@ export default function StudentHome() {
                   })}
                 </tbody>
               </table>
+              <GradeLegend className="border-t border-line px-5 py-3.5" />
             </div>
           )}
         </section>
@@ -132,6 +133,7 @@ export default function StudentHome() {
 
           <section className="card p-2">
             {[
+              { to: "/schedule", icon: CalendarClock, title: "Class schedule", sub: "Your week at a glance, with rooms" },
               { to: "/progress", icon: ListChecks, title: "Subject tracker", sub: "What you've passed, what's left, what's next" },
               { to: "/record", icon: FileText, title: "View grades", sub: "Midterm and final, every term" },
               { to: "/curriculum", icon: BookOpen, title: `${student.program_code} curriculum`, sub: "Every subject, year by year" },

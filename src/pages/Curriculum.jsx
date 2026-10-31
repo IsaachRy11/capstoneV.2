@@ -6,12 +6,10 @@ import { useAsync } from "../hooks/useAsync";
 import { addCurriculumSubject, getCurriculum, getPrograms } from "../services/catalog";
 import { getStudent } from "../services/students";
 import { ErrorState, FormError, LoadingState, Modal, PageHeader } from "../components/ui";
-import { semesterLabel, sumUnits, yearLabel } from "../lib/format";
-
-const KINDS = [["major", "Major"], ["elective", "Elective"], ["general_education", "General education"], ["pathfit", "PATHFIT"], ["nstp", "NSTP"], ["internship", "Internship"]];
+import { inferSubjectKind, semesterLabel, sumUnits, yearLabel } from "../lib/format";
 
 function AddSubjectModal({ program, onClose, onSaved }) {
-  const [form, setForm] = useState({ year_level: 1, semester: 1, code: "", title: "", units: 3, kind: "major" });
+  const [form, setForm] = useState({ year_level: 1, semester: 1, code: "", title: "", units: 3 });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -21,7 +19,10 @@ function AddSubjectModal({ program, onClose, onSaved }) {
     setBusy(true);
     setError("");
     try {
-      await addCurriculumSubject({ ...form, programCode: program.code, year_level: Number(form.year_level), semester: Number(form.semester), units: Number(form.units) });
+      await addCurriculumSubject({
+        ...form, programCode: program.code, year_level: Number(form.year_level), semester: Number(form.semester),
+        units: Number(form.units), kind: inferSubjectKind(form.code, form.title),
+      });
       onSaved();
     } catch (err) {
       setError(err.code === "23505" ? `${form.code} is already in the ${program.code} curriculum.` : err.message);
@@ -40,8 +41,6 @@ function AddSubjectModal({ program, onClose, onSaved }) {
         <div><label className="label" htmlFor="cc">Code</label><input id="cc" className="field font-mono" placeholder="IT 307" value={form.code} onChange={set("code")} required /></div>
         <div><label className="label" htmlFor="cu">Units</label><input id="cu" type="number" min={0.5} step={0.5} className="field font-mono" value={form.units} onChange={set("units")} required /></div>
         <div className="col-span-2"><label className="label" htmlFor="ct">Title</label><input id="ct" className="field" value={form.title} onChange={set("title")} required /></div>
-        <div className="col-span-2"><label className="label" htmlFor="ck">Type</label>
-          <select id="ck" className="field" value={form.kind} onChange={set("kind")}>{KINDS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
         <p className="col-span-2 text-[13px] text-ink-3">Only add subjects that are in SJC's approved curriculum.</p>
         <div className="col-span-2"><FormError error={error} /></div>
       </form>
