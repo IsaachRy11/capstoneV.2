@@ -16,6 +16,7 @@ const PAGE_TITLES = [
   [/^\/curriculum/, "Curriculum"],
   [/^\/record/, "Academic record"],
   [/^\/progress/, "Subject tracker"],
+  [/^\/schedules/, "Schedules"],
   [/^\/schedule/, "Schedule"],
   [/^\/profile/, "Profile"],
   [/^\/settings/, "Settings"],
@@ -50,6 +51,7 @@ function Sidebar({ onNavigate }) {
               <Users size={20} aria-hidden="true" />Students
             </NavLink>
             <NavLink to="/sections" className={link}><Layers size={20} aria-hidden="true" />Section allocations</NavLink>
+            <NavLink to="/schedules" className={link}><CalendarClock size={20} aria-hidden="true" />Schedules</NavLink>
             <NavLink to="/curriculum" className={link}><BookOpen size={20} aria-hidden="true" />Curriculum</NavLink>
           </>
         ) : (

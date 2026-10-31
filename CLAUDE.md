@@ -26,7 +26,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - `src/components/AppShell.jsx` (sidebar nav, top bar), `TermCalendar.jsx` (term chip → month calendar from `school_terms` dates only; never invent events), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
 - `src/lib/progress.js` — per-subject curriculum progress (passed / taking now / back subject / not taken), next-semester subjects, midterm early warnings. Pure functions; used by the student tracker and home page.
 - Product direction: the student finds out first (tracker, midterm warnings, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
-- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
+- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/schedules` (section timetables, current semester only), `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
 
 ## Data rules
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
