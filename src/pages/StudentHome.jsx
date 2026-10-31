@@ -92,24 +92,32 @@ export default function StudentHome() {
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>Code</th><th>Subject</th><th>Schedule</th><th className="!text-center">Units</th><th className="!text-center">Midterm</th></tr></thead>
+                <thead><tr><th>Subject</th><th>Schedule</th><th className="!text-center">Units</th><th className="!text-center">Midterm</th></tr></thead>
                 <tbody>
                   {classes.map((c) => {
                     const s = c.class_offerings.curriculum_subjects;
                     const lines = scheduleLines(c.class_offerings.class_meetings);
+                    const w = midtermWarning(c.midterm_grade);
                     return (
                       <tr key={c.id}>
-                        <td className="whitespace-nowrap font-mono text-[13px] text-accent">{s.code}</td>
-                        <td className="font-medium">{s.title}</td>
-                        <td className="text-[13px] text-ink-2">
-                          {lines.length ? lines.map((l) => <div key={l.days + l.time} className="whitespace-nowrap">{l.days} {l.time} · {l.room}</div>) : "To be arranged"}
+                        <td className="min-w-[200px]">
+                          <span className="block font-mono text-[12px] text-accent">{s.code}</span>
+                          <span className="block font-medium">{s.title}</span>
+                        </td>
+                        <td className="text-[13px]">
+                          {lines.length ? lines.map((l) => (
+                            <div key={l.days + l.time} className="whitespace-nowrap">
+                              <span className="font-medium text-ink">{l.days}</span> <span className="text-ink-2">{l.time}</span>
+                              <span className="block text-[12px] text-ink-3">{l.room}</span>
+                            </div>
+                          )) : <span className="text-ink-3">To be arranged</span>}
                         </td>
                         <td className="num">{Number(s.units)}</td>
-                        <td className="num">
-                          <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                        <td className="text-center">
+                          <span className={`font-mono text-[13px] font-semibold ${w?.level === "bad" ? "text-bad" : w ? "text-warn" : ""}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                             {formatGrade(c.midterm_grade)}
-                            {midtermWarning(c.midterm_grade) && <Badge tone={midtermWarning(c.midterm_grade).level}>{midtermWarning(c.midterm_grade).text}</Badge>}
                           </span>
+                          {w && <span className="mt-1 block"><Badge tone={w.level}>{w.text}</Badge></span>}
                         </td>
                       </tr>
                     );

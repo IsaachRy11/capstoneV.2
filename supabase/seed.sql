@@ -59,6 +59,7 @@ declare
   lname text;
   bias numeric;
   risk numeric;
+  chosen_room bigint;
   sec_offset int;
   term_index int;
   level int;
@@ -158,19 +159,22 @@ begin
                     from unnest(array[2, 4]) as d;
                   end if;
 
-                  update public.class_meetings m
-                  set room_id = case
-                    when subj.kind = 'pathfit' then room_gym
-                    else (select rm.id from public.rooms rm
-                          where rm.kind = case when subj.kind in ('major', 'elective') then 'laboratory' else 'lecture' end
-                            and rm.id <> room_gym
-                            and not exists (
-                              select 1 from public.class_meetings x
-                              where x.room_id = rm.id and x.weekday = m.weekday
-                                and x.starts_at < m.ends_at and m.starts_at < x.ends_at)
-                          order by random() limit 1)
-                  end
-                  where m.offering_id = off_id;
+                  -- One room for every meeting of this class: free at all of its times.
+                  if subj.kind = 'pathfit' then
+                    chosen_room := room_gym;
+                  else
+                    select rm.id into chosen_room from public.rooms rm
+                    where rm.kind = case when subj.kind in ('major', 'elective') then 'laboratory' else 'lecture' end
+                      and rm.id <> room_gym
+                      and not exists (
+                        select 1 from public.class_meetings mine
+                        join public.class_meetings x
+                          on x.room_id = rm.id and x.weekday = mine.weekday
+                         and x.starts_at < mine.ends_at and mine.starts_at < x.ends_at
+                        where mine.offering_id = off_id)
+                    order by random() limit 1;
+                  end if;
+                  update public.class_meetings set room_id = chosen_room where offering_id = off_id;
                 end if;
               end if;
 

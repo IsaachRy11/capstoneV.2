@@ -84,14 +84,17 @@ export function GradeLegend({ className = "", warnings = false, compact = false 
   );
 }
 
-export function PageHeader({ title, subtitle, actions }) {
+// The top bar already shows the page name, so the title here is screen-reader only unless
+// `showTitle` is set (e.g. Curriculum, where the title is the program name, i.e. real content).
+export function PageHeader({ title, subtitle, actions, showTitle = false }) {
+  if (!showTitle && !subtitle && !actions) return <h1 className="sr-only">{title}</h1>;
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-[28px] font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-[15px] text-ink-2">{subtitle}</p>}
+        <h1 className={showTitle ? "text-[28px] font-bold tracking-tight" : "sr-only"}>{title}</h1>
+        {subtitle && <p className={showTitle ? "text-[15px] text-ink-2" : "text-[15px] font-medium text-ink-2"}>{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2.5">{actions}</div>}
+      {actions && <div className="ml-auto flex flex-wrap gap-2.5">{actions}</div>}
     </div>
   );
 }

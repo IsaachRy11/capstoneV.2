@@ -70,7 +70,7 @@ export default function Curriculum() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader showTitle
         title={program.name}
         subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years`}
         actions={isSecretary && <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Add subject</button>}

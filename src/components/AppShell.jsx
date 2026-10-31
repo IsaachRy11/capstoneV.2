@@ -76,7 +76,9 @@ export default function AppShell() {
   const [q, setQ] = useState("");
   const term = useAsync(getCurrentTerm, []);
 
-  const title = PAGE_TITLES.find(([re]) => re.test(location.pathname))?.[1] || "";
+  const title = location.pathname === "/"
+    ? (user.role === "secretary" ? "Dashboard" : "Home")
+    : PAGE_TITLES.find(([re]) => re.test(location.pathname))?.[1] || "";
   const search = (e) => {
     e.preventDefault();
     if (q.trim()) navigate(`/students?q=${encodeURIComponent(q.trim())}`);

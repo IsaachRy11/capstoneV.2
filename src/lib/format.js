@@ -45,6 +45,10 @@ export function formatTime(t) {
   return `${hh}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
+// Days a class meets, regardless of time or room: "M W F", "T Th".
+export const meetingDays = (meetings = []) =>
+  [...new Set(meetings.map((m) => m.weekday))].sort((a, b) => a - b).map((d) => DAYS[d]).join(" ");
+
 // "7:30–8:30 AM", or "11:30 AM–1:00 PM" when the period changes.
 export function timeRange(start, end) {
   const a = formatTime(start), b = formatTime(end);

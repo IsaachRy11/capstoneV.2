@@ -110,9 +110,7 @@ export default function Profile() {
   return (
     <>
       <PageHeader title="Profile"
-        subtitle={isStudent
-          ? "Your photo is yours to change. For any other correction, contact the CCS office."
-          : "Your photo and display name."} />
+        subtitle={isStudent ? "Your photo is yours to change. For any other correction, contact the CCS office." : undefined} />
 
       <section className="card overflow-hidden">
         <SectionHeader title="Photo" subtitle="Shown in the top bar. Only signed-in users can see it." />

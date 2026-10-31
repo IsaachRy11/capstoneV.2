@@ -41,7 +41,6 @@ export default function Dashboard() {
     <>
       <PageHeader
         title="Department overview"
-        subtitle="College of Computer Studies · enrolment and sections this semester"
         actions={<>
           <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print summary</button>
           <Link className="btn btn-primary no-print" to="/students?add=1"><Plus size={16} aria-hidden="true" />Add student</Link>

@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { useAsync } from "../hooks/useAsync";
 import { getPrograms } from "../services/catalog";
 import { enrollStudent, getRoster, getSectionOfferings, listCurrentSections, removeEnrollment, searchStudents, updateSectionCapacity } from "../services/sections";
 import WeekStrip from "../components/WeekStrip";
 import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StandingBadge } from "../components/ui";
-import { scheduleLines, termLabel, yearLabel } from "../lib/format";
+import { meetingDays, yearLabel } from "../lib/format";
 
 function EnrollBox({ section, offering, rosterIds, onEnrolled }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -40,12 +41,31 @@ function EnrollBox({ section, offering, rosterIds, onEnrolled }) {
     }
   };
 
+  const seatsText = seatsLeft > 0 ? `${seatsLeft} ${seatsLeft === 1 ? "seat" : "seats"} left` : "Class is full";
+
+  if (!open) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-2 px-6 py-3.5">
+        <span className="text-[13px] text-ink-2">
+          <span className="font-semibold text-ink">{offering.enrolled} {offering.enrolled === 1 ? "student" : "students"}</span> · {seatsText}
+        </span>
+        <button className="btn btn-secondary btn-sm" onClick={() => setOpen(true)} disabled={seatsLeft <= 0}>
+          <Plus size={14} aria-hidden="true" />Add a student
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-6 py-4">
-      <label htmlFor="enrol" className="text-[13px] font-semibold text-ink">Enroll a student into {offering.curriculum_subjects.code} · {section.name}</label>
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor="enrol" className="text-[13px] font-semibold text-ink">Add a student to {offering.curriculum_subjects.code} · {section.name}</label>
+        <button className="text-[13px] font-semibold text-accent" onClick={() => { setOpen(false); setQ(""); }}>Done</button>
+      </div>
+      <p className="text-[12px] text-ink-3">For irregular students taking this subject with {section.name}. Everyone in the block section is already enrolled.</p>
       <div className="relative">
         <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
-        <input id="enrol" className="field pl-9" placeholder="Search by name or student ID" value={q} onChange={(e) => setQ(e.target.value)} disabled={seatsLeft <= 0} autoComplete="off" />
+        <input id="enrol" className="field pl-9" placeholder="Search by name or student ID" value={q} onChange={(e) => setQ(e.target.value)} disabled={seatsLeft <= 0} autoComplete="off" autoFocus />
       </div>
       {q.trim().length >= 2 && (
         <ul className="overflow-hidden rounded-lg border border-line bg-surface">
@@ -62,7 +82,7 @@ function EnrollBox({ section, offering, rosterIds, onEnrolled }) {
         </ul>
       )}
       <FormError error={error} />
-      <span className="text-[12px] text-ink-3">{seatsLeft > 0 ? `${seatsLeft} seats left.` : "This class is full. Raise the section capacity to add more."}</span>
+      <span className="text-[12px] text-ink-3">{seatsLeft > 0 ? `${seatsText}.` : "This class is full. Raise the section capacity to add more."}</span>
     </div>
   );
 }
@@ -97,7 +117,6 @@ function CapacityModal({ section, onClose, onSaved }) {
 }
 
 export default function Sections() {
-  const { term } = useOutletContext();
   const [programCode, setProgramCode] = useState(null);
   const [year, setYear] = useState(1);
   const [offeringId, setOfferingId] = useState(null);
@@ -134,7 +153,7 @@ export default function Sections() {
 
   return (
     <>
-      <PageHeader title="Section allocations" subtitle={`${termLabel(term)} · pick a subject to see its schedule, seats and class list.`} />
+      <PageHeader title="Section allocations" />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="seg" role="group" aria-label="Program">
@@ -162,16 +181,17 @@ export default function Sections() {
             {offerings.error && <ErrorState error={offerings.error} onRetry={offerings.reload} />}
             {offerings.data?.map((o) => {
               const on = o.id === offering?.id;
-              const lines = scheduleLines(o.class_meetings);
               return (
                 <button key={o.id} aria-pressed={on} onClick={() => setOfferingId(o.id)}
                   className={`flex w-full items-center gap-3.5 rounded-[10px] border px-4 py-3.5 text-left ${on ? "border-accent bg-tint" : "border-transparent hover:bg-hover"}`}>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="font-mono text-[13px] text-accent">{o.curriculum_subjects.code}</span>
                     <span className="text-[14px] font-semibold leading-snug text-ink">{o.curriculum_subjects.title}</span>
-                    <span className="text-[12px] text-ink-3">{Number(o.curriculum_subjects.units)} units · {lines.map((l) => l.days).join(" / ") || "To be arranged"}</span>
+                    <span className="text-[12px] text-ink-3">{Number(o.curriculum_subjects.units)} units · {meetingDays(o.class_meetings) || "To be arranged"}</span>
                   </div>
-                  <span className="whitespace-nowrap font-mono text-[12px] text-ink-2">{o.enrolled} / {o.capacity ?? section.capacity}</span>
+                  {o.enrolled !== section.enrolled && (
+                    <span className="whitespace-nowrap font-mono text-[12px] text-ink-2" title="Differs from the section because of irregular students">{o.enrolled} / {o.capacity ?? section.capacity}</span>
+                  )}
                 </button>
               );
             })}
@@ -192,7 +212,7 @@ export default function Sections() {
                 <WeekStrip meetings={offering.class_meetings} className="min-w-[420px] flex-[2_1_480px]" />
               </div>
 
-              <EnrollBox section={section} offering={offering} rosterIds={new Set((roster.data || []).map((r) => r.student_id))} onEnrolled={refresh} />
+              <EnrollBox key={offering.id} section={section} offering={offering} rosterIds={new Set((roster.data || []).map((r) => r.student_id))} onEnrolled={refresh} />
 
               {roster.loading ? <LoadingState /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">

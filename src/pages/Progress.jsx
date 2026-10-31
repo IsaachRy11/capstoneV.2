@@ -68,7 +68,7 @@ export default function Progress() {
 
   return (
     <>
-      <PageHeader title="Subject tracker" subtitle={`${student.program_name} · where you stand on every subject in your curriculum`} />
+      <PageHeader title="Subject tracker" subtitle={student.program_name} />
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <Stat label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>

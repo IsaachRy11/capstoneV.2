@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import { Printer } from "lucide-react";
 import { useAsync } from "../hooks/useAsync";
 import { getPrograms } from "../services/catalog";
 import { getSectionOfferings, listCurrentSections } from "../services/sections";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../components/ui";
 import WeekTimetable from "../components/WeekTimetable";
-import { sumUnits, termLabel, yearLabel } from "../lib/format";
+import { sumUnits, yearLabel } from "../lib/format";
 
 // Secretary: weekly timetable of each block section, current semester only.
 export default function SectionSchedules() {
-  const { term } = useOutletContext();
   const [programCode, setProgramCode] = useState(null);
   const [year, setYear] = useState(1);
 
@@ -36,7 +34,7 @@ export default function SectionSchedules() {
 
   return (
     <>
-      <PageHeader title="Schedules" subtitle={`${termLabel(term)} · weekly timetable of each block section`}
+      <PageHeader title="Schedules"
         actions={items.length > 0 && <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
 
       <div className="no-print flex flex-wrap items-center gap-3">
@@ -63,7 +61,7 @@ export default function SectionSchedules() {
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h2 className="text-[19px] font-bold">{section.name}</h2>
             <span className="text-[14px] text-ink-3">
-              {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room || "Room TBA"} ·{section.enrolled} of {section.capacity} seats filled
+              {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room || "Room TBA"} · {section.enrolled} of {section.capacity} seats filled
             </span>
           </div>
           <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />
