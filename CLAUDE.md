@@ -9,7 +9,8 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Deployed on Vercel (`vercel.json` rewrites all routes to `index.html`)
 
 ## Commands
-- `npm run dev` — dev server on :5173
+- `npm run dev` — dev server on :5173. **Restart it after changing `tailwind.config.js`**: Tailwind doesn't reload its config, so new theme classes (`bg-surface`, `text-ink-3`, `border-line`…) silently don't apply and the UI looks flat/white.
+- Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
 
