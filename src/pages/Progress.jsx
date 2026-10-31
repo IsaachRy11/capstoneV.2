@@ -107,7 +107,7 @@ export default function Progress() {
                     <span className="block text-[14px] font-medium text-ink">{s.title}</span>
                     {s.missingPrereqs.length > 0 && <span className="mt-1 block text-[12px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>}
                   </span>
-                  <span className="whitespace-nowrap font-mono text-[13px] text-ink-2">{Number(s.units)} u</span>
+                  <span className="whitespace-nowrap text-[13px] text-ink-2">{Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                 </li>
               ))}
             </ul>
