@@ -4,6 +4,9 @@ export const yearLabel = (y) => ["", "1st Year", "2nd Year", "3rd Year", "4th Ye
 export const semesterLabel = (s) => (s === 1 ? "1st Semester" : s === 2 ? "2nd Semester" : "Summer");
 export const termLabel = (t) => (t ? `SY ${t.school_year.replace("-", "–")} · ${semesterLabel(t.semester)}` : "");
 
+// "Bachelor of Science in Computer Science" → "BS Computer Science" (display only).
+export const shortProgramName = (name = "") => name.replace(/^Bachelor of Science in /, "BS ");
+
 export const formatGrade = (g) => (g === null || g === undefined ? "—" : Number(g).toFixed(2));
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 

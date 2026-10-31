@@ -6,8 +6,10 @@ export const getCurrentTerm = () =>
 export const getTerms = () =>
   unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester"));
 
+// Degree programs first (longest duration), then by code descending: BSIT, BSCS, ACT.
 export const getPrograms = () =>
-  unwrap(supabase.from("programs").select("id, code, name, duration_years").order("code"));
+  unwrap(supabase.from("programs").select("id, code, name, duration_years"))
+    .then((rows) => rows.sort((a, b) => b.duration_years - a.duration_years || b.code.localeCompare(a.code)));
 
 // All subjects of the active curricula (optionally one program), in checklist order.
 export const getCurriculum = (programCode) => {

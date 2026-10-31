@@ -107,7 +107,7 @@ export default function AppShell() {
           <UserMenu />
         </header>
 
-        <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
+        <main className="flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
           <Outlet context={{ term: term.data, termLoading: term.loading }} />
         </main>
       </div>
