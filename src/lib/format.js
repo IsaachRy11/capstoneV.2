@@ -19,8 +19,8 @@ export const colorIndex = (s = "") => ([...s].reduce((h, c) => (h * 31 + c.charC
 // Same rule as the database's norm_key(): "IT 101" → "it101"
 export const normKey = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
-// admission_type values shown as a plain "Student type" (a student stays "Student" every year).
-export const STUDENT_TYPE = { new: "Student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
+// admission_type values shown as "Student type". "new" is shown as "Regular student" (every year, not just 1st).
+export const STUDENT_TYPE = { new: "Regular student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
 // Subject type is inferred from the code, the same way the curriculum migration does it.
 export function inferSubjectKind(code, title = "") {

@@ -14,7 +14,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
-- `npm test` — Vitest unit tests for `src/lib` (progress, grades, schedules, CSV). Add a test when changing that logic.
+- `npm test` — Vitest: unit tests for `src/lib` and database tests in `supabase/tests` (PGlite builds an in-memory Postgres from the migrations + seed; never touches Supabase). Add a test when changing that logic or a migration.
 
 ## Roles (exactly two — no adviser/teacher/department roles)
 - `secretary` — full admin: add students, encode grades, edit section capacity, edit curriculum
@@ -38,7 +38,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Grade colors mean the same thing everywhere: red = failing/failed, green = passed, yellow = close to the passing line only, grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend`.
 - UI reviews: Vercel's Web Interface Guidelines (https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) are a useful checklist; this file's conventions win where they differ (sentence case, not Title Case).
 - Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
-- Wording: say "Student type" (Student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
+- Wording: say "Student type" (Regular student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)
 - Schema, RLS and the official SJC curriculum are migrations in `supabase/migrations/`. Demo students/sections/schedules/grades are in `supabase/seed.sql`.
