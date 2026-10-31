@@ -3,6 +3,9 @@ import { supabase, unwrap } from "../lib/supabase";
 export const getCurrentTerm = () =>
   unwrap(supabase.from("school_terms").select("*").eq("is_current", true).maybeSingle());
 
+export const getTerms = () =>
+  unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester"));
+
 export const getPrograms = () =>
   unwrap(supabase.from("programs").select("id, code, name, duration_years").order("code"));
 

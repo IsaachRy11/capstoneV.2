@@ -22,7 +22,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - `src/services/*.js` — every Supabase query lives here (catalog, students, sections). Pages never call `supabase` directly except small one-off reads.
 - `src/hooks/useAsync.js` — `{ data, error, loading, reload }` for page data. `src/lib/format.js` — display helpers (labels, grades, schedules, CSV).
 - `src/context/AuthContext.jsx` — Supabase Auth; role comes from `secretaries` / `students` rows linked by `auth_user_id`. `ThemeContext.jsx` — light/dark via `data-theme` on `<html>`.
-- `src/components/AppShell.jsx` (sidebar nav, top bar), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
+- `src/components/AppShell.jsx` (sidebar nav, top bar), `TermCalendar.jsx` (term chip → month calendar from `school_terms` dates only; never invent events), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
 - `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
 
 ## Data rules

@@ -138,7 +138,6 @@ export default function Profile() {
               <Row label="Standing"><StandingBadge standing={student.standing} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
             </>
           )}
-          {!isStudent && <Row label="Role">Secretary: full access to students, grades, sections and curriculum</Row>}
         </dl>
       </section>
     </>

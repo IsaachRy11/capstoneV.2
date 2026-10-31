@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, Calendar, FileText, Home, Layers, LayoutDashboard, Menu, Search, Users, X } from "lucide-react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { BookOpen, FileText, Home, Layers, LayoutDashboard, Menu, Search, Users, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
 import { supabase, unwrap } from "../lib/supabase";
-import { termLabel, yearLabel } from "../lib/format";
 import UserMenu from "./UserMenu";
+import TermCalendar from "./TermCalendar";
 import { SealLogo } from "./ui";
 
 const PAGE_TITLES = [
@@ -34,17 +34,14 @@ function Brand() {
 
 function Sidebar({ onNavigate }) {
   const { user } = useAuth();
-  const [params] = useSearchParams();
-  const location = useLocation();
   const isSecretary = user.role === "secretary";
 
-  const yearCounts = useAsync(
-    () => (isSecretary ? unwrap(supabase.from("v_student_overview").select("year_level")) : Promise.resolve([])),
+  const studentCount = useAsync(
+    () => (isSecretary
+      ? unwrap(supabase.from("v_student_overview").select("id", { count: "exact", head: true }))
+      : Promise.resolve(null)),
     [isSecretary]
   );
-  const counts = (yearCounts.data || []).reduce((acc, r) => ({ ...acc, [r.year_level]: (acc[r.year_level] || 0) + 1 }), {});
-  const total = yearCounts.data?.length;
-  const activeYear = location.pathname === "/students" ? params.get("year") : null;
   const link = ({ isActive }) => `nav-link ${isActive ? "active" : ""}`;
 
   return (
@@ -55,17 +52,10 @@ function Sidebar({ onNavigate }) {
           <>
             <NavLink to="/" end className={link}><LayoutDashboard size={18} aria-hidden="true" />Dashboard</NavLink>
             <div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">Records</div>
-            <NavLink to="/students" end className={({ isActive }) => link({ isActive: isActive && !activeYear })}>
+            <NavLink to="/students" className={link}>
               <Users size={18} aria-hidden="true" /><span className="flex-1">Students</span>
-              {total !== undefined && <span className="font-mono text-[12px] text-ink-3">{total}</span>}
+              {typeof studentCount.data === "number" && <span className="font-mono text-[12px] text-ink-3">{studentCount.data}</span>}
             </NavLink>
-            {[1, 2, 3, 4].map((y) => (
-              <NavLink key={y} to={`/students?year=${y}`}
-                className={`flex min-h-[36px] items-center justify-between rounded-lg pl-10 pr-3 text-[13px] ${activeYear === String(y) ? "bg-tint font-semibold text-tint-ink" : "text-ink-2 hover:bg-hover hover:text-ink"}`}>
-                <span>{yearLabel(y)}</span>
-                <span className="font-mono text-[12px] text-ink-3">{counts[y] ?? 0}</span>
-              </NavLink>
-            ))}
             <NavLink to="/sections" className={link}><Layers size={18} aria-hidden="true" />Section allocations</NavLink>
             <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
           </>
@@ -118,11 +108,7 @@ export default function AppShell() {
               <input id="global-search" className="field pl-9" placeholder="Search students by name or ID" value={q} onChange={(e) => setQ(e.target.value)} />
             </form>
           )}
-          {term.data && (
-            <div className="hidden h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-line px-3 text-[13px] font-semibold text-ink-2 sm:inline-flex">
-              <Calendar size={16} aria-hidden="true" />{termLabel(term.data)}
-            </div>
-          )}
+          <TermCalendar term={term.data} />
           <UserMenu />
         </header>
 
