@@ -34,7 +34,10 @@ export default function UserMenu() {
   }, [open]);
 
   const close = () => setOpen(false);
-  const item = "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[14px] text-ink hover:bg-hover focus:bg-hover focus:outline-none";
+  // Hover and keyboard focus use the same tinted highlight as the active sidebar link.
+  const item = "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-tint hover:text-tint-ink focus:outline-none focus-visible:bg-tint focus-visible:text-tint-ink";
+  const danger = "group flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-[var(--bad-bg)] hover:text-bad focus:outline-none focus-visible:bg-[var(--bad-bg)] focus-visible:text-bad";
+  const icon = "text-ink-3 transition-colors group-hover:text-current group-focus-visible:text-current";
   const isSecretary = user.role === "secretary";
 
   return (
@@ -58,16 +61,16 @@ export default function UserMenu() {
           </div>
           <div className="my-1.5 h-px bg-line" />
 
-          <Link to="/profile" role="menuitem" className={item} onClick={close}><User size={17} className="text-ink-3" aria-hidden="true" />Profile</Link>
-          <Link to="/settings" role="menuitem" className={item} onClick={close}><Settings size={17} className="text-ink-3" aria-hidden="true" />Settings</Link>
+          <Link to="/profile" role="menuitem" className={item} onClick={close}><User size={17} className={icon} aria-hidden="true" />Profile</Link>
+          <Link to="/settings" role="menuitem" className={item} onClick={close}><Settings size={17} className={icon} aria-hidden="true" />Settings</Link>
           <button role="menuitem" className={item} onClick={toggleTheme}>
-            {theme === "dark" ? <Sun size={17} className="text-ink-3" aria-hidden="true" /> : <Moon size={17} className="text-ink-3" aria-hidden="true" />}
+            {theme === "dark" ? <Sun size={17} className={icon} aria-hidden="true" /> : <Moon size={17} className={icon} aria-hidden="true" />}
             <span className="flex-1">Appearance</span>
-            <span className="text-[12px] text-ink-3">{theme === "dark" ? "Dark" : "Light"}</span>
+            <span className="text-[12px] text-ink-3 group-hover:text-current">{theme === "dark" ? "Dark" : "Light"}</span>
           </button>
 
           <div className="my-1.5 h-px bg-line" />
-          <button role="menuitem" className={item} onClick={() => { close(); signOut(); }}><LogOut size={17} className="text-ink-3" aria-hidden="true" />Sign out</button>
+          <button role="menuitem" className={danger} onClick={() => { close(); signOut(); }}><LogOut size={17} className={icon} aria-hidden="true" />Sign out</button>
         </div>
       )}
     </div>

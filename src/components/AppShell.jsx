@@ -4,7 +4,6 @@ import { BookOpen, FileText, Home, Layers, LayoutDashboard, Menu, Search, Users,
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
-import { supabase, unwrap } from "../lib/supabase";
 import UserMenu from "./UserMenu";
 import TermCalendar from "./TermCalendar";
 import { SealLogo } from "./ui";
@@ -35,13 +34,6 @@ function Brand() {
 function Sidebar({ onNavigate }) {
   const { user } = useAuth();
   const isSecretary = user.role === "secretary";
-
-  const studentCount = useAsync(
-    () => (isSecretary
-      ? unwrap(supabase.from("v_student_overview").select("id", { count: "exact", head: true }))
-      : Promise.resolve(null)),
-    [isSecretary]
-  );
   const link = ({ isActive }) => `nav-link ${isActive ? "active" : ""}`;
 
   return (
@@ -53,8 +45,7 @@ function Sidebar({ onNavigate }) {
             <NavLink to="/" end className={link}><LayoutDashboard size={18} aria-hidden="true" />Dashboard</NavLink>
             <div className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">Records</div>
             <NavLink to="/students" className={link}>
-              <Users size={18} aria-hidden="true" /><span className="flex-1">Students</span>
-              {typeof studentCount.data === "number" && <span className="font-mono text-[12px] text-ink-3">{studentCount.data}</span>}
+              <Users size={18} aria-hidden="true" />Students
             </NavLink>
             <NavLink to="/sections" className={link}><Layers size={18} aria-hidden="true" />Section allocations</NavLink>
             <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
