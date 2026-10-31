@@ -30,7 +30,8 @@ export function inferSubjectKind(code, title = "") {
 }
 
 export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "INC", dropped: "Dropped" };
-export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "warn", dropped: "neutral" };
+// Yellow is reserved for "close to the passing line"; INC and Dropped are grey (no final grade).
+export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
 const DAYS = ["", "M", "T", "W", "Th", "F", "Sa", "Su"];
 

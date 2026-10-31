@@ -58,20 +58,29 @@ export default function StudentHome() {
       </section>
 
       {warnings.length > 0 && (
-        <section role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--warn-bg)", borderColor: "var(--line)" }}>
-          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
-          <div className="flex flex-col gap-1.5">
-            <h2 className="text-[15px] font-bold text-warn">Heads up on your midterm grades</h2>
-            <ul className="flex flex-col gap-1 text-[14px] text-ink-2">
-              {warnings.map(({ c, w }) => (
-                <li key={c.id}>
-                  <span className="font-mono">{c.class_offerings.curriculum_subjects.code}</span> {c.class_offerings.curriculum_subjects.title}:{" "}
-                  <span className="font-semibold text-ink">{formatGrade(c.midterm_grade)}</span> ({w.text.toLowerCase()})
-                </li>
-              ))}
-            </ul>
-            <p className="text-[13px] text-ink-3">There's still time before finals. Talk to your instructor about what you can do to pull it up.</p>
+        <section role="alert" className="card flex flex-wrap gap-x-8 gap-y-5 px-5 py-5">
+          <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+            <div className="flex min-w-0 flex-col gap-3">
+              <h2 className="text-[16px] font-bold text-ink">Heads up on your midterm grades</h2>
+              <ul className="flex flex-col gap-2.5">
+                {warnings.map(({ c, w }) => (
+                  <li key={c.id} className="flex items-start gap-3">
+                    <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: w.level === "bad" ? "var(--bad)" : "var(--warn)" }} aria-hidden="true" />
+                    <span className="min-w-0 text-[14px] text-ink-2">
+                      <span className="font-mono text-ink">{c.class_offerings.curriculum_subjects.code}</span> {c.class_offerings.curriculum_subjects.title}
+                      <span className="block">
+                        Midterm <span className={`font-mono font-semibold ${w.level === "bad" ? "text-bad" : "text-warn"}`}>{formatGrade(c.midterm_grade)}</span>
+                        <span className="text-ink-3"> · {w.text.toLowerCase()}</span>
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[13px] text-ink-3">There's still time before finals. Talk to your instructor about what you can do to pull it up.</p>
+            </div>
           </div>
+          <GradeLegend compact className="flex-[1_1_240px] border-t border-line pt-5 sm:flex-[0_1_260px] sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0" />
         </section>
       )}
 

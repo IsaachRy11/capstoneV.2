@@ -36,7 +36,7 @@ function MidtermCell({ s }) {
 }
 
 function FinalCell({ s }) {
-  if (s.state === "back" && s.backReason !== "Failed") return <span className="font-semibold text-bad">{s.backReason}</span>;
+  if (s.state === "back" && s.backReason !== "Failed") return <span className="font-semibold text-ink-2">{s.backReason}</span>;
   if (s.final === null) return dash;
   return <span className={`font-mono font-semibold ${Number(s.final) > 3 ? "text-bad" : ""}`}>{formatGrade(s.final)}</span>;
 }

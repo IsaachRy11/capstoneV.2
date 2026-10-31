@@ -27,19 +27,59 @@ export const StandingBadge = ({ standing }) =>
 
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
-// How to read SJC grades: 1.00 is highest, 3.00 is the lowest passing grade, past 3.00 (5.00) fails.
-// `warnings` adds the midterm warning badges shown next to midterm grades.
-export function GradeLegend({ className = "", warnings = false }) {
-  const item = "inline-flex items-center gap-2";
+// Grade color meanings, used everywhere: red = failing, green = passed,
+// yellow = close to the passing line (still passing), grey = INC or Dropped (no final grade).
+// Each color always comes with words, so meaning never depends on color alone.
+const LEGEND = {
+  failing: { color: "var(--bad)", label: "Failing", detail: "5.00" },
+  passed: { color: "var(--ok)", label: "Passed", detail: "1.00 – 3.00 · 1.00 is the highest" },
+  close: { color: "var(--warn)", label: "Close to the passing line", detail: "Midterm of 2.75 – 3.00" },
+  other: { color: "var(--ink-3)", label: "INC or Dropped", detail: "No final grade" },
+};
+
+function LegendRow({ color, label, detail }) {
   return (
-    <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ink-2 ${className}`} aria-label="How grades work">
-      <span className="font-semibold text-ink">How grades work:</span>
-      <span className={item}><Badge tone="ok">1.00 – 3.00</Badge>Passed (1.00 is the highest)</span>
-      <span className={item}><Badge tone="bad">5.00</Badge>Failed</span>
-      {warnings && <span className={item}><Badge tone="warn">Close to the passing line</Badge>Midterm of 2.75 – 3.00</span>}
-      {warnings && <span className={item}><Badge tone="bad">Failing at midterm</Badge>Midterm of 5.00</span>}
-      <span className={item}><Badge tone="warn">INC</Badge>Incomplete</span>
-      <span className={item}><Badge tone="neutral">Dropped</Badge>Withdrawn from the class</span>
+    <li className="flex items-start gap-3">
+      <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
+      <span className="flex flex-col">
+        <span className="text-[13px] font-semibold text-ink">{label}</span>
+        <span className="text-[12px] text-ink-3">{detail}</span>
+      </span>
+    </li>
+  );
+}
+
+// `compact`: vertical list for side panels. `warnings`: include the midterm warning color.
+export function GradeLegend({ className = "", warnings = false, compact = false }) {
+  if (compact) {
+    return (
+      <div className={className}>
+        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
+        <ul className="flex flex-col gap-2.5">
+          {[LEGEND.failing, LEGEND.passed, LEGEND.close, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
+        </ul>
+      </div>
+    );
+  }
+  return (
+    <div className={`flex flex-wrap gap-x-10 gap-y-4 ${className}`} aria-label="What the grade colors mean">
+      <div>
+        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Final grades</div>
+        <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-3">
+          <LegendRow {...LEGEND.passed} />
+          <LegendRow {...LEGEND.failing} label="Failed" />
+          <LegendRow {...LEGEND.other} />
+        </ul>
+      </div>
+      {warnings && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Midterm warnings</div>
+          <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+            <LegendRow {...LEGEND.close} />
+            <LegendRow {...LEGEND.failing} label="Failing at midterm" detail="Midterm of 5.00" />
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
