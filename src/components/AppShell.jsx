@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, FileText, Home, Layers, LayoutDashboard, Menu, Search, Users, X } from "lucide-react";
+import { BookOpen, FileText, Home, Layers, LayoutDashboard, ListChecks, Menu, Search, Users, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -15,6 +15,7 @@ const PAGE_TITLES = [
   [/^\/sections/, "Section allocations"],
   [/^\/curriculum/, "Curriculum"],
   [/^\/record/, "Academic record"],
+  [/^\/progress/, "Subject tracker"],
   [/^\/profile/, "Profile"],
   [/^\/settings/, "Settings"],
 ];
@@ -53,6 +54,7 @@ function Sidebar({ onNavigate }) {
         ) : (
           <>
             <NavLink to="/" end className={link}><Home size={18} aria-hidden="true" />Home</NavLink>
+            <NavLink to="/progress" className={link}><ListChecks size={18} aria-hidden="true" />Subject tracker</NavLink>
             <NavLink to="/record" className={link}><FileText size={18} aria-hidden="true" />Academic record</NavLink>
             <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
           </>

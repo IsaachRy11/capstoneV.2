@@ -22,6 +22,10 @@ export const getCurriculum = (programCode) => {
   return unwrap(q);
 };
 
+// Official prerequisites (empty until SJC's list is added). Rows: { subject_id, prerequisite_id }.
+export const getPrerequisites = () =>
+  unwrap(supabase.from("subject_prerequisites").select("subject_id, prerequisite_id"));
+
 export async function addCurriculumSubject({ programCode, year_level, semester, code, title, units, kind }) {
   const curriculum = await unwrap(
     supabase.from("curricula").select("id, programs!inner(code)").eq("is_active", true).eq("programs.code", programCode).single()

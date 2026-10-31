@@ -1,5 +1,6 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, FileText } from "lucide-react";
+import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
+import { midtermWarning } from "../lib/progress";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getSectionInfo, getStudent, getTermClasses } from "../services/students";
@@ -27,6 +28,10 @@ export default function StudentHome() {
   const { student, classes, section, deficiencies } = data;
   const active = classes.filter((c) => c.status !== "dropped");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
+  const warnings = active
+    .map((c) => ({ c, w: midtermWarning(c.midterm_grade) }))
+    .filter((x) => x.w)
+    .sort((a, b) => (a.w.level === "bad" ? -1 : 1) - (b.w.level === "bad" ? -1 : 1));
 
   return (
     <>
@@ -51,6 +56,24 @@ export default function StudentHome() {
           ))}
         </dl>
       </section>
+
+      {warnings.length > 0 && (
+        <section role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--warn-bg)", borderColor: "var(--line)" }}>
+          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-[15px] font-bold text-warn">Heads up on your midterm grades</h2>
+            <ul className="flex flex-col gap-1 text-[14px] text-ink-2">
+              {warnings.map(({ c, w }) => (
+                <li key={c.id}>
+                  <span className="font-mono">{c.class_offerings.curriculum_subjects.code}</span> {c.class_offerings.curriculum_subjects.title}:{" "}
+                  <span className="font-semibold text-ink">{formatGrade(c.midterm_grade)}</span> ({w.text.toLowerCase()})
+                </li>
+              ))}
+            </ul>
+            <p className="text-[13px] text-ink-3">There's still time before finals. Talk to your instructor about what you can do to pull it up.</p>
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-wrap items-start gap-5">
         <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
@@ -100,13 +123,16 @@ export default function StudentHome() {
                 <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
                   {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
                 </ul>
-                <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS office about retaking these.</p>
+                <p className="mt-2 text-[13px] text-ink-3">
+                  <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS office about retaking them.
+                </p>
               </div>
             </section>
           )}
 
           <section className="card p-2">
             {[
+              { to: "/progress", icon: ListChecks, title: "Subject tracker", sub: "What you've passed, what's left, what's next" },
               { to: "/record", icon: FileText, title: "View grades", sub: "Midterm and final, every term" },
               { to: "/curriculum", icon: BookOpen, title: `${student.program_code} curriculum`, sub: "Every subject, year by year" },
             ].map(({ to, icon: Icon, title, sub }) => (
