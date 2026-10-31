@@ -4,6 +4,7 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { useAsync } from "../hooks/useAsync";
 import { getPrograms } from "../services/catalog";
 import { enrollStudent, getRoster, getSectionOfferings, listCurrentSections, removeEnrollment, searchStudents, updateSectionCapacity } from "../services/sections";
+import WeekStrip from "../components/WeekStrip";
 import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StandingBadge } from "../components/ui";
 import { scheduleLines, termLabel, yearLabel } from "../lib/format";
 
@@ -178,13 +179,17 @@ export default function Sections() {
 
           {offering && (
             <section className="card min-w-0 flex-[999_1_520px] overflow-hidden">
-              <div className="flex flex-col gap-2 border-b border-line p-6">
-                <span className="font-mono text-[13px] text-accent">{offering.curriculum_subjects.code} · {Number(offering.curriculum_subjects.units)} units</span>
-                <h2 className="text-[22px] font-bold tracking-tight">{offering.curriculum_subjects.title}</h2>
-                <div className="text-[14px] text-ink-2">
-                  {scheduleLines(offering.class_meetings).map((l) => <div key={l.days + l.time}>{l.days} {l.time} · {l.room}</div>)}
-                  {offering.class_meetings.length === 0 && "Schedule to be arranged"}
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-line p-6">
+                <div className="flex min-w-[220px] flex-[1_1_240px] flex-col gap-2">
+                  <span className="font-mono text-[13px] text-accent">{offering.curriculum_subjects.code} · {Number(offering.curriculum_subjects.units)} units</span>
+                  <h2 className="text-[22px] font-bold tracking-tight">{offering.curriculum_subjects.title}</h2>
+                  <span className="text-[13px] text-ink-3">
+                    {offering.class_meetings.length
+                      ? `Meets ${offering.class_meetings.length} ${offering.class_meetings.length === 1 ? "day" : "days"} a week`
+                      : "No fixed schedule yet"}
+                  </span>
                 </div>
+                <WeekStrip meetings={offering.class_meetings} className="min-w-[420px] flex-[2_1_480px]" />
               </div>
 
               <EnrollBox section={section} offering={offering} rosterIds={new Set((roster.data || []).map((r) => r.student_id))} onEnrolled={refresh} />

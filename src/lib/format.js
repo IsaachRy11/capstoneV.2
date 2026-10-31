@@ -45,6 +45,13 @@ export function formatTime(t) {
   return `${hh}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
+// "7:30–8:30 AM", or "11:30 AM–1:00 PM" when the period changes.
+export function timeRange(start, end) {
+  const a = formatTime(start), b = formatTime(end);
+  const [aT, aP] = a.split(" "), [bT, bP] = b.split(" ");
+  return aP === bP ? `${aT}–${bT} ${bP}` : `${a}–${b}`;
+}
+
 // Groups meetings that share time and room: "MWF 7:30 AM–8:30 AM · CCS Lab 1"
 export function scheduleLines(meetings = []) {
   const groups = new Map();
