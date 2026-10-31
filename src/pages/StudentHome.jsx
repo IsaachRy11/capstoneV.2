@@ -1,10 +1,11 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, FileText } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
+import { midtermWarning } from "../lib/progress";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getSectionInfo, getStudent, getTermClasses } from "../services/students";
 import { supabase, unwrap } from "../lib/supabase";
-import { ErrorState, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
+import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
 import { formatGrade, scheduleLines, sumUnits, yearLabel } from "../lib/format";
 
 export default function StudentHome() {
@@ -27,6 +28,10 @@ export default function StudentHome() {
   const { student, classes, section, deficiencies } = data;
   const active = classes.filter((c) => c.status !== "dropped");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
+  const warnings = active
+    .map((c) => ({ c, w: midtermWarning(c.midterm_grade) }))
+    .filter((x) => x.w)
+    .sort((a, b) => (a.w.level === "bad" ? -1 : 1) - (b.w.level === "bad" ? -1 : 1));
 
   return (
     <>
@@ -43,7 +48,7 @@ export default function StudentHome() {
           {[
             ["Year level", yearLabel(student.year_level)],
             ["Section", student.section_name || "Not registered"],
-            ["Home room", section?.rooms?.name || "TBA"],
+            ["Room", section?.rooms?.name || "TBA"],
             ["Subjects this term", `${active.length} subjects`],
             ["Units this term", `${units} units`],
           ].map(([k, v]) => (
@@ -51,6 +56,33 @@ export default function StudentHome() {
           ))}
         </dl>
       </section>
+
+      {warnings.length > 0 && (
+        <section role="alert" className="card flex flex-wrap gap-x-8 gap-y-5 px-5 py-5">
+          <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+            <div className="flex min-w-0 flex-col gap-3">
+              <h2 className="text-[16px] font-bold text-ink">Heads up on your midterm grades</h2>
+              <ul className="flex flex-col gap-2.5">
+                {warnings.map(({ c, w }) => (
+                  <li key={c.id} className="flex items-start gap-3">
+                    <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: w.level === "bad" ? "var(--bad)" : "var(--warn)" }} aria-hidden="true" />
+                    <span className="min-w-0 text-[14px] text-ink-2">
+                      <span className="font-mono text-ink">{c.class_offerings.curriculum_subjects.code}</span> {c.class_offerings.curriculum_subjects.title}
+                      <span className="block">
+                        Midterm <span className={`font-mono font-semibold ${w.level === "bad" ? "text-bad" : "text-warn"}`}>{formatGrade(c.midterm_grade)}</span>
+                        <span className="text-ink-3"> · {w.text.toLowerCase()}</span>
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[13px] text-ink-3">There's still time before finals. Talk to your instructor about what you can do to pull it up.</p>
+            </div>
+          </div>
+          <GradeLegend compact className="flex-[1_1_240px] border-t border-line pt-5 sm:flex-[0_1_260px] sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0" />
+        </section>
+      )}
 
       <div className="flex flex-wrap items-start gap-5">
         <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
@@ -73,12 +105,18 @@ export default function StudentHome() {
                           {lines.length ? lines.map((l) => <div key={l.days + l.time} className="whitespace-nowrap">{l.days} {l.time} · {l.room}</div>) : "To be arranged"}
                         </td>
                         <td className="num">{Number(s.units)}</td>
-                        <td className="num">{formatGrade(c.midterm_grade)}</td>
+                        <td className="num">
+                          <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                            {formatGrade(c.midterm_grade)}
+                            {midtermWarning(c.midterm_grade) && <Badge tone={midtermWarning(c.midterm_grade).level}>{midtermWarning(c.midterm_grade).text}</Badge>}
+                          </span>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+              <GradeLegend warnings className="border-t border-line px-5 py-3.5" />
             </div>
           )}
         </section>
@@ -100,13 +138,17 @@ export default function StudentHome() {
                 <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
                   {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
                 </ul>
-                <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS office about retaking these.</p>
+                <p className="mt-2 text-[13px] text-ink-3">
+                  <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS office about retaking them.
+                </p>
               </div>
             </section>
           )}
 
           <section className="card p-2">
             {[
+              { to: "/schedule", icon: CalendarClock, title: "Class schedule", sub: "Your week at a glance, with rooms" },
+              { to: "/progress", icon: ListChecks, title: "Subject tracker", sub: "What you've passed, what's left, what's next" },
               { to: "/record", icon: FileText, title: "View grades", sub: "Midterm and final, every term" },
               { to: "/curriculum", icon: BookOpen, title: `${student.program_code} curriculum`, sub: "Every subject, year by year" },
             ].map(({ to, icon: Icon, title, sub }) => (

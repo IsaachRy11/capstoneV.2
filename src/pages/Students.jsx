@@ -5,7 +5,7 @@ import { useAsync } from "../hooks/useAsync";
 import { createStudent, listStudents } from "../services/students";
 import { getPrograms } from "../services/catalog";
 import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StandingBadge } from "../components/ui";
-import { downloadFile, toCsv, yearLabel } from "../lib/format";
+import { STUDENT_TYPE, downloadFile, toCsv, yearLabel } from "../lib/format";
 
 const PAGE_SIZE = 25;
 
@@ -54,9 +54,9 @@ function AddStudentModal({ programs, term, onClose, onCreated }) {
           </select>
         </div>
         <div className="col-span-2">
-          <label className="label" htmlFor="sadm">Admission</label>
+          <label className="label" htmlFor="sadm">Student type</label>
           <select id="sadm" className="field" value={form.admission_type} onChange={set("admission_type")}>
-            <option value="new">New student</option><option value="transferee">Transferee</option><option value="shiftee">Shiftee</option><option value="returnee">Returnee</option>
+            {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
         <p className="col-span-2 text-[13px] text-ink-3">They're placed in their block section for this semester and enrolled in its classes. To let them sign in, add a login with the same email under Authentication in Supabase.</p>

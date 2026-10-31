@@ -9,7 +9,8 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Deployed on Vercel (`vercel.json` rewrites all routes to `index.html`)
 
 ## Commands
-- `npm run dev` — dev server on :5173
+- `npm run dev` — dev server on :5173. **Restart it after changing `tailwind.config.js`**: Tailwind doesn't reload its config, so new theme classes (`bg-surface`, `text-ink-3`, `border-line`…) silently don't apply and the UI looks flat/white.
+- Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
 
@@ -23,13 +24,19 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - `src/hooks/useAsync.js` — `{ data, error, loading, reload }` for page data. `src/lib/format.js` — display helpers (labels, grades, schedules, CSV).
 - `src/context/AuthContext.jsx` — Supabase Auth; role comes from `secretaries` / `students` rows linked by `auth_user_id`. `ThemeContext.jsx` — light/dark via `data-theme` on `<html>`.
 - `src/components/AppShell.jsx` (sidebar nav, top bar), `TermCalendar.jsx` (term chip → month calendar from `school_terms` dates only; never invent events), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
-- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
+- `src/lib/progress.js` — per-subject curriculum progress (passed / taking now / back subject / not taken), next-semester subjects, midterm early warnings. Pure functions; used by the student tracker and home page.
+- Product direction: the student finds out first (tracker, midterm warnings, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
+- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
 
 ## Data rules
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 passing, 5.00 failed; INC and Dropped are statuses, not grades.
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` wherever grades appear for students (`warnings` prop where midterm warnings can show). Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
+- Grade colors mean the same thing everywhere: red = failing/failed, green = passed, yellow = close to the passing line only, grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend`.
+- UI reviews: Vercel's Web Interface Guidelines (https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) are a useful checklist; this file's conventions win where they differ (sentence case, not Title Case).
+- Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
+- Wording: say "Student type" (Student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)
 - Schema, RLS and the official SJC curriculum are migrations in `supabase/migrations/`. Demo students/sections/schedules/grades are in `supabase/seed.sql`.

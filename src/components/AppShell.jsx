@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, FileText, Home, Layers, LayoutDashboard, Menu, Search, Users, X } from "lucide-react";
+import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Menu, Search, Users, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -15,6 +15,8 @@ const PAGE_TITLES = [
   [/^\/sections/, "Section allocations"],
   [/^\/curriculum/, "Curriculum"],
   [/^\/record/, "Academic record"],
+  [/^\/progress/, "Subject tracker"],
+  [/^\/schedule/, "Schedule"],
   [/^\/profile/, "Profile"],
   [/^\/settings/, "Settings"],
 ];
@@ -53,6 +55,8 @@ function Sidebar({ onNavigate }) {
         ) : (
           <>
             <NavLink to="/" end className={link}><Home size={18} aria-hidden="true" />Home</NavLink>
+            <NavLink to="/schedule" className={link}><CalendarClock size={18} aria-hidden="true" />Schedule</NavLink>
+            <NavLink to="/progress" className={link}><ListChecks size={18} aria-hidden="true" />Subject tracker</NavLink>
             <NavLink to="/record" className={link}><FileText size={18} aria-hidden="true" />Academic record</NavLink>
             <NavLink to="/curriculum" className={link}><BookOpen size={18} aria-hidden="true" />Curriculum</NavLink>
           </>
@@ -91,7 +95,7 @@ export default function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex min-h-16 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-8">
           <button className="icon-btn lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
-          <div className="flex-1 text-[14px] font-semibold text-ink">{title}</div>
+          <div className="flex-1 font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
             <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
               <label htmlFor="global-search" className="sr-only">Search students</label>
@@ -103,7 +107,7 @@ export default function AppShell() {
           <UserMenu />
         </header>
 
-        <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
+        <main className="flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
           <Outlet context={{ term: term.data, termLoading: term.loading }} />
         </main>
       </div>

@@ -5,7 +5,7 @@ import { listStudents } from "../services/students";
 import { listCurrentSections } from "../services/sections";
 import { countOfferings, getCurriculum, getPrograms } from "../services/catalog";
 import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../components/ui";
-import { sumUnits, yearLabel } from "../lib/format";
+import { shortProgramName, sumUnits, yearLabel } from "../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (
@@ -106,9 +106,9 @@ export default function Dashboard() {
           {programs.map((p) => {
             const subs = curriculum.filter((c) => c.curricula.programs.code === p.code);
             return (
-              <Link key={p.code} to={`/curriculum?program=${p.code}`} className="flex items-center justify-between gap-3 border-t border-line-2 py-3 text-ink">
-                <span className="flex flex-col gap-0.5"><span className="text-[14px] font-semibold">{p.name}</span><span className="text-[13px] text-ink-3">{p.duration_years} years</span></span>
-                <span className="text-right font-mono text-[13px] text-ink-2">{subs.length} subjects<br />{sumUnits(subs)} units</span>
+              <Link key={p.code} to={`/curriculum?program=${p.code}`} className="flex items-center justify-between gap-3 rounded-md border-t border-line-2 py-3 text-ink hover:text-ink">
+                <span className="flex min-w-0 flex-col gap-0.5"><span className="text-[14px] font-semibold">{shortProgramName(p.name)}</span><span className="text-[13px] text-ink-3">{p.duration_years} years</span></span>
+                <span className="shrink-0 whitespace-nowrap text-right font-mono text-[13px] text-ink-2">{subs.length} subjects<br />{sumUnits(subs)} units</span>
               </Link>
             );
           })}
@@ -116,10 +116,10 @@ export default function Dashboard() {
       </div>
 
       <section className="card overflow-hidden">
-        <SectionHeader title="Sections this semester" subtitle="Block sections, home rooms and seats" action={<Link to="/sections" className="whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
+        <SectionHeader title="Sections this semester" subtitle="Block sections, rooms and seats" action={<Link to="/sections" className="whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Home room</th><th className="w-[32%]">Seats</th></tr></thead>
+            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Room</th><th className="w-[32%]">Seats</th></tr></thead>
             <tbody>
               {sections.map((s) => (
                 <tr key={s.id}>

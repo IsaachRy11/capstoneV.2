@@ -5,10 +5,9 @@ import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getHistory, getSectionInfo, getStudent, updateGrade } from "../services/students";
 import { supabase, unwrap } from "../lib/supabase";
-import { Avatar, Badge, ErrorState, FormError, LoadingState, StandingBadge, StatusBadge } from "../components/ui";
-import { GRADE_OPTIONS, formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
+import { Avatar, Badge, ErrorState, FormError, GradeLegend, LoadingState, StandingBadge, StatusBadge } from "../components/ui";
+import { GRADE_OPTIONS, STUDENT_TYPE, formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
 
-const ADMISSION = { new: "New student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
 function TermTable({ term, rows, canEdit, onSaved }) {
   const [editing, setEditing] = useState(false);
@@ -173,10 +172,10 @@ export default function StudentRecord() {
         <dl className="grid gap-4 border-t border-line-2 pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
           {[
             ["Section", student.section_name || "Not registered"],
-            ["Home room", section?.rooms?.name || "TBA"],
+            ["Room", section?.rooms?.name || "TBA"],
             ["Units this term", `${sumUnits(current)} units`],
             ["Units earned", `${earned} units`],
-            ["Admission", ADMISSION[student.admission_type]],
+            ["Student type", STUDENT_TYPE[student.admission_type]],
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
           ))}
@@ -200,6 +199,7 @@ export default function StudentRecord() {
         </div>
       )}
 
+      {terms.length > 0 && <GradeLegend className="card px-5 py-3.5" />}
       {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
       {terms.map((t) => (
         <TermTable key={t.school_term_id} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />

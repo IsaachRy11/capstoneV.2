@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
-import { STATUS_LABEL, STATUS_TONE, initials } from "../lib/format";
-
-// Same name → same color (av-1 … av-6 in index.css).
-const avatarTone = (name = "") => (([...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 6) + 1);
+import { STATUS_LABEL, STATUS_TONE, colorIndex, initials } from "../lib/format";
 
 // Profile photo if there is one, otherwise initials on a colored circle. `size` in px.
 export function Avatar({ name, url, size = 40, className = "" }) {
@@ -11,7 +8,7 @@ export function Avatar({ name, url, size = 40, className = "" }) {
   return url ? (
     <img src={url} alt="" style={style} className={`shrink-0 rounded-full object-cover ${className}`} />
   ) : (
-    <span style={style} className={`av-${avatarTone(name)} flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide ${className}`} aria-hidden="true">
+    <span style={style} className={`av-${colorIndex(name)} flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide ${className}`} aria-hidden="true">
       {initials(name)}
     </span>
   );
@@ -29,6 +26,63 @@ export const StandingBadge = ({ standing }) =>
   standing === "irregular" ? <Badge tone="warn" dot>Irregular</Badge> : <Badge tone="ok" dot>Regular</Badge>;
 
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
+
+// Grade color meanings, used everywhere: red = failing, green = passed,
+// yellow = close to the passing line (still passing), grey = INC or Dropped (no final grade).
+// Each color always comes with words, so meaning never depends on color alone.
+const LEGEND = {
+  failing: { color: "var(--bad)", label: "Failing", detail: "5.00" },
+  passed: { color: "var(--ok)", label: "Passed", detail: "1.00 – 3.00 · 1.00 is the highest" },
+  close: { color: "var(--warn)", label: "Close to the passing line", detail: "Midterm of 2.75 – 3.00" },
+  other: { color: "var(--ink-3)", label: "INC or Dropped", detail: "No final grade" },
+};
+
+function LegendRow({ color, label, detail }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
+      <span className="flex flex-col">
+        <span className="text-[13px] font-semibold text-ink">{label}</span>
+        <span className="text-[12px] text-ink-3">{detail}</span>
+      </span>
+    </li>
+  );
+}
+
+// `compact`: vertical list for side panels. `warnings`: include the midterm warning color.
+export function GradeLegend({ className = "", warnings = false, compact = false }) {
+  if (compact) {
+    return (
+      <div className={className}>
+        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
+        <ul className="flex flex-col gap-2.5">
+          {[LEGEND.failing, LEGEND.passed, LEGEND.close, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
+        </ul>
+      </div>
+    );
+  }
+  return (
+    <div className={`flex flex-wrap gap-x-10 gap-y-4 ${className}`} aria-label="What the grade colors mean">
+      <div>
+        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Final grades</div>
+        <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-3">
+          <LegendRow {...LEGEND.passed} />
+          <LegendRow {...LEGEND.failing} label="Failed" />
+          <LegendRow {...LEGEND.other} />
+        </ul>
+      </div>
+      {warnings && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Midterm warnings</div>
+          <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+            <LegendRow {...LEGEND.close} />
+            <LegendRow {...LEGEND.failing} label="Failing at midterm" detail="Midterm of 5.00" />
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function PageHeader({ title, subtitle, actions }) {
   return (

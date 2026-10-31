@@ -4,17 +4,37 @@ export const yearLabel = (y) => ["", "1st Year", "2nd Year", "3rd Year", "4th Ye
 export const semesterLabel = (s) => (s === 1 ? "1st Semester" : s === 2 ? "2nd Semester" : "Summer");
 export const termLabel = (t) => (t ? `SY ${t.school_year.replace("-", "–")} · ${semesterLabel(t.semester)}` : "");
 
+// "Bachelor of Science in Computer Science" → "BS Computer Science" (display only).
+export const shortProgramName = (name = "") => name.replace(/^Bachelor of Science in /, "BS ");
+
 export const formatGrade = (g) => (g === null || g === undefined ? "—" : Number(g).toFixed(2));
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 
 export const initials = (name = "") =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
 
+// Stable 1–6 color slot for a name or code (maps to .av-1 … .av-6 in index.css).
+export const colorIndex = (s = "") => ([...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 6) + 1;
+
 // Same rule as the database's norm_key(): "IT 101" → "it101"
 export const normKey = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
+// admission_type values shown as a plain "Student type" (a student stays "Student" every year).
+export const STUDENT_TYPE = { new: "Student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
+
+// Subject type is inferred from the code, the same way the curriculum migration does it.
+export function inferSubjectKind(code, title = "") {
+  if (/internship|practicum|on-the-job/i.test(title)) return "internship";
+  if (/elective/i.test(code)) return "elective";
+  if (/^GE\s/i.test(code)) return "general_education";
+  if (/^PATHFIT/i.test(code)) return "pathfit";
+  if (/^NSTP/i.test(code)) return "nstp";
+  return "major";
+}
+
 export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "INC", dropped: "Dropped" };
-export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "warn", dropped: "neutral" };
+// Yellow is reserved for "close to the passing line"; INC and Dropped are grey (no final grade).
+export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
 const DAYS = ["", "M", "T", "W", "Th", "F", "Sa", "Su"];
 
