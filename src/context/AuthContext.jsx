@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { getAvatarUrl } from "../services/account";
+import { loginEmail } from "../lib/format";
 
 // Two roles only: "secretary" (row in public.secretaries) and "student" (row in public.students).
 // The role comes from the database, never from the client.
@@ -63,8 +64,10 @@ export function AuthProvider({ children }) {
     : loaded.profile ? "ready" : "unlinked";
   const profile = status === "ready" ? loaded.profile : null;
 
-  const signIn = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  // Accepts a student ID (2025-0001) or a staff email; see loginEmail() in lib/format.js.
+  const signIn = useCallback(async (identifier, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(identifier), password });
+
     if (error) throw error;
   }, []);
 

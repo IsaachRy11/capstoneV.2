@@ -147,6 +147,66 @@ describe("save_grades and the grade change log", () => {
   });
 });
 
+describe("schedule editing rules", () => {
+  const offeringOf = (section, n = 0) => one(`
+    select o.id from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current
+    where s.name = '${section}' order by o.id offset ${n} limit 1`);
+  const lab = () => one(`select id from rooms where kind = 'laboratory' and not is_shared order by name limit 1`);
+
+  it("blocks two classes at the same time in one section", async () => {
+    const taken = await one(`
+      select m.weekday, m.starts_at, m.ends_at, o.section_id from class_meetings m join class_offerings o on o.id = m.offering_id
+      join sections s on s.id = o.section_id where s.name = 'BSIT 1-S' order by m.id limit 1`);
+    const other = await one(`select id from class_offerings where section_id = ${taken.section_id} and id not in (select offering_id from class_meetings where weekday = ${taken.weekday} and starts_at = '${taken.starts_at}') limit 1`);
+    const r = await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${other.id}, ${taken.weekday}, '${taken.starts_at}', '${taken.ends_at}')`);
+    expect(r.error).toMatch(/^BSIT 1-S already has/);
+  });
+
+  it("blocks double-booking a room, but allows the shared gym", async () => {
+    const a = await offeringOf("BSCS 3-S");
+    const b = await offeringOf("BSCS 4-S");
+    const room = await lab();
+    const gym = await one(`select id from rooms where is_shared limit 1`);
+    expect((await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${a.id}, 6, '17:00', '18:00', ${room.id})`)).error).toBeUndefined();
+    const clash = await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${b.id}, 6, '17:30', '18:30', ${room.id})`);
+    expect(clash.error).toMatch(/is already taken then by/);
+    expect((await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${a.id}, 6, '19:00', '20:00', ${gym.id})`)).error).toBeUndefined();
+    expect((await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${b.id}, 6, '19:00', '20:00', ${gym.id})`)).error).toBeUndefined();
+  });
+
+  it("blocks a time that clashes for a student already in the class", async () => {
+    // Put a BSCS 2-S student into one BSCS 3-S class (at a free Saturday time), then try to move
+    // another BSCS 2-S class onto that same time.
+    const extra = await offeringOf("BSCS 3-S", 1);
+    await db.exec(`insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${extra.id}, 6, '13:00', '14:00')`);
+    const student = await one(`select r.student_id from registrations r join sections s on s.id = r.section_id join school_terms t on t.id = s.school_term_id and t.is_current where s.name = 'BSCS 2-S' order by r.student_id limit 1`);
+    await db.exec(`insert into enrollments (student_id, offering_id) values ('${student.student_id}', ${extra.id})`);
+    const own = await offeringOf("BSCS 2-S");
+    const r = await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${own.id}, 6, '13:30', '14:30')`);
+    expect(r.error).toMatch(/^Student .* in this class has/);
+  });
+
+  it("refuses schedule edits from students", async () => {
+    const a = await offeringOf("BSIT 2-S");
+    expect((await as("authenticated", STU, `insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${a.id}, 6, '06:00', '07:00') returning id`)).error).toBeTruthy();
+  });
+});
+
+describe("curriculum editing", () => {
+  it("won't delete a subject that is scheduled or graded", async () => {
+    const used = await one(`select curriculum_subject_id id from class_offerings limit 1`);
+    const r = await as("authenticated", SEC, `delete from curriculum_subjects where id = ${used.id}`);
+    expect(r.error).toMatch(/foreign key/);
+  });
+
+  it("deletes an unused subject", async () => {
+    const cur = await one(`select c.id from curricula c join programs p on p.id = c.program_id where p.code = 'BSIT' and c.is_active`);
+    await db.exec(`insert into curriculum_subjects (curriculum_id, year_level, semester, code, title, units, kind) values (${cur.id}, 4, 2, 'IT 999', 'Test subject', 3, 'major')`);
+    const r = await as("authenticated", SEC, `delete from curriculum_subjects where code = 'IT 999' returning id`);
+    expect(r.rows).toHaveLength(1);
+  });
+});
+
 describe("enrollment rules", () => {
   it("blocks enrolling into a full class", async () => {
     const off = await one(`select o.id, (select count(*)::int from enrollments where offering_id = o.id) n from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current where s.name = 'BSIT 2-S' order by o.id limit 1`);

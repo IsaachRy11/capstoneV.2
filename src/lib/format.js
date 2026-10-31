@@ -19,6 +19,13 @@ export const colorIndex = (s = "") => ([...s].reduce((h, c) => (h * 31 + c.charC
 // Same rule as the database's norm_key(): "IT 101" → "it101"
 export const normKey = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
+// Students sign in with their student ID. Behind the scenes their login is the address below
+// (created by scripts/create-student-accounts.mjs). Staff sign in with their real email.
+export const STUDENT_LOGIN_DOMAIN = "students.ccs-monitor.test";
+export const isStudentId = (s = "") => /^\d{4}-\d{4}$/.test(s.trim());
+export const loginEmail = (identifier = "") =>
+  isStudentId(identifier) ? `${identifier.trim()}@${STUDENT_LOGIN_DOMAIN}` : identifier.trim().toLowerCase();
+
 // admission_type values shown as "Student type". "new" is shown as "Regular student" (every year, not just 1st).
 export const STUDENT_TYPE = { new: "Regular student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 

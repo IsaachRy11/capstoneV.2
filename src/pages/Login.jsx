@@ -5,14 +5,14 @@ import { useTheme } from "../context/ThemeContext";
 import { FormError, SealLogo } from "../components/ui";
 
 const DEMO_ACCOUNTS = [
-  { email: "demo.secretary@ccs-monitor.test", label: "Demo secretary" },
-  { email: "demo.student@ccs-monitor.test", label: "Demo student" },
+  { id: "demo.secretary@ccs-monitor.test", label: "Demo secretary", hint: "Fills in the email" },
+  { id: "2025-0001", label: "Demo student", hint: "Fills in student ID 2025-0001" },
 ];
 
 export default function Login() {
   const { signIn, status, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,9 +23,9 @@ export default function Login() {
     setError("");
     setBusy(true);
     try {
-      await signIn(email, password);
+      await signIn(identifier, password);
     } catch (err) {
-      setError(err.message === "Invalid login credentials" ? "Email or password is incorrect." : err.message);
+      setError(err.message === "Invalid login credentials" ? "Student ID, email or password is incorrect." : err.message);
     } finally {
       setBusy(false);
     }
@@ -60,7 +60,7 @@ export default function Login() {
         <div className="flex w-full max-w-[400px] flex-col gap-7">
           <div className="flex flex-col gap-2">
             <h2 className="text-[28px] font-bold tracking-tight">Sign in</h2>
-            <p className="text-[15px] text-ink-2">Use the email and password from the CCS office.</p>
+            <p className="text-[15px] text-ink-2">Students: use your student ID. Staff: use your email.</p>
           </div>
 
           {status === "unlinked" && (
@@ -73,8 +73,8 @@ export default function Login() {
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-              <label className="label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="field h-11" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
+              <label className="label" htmlFor="email">Student ID or email</label>
+              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
             </div>
             <div>
               <label className="label" htmlFor="password">Password</label>
@@ -98,10 +98,10 @@ export default function Login() {
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               {DEMO_ACCOUNTS.map((a) => (
-                <button key={a.email} type="button" onClick={() => setEmail(a.email)}
+                <button key={a.id} type="button" onClick={() => setIdentifier(a.id)}
                   className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-left hover:border-accent">
                   <div className="text-[14px] font-semibold text-ink">{a.label}</div>
-                  <div className="truncate text-[12px] text-ink-3">Fills in the email</div>
+                  <div className="truncate text-[12px] text-ink-3">{a.hint}</div>
                 </button>
               ))}
             </div>

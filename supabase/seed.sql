@@ -24,6 +24,8 @@ insert into public.rooms (name, kind, capacity) values
   ('Room 303',  'lecture',    45), ('Room 304',  'lecture',    45),
   ('Room 305',  'lecture',    45), ('Room 306',  'lecture',    45),
   ('Gymnasium', 'lecture',   120);
+-- The gym hosts several PATHFIT classes at once, so it's exempt from the room double-booking rule.
+update public.rooms set is_shared = true where name = 'Gymnasium';
 
 -- ─── Demo login (link it by creating an Auth user with this email) ────────
 insert into public.secretaries (full_name, email) values

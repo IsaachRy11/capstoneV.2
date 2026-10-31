@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  formatGrade, formatTime, inferSubjectKind, initials, meetingDays, normKey,
+  formatGrade, formatTime, inferSubjectKind, initials, isStudentId, loginEmail, meetingDays, normKey,
   scheduleLines, shortProgramName, sumUnits, termLabel, timeRange, toCsv,
 } from "./format";
 
@@ -68,6 +68,22 @@ describe("schedules", () => {
   it("lists meeting days regardless of rooms", () => {
     expect(meetingDays([...meetings, { weekday: 3, starts_at: "09:00:00", ends_at: "10:00:00" }])).toBe("M W F");
     expect(meetingDays([])).toBe("");
+  });
+});
+
+describe("login", () => {
+  it("turns a student ID into the student's login address", () => {
+    expect(loginEmail(" 2025-0001 ")).toBe("2025-0001@students.ccs-monitor.test");
+  });
+
+  it("leaves staff emails alone (lower-cased)", () => {
+    expect(loginEmail("Demo.Secretary@ccs-monitor.test")).toBe("demo.secretary@ccs-monitor.test");
+  });
+
+  it("only treats the ####-#### pattern as a student ID", () => {
+    expect(isStudentId("2025-0001")).toBe(true);
+    expect(isStudentId("2025-001")).toBe(false);
+    expect(isStudentId("SEC-001")).toBe(false);
   });
 });
 

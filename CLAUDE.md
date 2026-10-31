@@ -50,7 +50,8 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 
 ## Known state (Oct 31 2026)
 - Schema, curriculum and seed are LIVE on the Supabase project (migrations 0001–0004 recorded). Old prototype tables kept as `legacy_*` with RLS on (locked). The user is on Supabase's free plan: no dashboard backups, no Docker; keep data by renaming, not dropping.
-- React app rebuilt on the new schema with real Supabase Auth and both themes (Oct 31 2026). Demo logins: demo.secretary@ccs-monitor.test, demo.student@ccs-monitor.test (passwords set by the user, unknown to Claude).
+- React app rebuilt on the new schema with real Supabase Auth and both themes (Oct 31 2026). Sign-in: students use their **student ID** (login address `<id>@students.ccs-monitor.test`, created by `npm run accounts:students`, which needs `SUPABASE_SERVICE_ROLE_KEY` + `STUDENT_DEFAULT_PASSWORD` in `.env.local`); the secretary uses her email (demo.secretary@ccs-monitor.test). Demo student: 2025-0001.
+- Secretary can edit/delete curriculum subjects (delete blocked if scheduled or graded) and add/change/remove class times on Schedules; migration 0008 blocks section, room (gym is shared) and student time clashes. Students list has no "All years" tab; searching spans all years.
 - Writing to the live DB (db push, migrations) needs the user's explicit OK; the auto-mode classifier blocks it otherwise. Read-only `npx supabase db query --linked` checks are fine.
 - Prerequisites: not in the official source; `subject_prerequisites` is empty until the user provides the official list.
 
