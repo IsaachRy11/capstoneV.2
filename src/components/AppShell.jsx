@@ -6,6 +6,7 @@ import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
 import UserMenu from "./UserMenu";
 import TermCalendar from "./TermCalendar";
+import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 
 const PAGE_TITLES = [
@@ -113,7 +114,9 @@ export default function AppShell() {
         </header>
 
         <main className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
-          <Outlet context={{ term: term.data, termLoading: term.loading }} />
+          <ErrorBoundary key={location.pathname}>
+            <Outlet context={{ term: term.data, termLoading: term.loading }} />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

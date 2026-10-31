@@ -31,9 +31,9 @@ export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{ST
 // yellow = close to the passing line (still passing), grey = INC or Dropped (no final grade).
 // Each color always comes with words, so meaning never depends on color alone.
 const LEGEND = {
-  failing: { color: "var(--bad)", label: "Failing", detail: "5.00" },
+  failing: { color: "var(--bad)", label: "Failed", detail: "5.00" },
   passed: { color: "var(--ok)", label: "Passed", detail: "1.00 – 3.00 · 1.00 is the highest" },
-  close: { color: "var(--warn)", label: "Close to the passing line", detail: "Midterm of 2.75 – 3.00" },
+  close: { color: "var(--warn)", label: "Close to the passing line", detail: "2.75 – 3.00 · still passing" },
   other: { color: "var(--ink-3)", label: "INC or Dropped", detail: "No final grade" },
 };
 
@@ -50,36 +50,26 @@ function LegendRow({ color, label, detail }) {
 }
 
 // `compact`: vertical list for side panels. `warnings`: include the midterm warning color.
-export function GradeLegend({ className = "", warnings = false, compact = false }) {
+export function GradeLegend({ className = "", compact = false }) {
   if (compact) {
     return (
       <div className={className}>
         <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
         <ul className="flex flex-col gap-2.5">
-          {[LEGEND.failing, LEGEND.passed, LEGEND.close, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
+          {[LEGEND.passed, LEGEND.close, LEGEND.failing, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
         </ul>
       </div>
     );
   }
+  // One legend for midterm and final grades alike: they use the same scale.
   return (
-    <div className={`flex flex-wrap gap-x-10 gap-y-4 ${className}`} aria-label="What the grade colors mean">
-      <div>
-        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Final grades</div>
-        <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-3">
-          <LegendRow {...LEGEND.passed} />
-          <LegendRow {...LEGEND.failing} label="Failed" />
-          <LegendRow {...LEGEND.other} />
-        </ul>
-      </div>
-      {warnings && (
-        <div>
-          <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">Midterm warnings</div>
-          <ul className="grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-            <LegendRow {...LEGEND.close} />
-            <LegendRow {...LEGEND.failing} label="Failing at midterm" detail="Midterm of 5.00" />
-          </ul>
-        </div>
-      )}
+    <div className={className} aria-label="What the grade colors mean">
+      <ul className="grid gap-x-8 gap-y-2.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+        <LegendRow {...LEGEND.passed} />
+        <LegendRow {...LEGEND.close} />
+        <LegendRow {...LEGEND.failing} />
+        <LegendRow {...LEGEND.other} />
+      </ul>
     </div>
   );
 }

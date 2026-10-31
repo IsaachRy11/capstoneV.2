@@ -50,6 +50,7 @@ src/
    ```
 3. Set up the database once by following [supabase/README.md](supabase/README.md).
 4. `npm run dev`, then open http://localhost:5173
+5. `npm test` runs the unit tests.
 
 Sign-in uses Supabase Auth. An account gets its role from a matching email in the `secretaries` or `students` table.
 

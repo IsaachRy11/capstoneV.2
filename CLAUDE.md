@@ -14,6 +14,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
+- `npm test` — Vitest unit tests for `src/lib` (progress, grades, schedules, CSV). Add a test when changing that logic.
 
 ## Roles (exactly two — no adviser/teacher/department roles)
 - `secretary` — full admin: add students, encode grades, edit section capacity, edit curriculum
@@ -33,7 +34,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` wherever grades appear for students (`warnings` prop where midterm warnings can show). Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` (one legend for midterm and final grades) wherever grades appear for students. Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
 - Grade colors mean the same thing everywhere: red = failing/failed, green = passed, yellow = close to the passing line only, grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend`.
 - UI reviews: Vercel's Web Interface Guidelines (https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) are a useful checklist; this file's conventions win where they differ (sentence case, not Title Case).
 - Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
@@ -43,6 +44,8 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Schema, RLS and the official SJC curriculum are migrations in `supabase/migrations/`. Demo students/sections/schedules/grades are in `supabase/seed.sql`.
 - Curriculum is official data (sjc.edu.ph): never invent subjects, units or prerequisites. Only students, schedules and rooms may be made up.
 - Standing (regular/irregular) is computed by the `v_student_overview` view; grade → status is a DB trigger. Don't recompute these in React.
+- Multi-step writes go through database functions (one transaction): `add_student()`, `save_grades()` via `supabase.rpc`. Enrollment capacity and schedule clashes are enforced by a trigger (friendly error messages come back from the DB). Every grade change is logged in `grade_changes` / `v_grade_changes` (secretary only).
+- RLS helpers live in the `private` schema (`private.is_secretary()`, `private.current_student_id()`), always wrapped as `(select …)` in policies. Index every new foreign key.
 - Schema changes = a new migration file; never edit an applied one.
 
 ## Known state (Oct 31 2026)

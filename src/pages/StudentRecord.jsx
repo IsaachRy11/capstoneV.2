@@ -3,8 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { AlertTriangle, Pencil, Printer } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
-import { getHistory, getStudent, updateGrade } from "../services/students";
-import { supabase, unwrap } from "../lib/supabase";
+import { getDeficiencies, getGradeChanges, getHistory, getStudent, saveGrades } from "../services/students";
 import { Avatar, Badge, ErrorState, FormError, GradeLegend, LoadingState, StandingBadge, StatusBadge } from "../components/ui";
 import { GRADE_OPTIONS, STUDENT_TYPE, formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
 
@@ -34,10 +33,12 @@ function TermTable({ term, rows, canEdit, onSaved }) {
         const st = r.status === "incomplete" || r.status === "dropped" ? r.status : "auto";
         return String(d.midterm) !== String(r.midterm_grade ?? "") || String(d.final) !== String(r.final_grade ?? "") || d.status !== st;
       });
-      await Promise.all(changed.map((r) => {
-        const d = draft[r.enrollment_id];
-        return updateGrade(r.enrollment_id, { midterm: d.midterm === "" ? null : Number(d.midterm), final: d.final === "" ? null : Number(d.final), status: d.status });
-      }));
+      if (changed.length) {
+        await saveGrades(changed.map((r) => {
+          const d = draft[r.enrollment_id];
+          return { enrollmentId: r.enrollment_id, midterm: d.midterm === "" ? null : Number(d.midterm), final: d.final === "" ? null : Number(d.final), status: d.status };
+        }));
+      }
       setEditing(false);
       onSaved();
     } catch (err) {
@@ -127,12 +128,11 @@ export default function StudentRecord() {
   const isSecretary = user.role === "secretary";
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [student, history, deficiencies] = await Promise.all([
-      getStudent(id), getHistory(id),
-      unwrap(supabase.from("v_student_deficiencies").select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year").eq("student_id", id)),
+    const [student, history, deficiencies, changes] = await Promise.all([
+      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [],
     ]);
-    return { student, history, deficiencies };
-  }, [id]);
+    return { student, history, deficiencies, changes };
+  }, [id, isSecretary]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -140,7 +140,7 @@ export default function StudentRecord() {
     return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const { student, history, deficiencies } = data;
+  const { student, history, deficiencies, changes } = data;
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
   const current = history.filter((r) => r.is_current && r.status !== "dropped");
@@ -202,6 +202,45 @@ export default function StudentRecord() {
       {terms.map((t) => (
         <TermTable key={t.school_term_id} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
       ))}
+
+      {isSecretary && <GradeHistory changes={changes} />}
     </>
+  );
+}
+
+const gradeOrStatus = (grade, status) =>
+  status === "incomplete" ? "INC" : status === "dropped" ? "Dropped" : formatGrade(grade);
+
+// Every grade edit, recorded by the database (grade_changes): who, when, from what to what.
+function GradeHistory({ changes }) {
+  return (
+    <section className="card no-print overflow-hidden">
+      <div className="border-b border-line px-5 py-4">
+        <h2 className="text-[17px] font-bold">Grade change history</h2>
+        <p className="mt-1 text-[13px] text-ink-3">Recorded automatically whenever a grade is saved. Entries can't be edited or deleted.</p>
+      </div>
+      {changes.length === 0 ? (
+        <p className="px-5 py-6 text-[14px] text-ink-3">No grade changes yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead><tr><th>When</th><th>Subject</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th>Changed by</th></tr></thead>
+            <tbody>
+              {changes.map((c) => (
+                <tr key={c.id}>
+                  <td className="whitespace-nowrap text-[13px] text-ink-2">
+                    {new Date(c.changed_at).toLocaleString("en-PH", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </td>
+                  <td><span className="font-mono text-[13px] text-accent">{c.code}</span> <span className="text-[13px]">{c.title}</span></td>
+                  <td className="num">{formatGrade(c.old_midterm)} → <span className="font-semibold">{formatGrade(c.new_midterm)}</span></td>
+                  <td className="num">{gradeOrStatus(c.old_final, c.old_status)} → <span className="font-semibold">{gradeOrStatus(c.new_final, c.new_status)}</span></td>
+                  <td className="text-[13px]">{c.changed_by_name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

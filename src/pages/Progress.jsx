@@ -123,7 +123,7 @@ export default function Progress() {
         <div className="seg self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
-        <GradeLegend warnings className="card px-5 py-3.5" />
+        <GradeLegend className="card px-5 py-3.5" />
       </div>
 
       {years.map((y) => {

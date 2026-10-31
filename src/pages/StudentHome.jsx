@@ -3,8 +3,7 @@ import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, Fil
 import { midtermWarning } from "../lib/progress";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
-import { getSectionInfo, getStudent, getTermClasses } from "../services/students";
-import { supabase, unwrap } from "../lib/supabase";
+import { getDeficiencies, getSectionInfo, getStudent, getTermClasses } from "../services/students";
 import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
 import { formatGrade, scheduleLines, sumUnits, yearLabel } from "../lib/format";
 
@@ -17,7 +16,7 @@ export default function StudentHome() {
     const [classes, section, deficiencies] = await Promise.all([
       term ? getTermClasses(user.studentId, term.id) : [],
       getSectionInfo(student?.section_id),
-      unwrap(supabase.from("v_student_deficiencies").select("enrollment_id, code, title, status").eq("student_id", user.studentId)),
+      getDeficiencies(user.studentId),
     ]);
     return { student, classes, section, deficiencies };
   }, [user.studentId, term?.id]);
@@ -124,7 +123,7 @@ export default function StudentHome() {
                   })}
                 </tbody>
               </table>
-              <GradeLegend warnings className="border-t border-line px-5 py-3.5" />
+              <GradeLegend className="border-t border-line px-5 py-3.5" />
             </div>
           )}
         </section>
