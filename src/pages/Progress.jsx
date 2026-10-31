@@ -22,20 +22,23 @@ function Stat({ label, value, sub, children }) {
   );
 }
 
-function SubjectDetail({ s }) {
-  if (s.state === "passed") return <span className="font-mono text-[13px] font-semibold">{formatGrade(s.grade)}</span>;
-  if (s.state === "in_progress") {
-    const w = midtermWarning(s.midterm);
-    return (
-      <span className="flex flex-wrap items-center gap-2 text-[13px]">
-        {s.midterm !== null ? <span className="text-ink-2">Midterm <span className="font-mono font-semibold text-ink">{formatGrade(s.midterm)}</span></span> : <span className="text-ink-3">No midterm yet</span>}
-        {w && <Badge tone={w.level}>{w.text}</Badge>}
-      </span>
-    );
-  }
-  if (s.state === "back") return <span className="text-[13px] font-semibold text-bad">{s.backReason}{s.attempts > 1 ? ` · ${s.attempts} attempts` : ""}</span>;
-  if (s.missingPrereqs.length) return <span className="text-[13px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>;
-  return <span className="text-[13px] text-ink-3">—</span>;
+const dash = <span className="text-ink-3">—</span>;
+
+function MidtermCell({ s }) {
+  if (s.midterm === null) return dash;
+  const w = s.state === "in_progress" ? midtermWarning(s.midterm) : null;
+  return (
+    <span className="inline-flex flex-wrap items-center justify-center gap-2">
+      <span className={`font-mono font-semibold ${Number(s.midterm) > 3 ? "text-bad" : ""}`}>{formatGrade(s.midterm)}</span>
+      {w && <Badge tone={w.level}>{w.text}</Badge>}
+    </span>
+  );
+}
+
+function FinalCell({ s }) {
+  if (s.state === "back" && s.backReason !== "Failed") return <span className="font-semibold text-bad">{s.backReason}</span>;
+  if (s.final === null) return dash;
+  return <span className={`font-mono font-semibold ${Number(s.final) > 3 ? "text-bad" : ""}`}>{formatGrade(s.final)}</span>;
 }
 
 export default function Progress() {
@@ -71,8 +74,8 @@ export default function Progress() {
         <Stat label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
           <div className="bar" role="img" aria-label={`${pct} percent of units earned`}><span style={{ width: `${pct}%` }} /></div>
         </Stat>
-        <Stat label="Subjects passed" value={<>{progress.passedCount}<span className="text-[17px] font-semibold text-ink-3"> / {progress.total}</span></>} />
-        <Stat label="Taking now" value={progress.inProgress.length} sub={`${sumUnits(progress.inProgress)} units this semester`} />
+        <Stat label="Subjects passed" value={<>{progress.passedCount}<span className="text-[17px] font-semibold text-ink-3"> / {progress.total}</span></>} sub="Out of every subject in your curriculum" />
+        <Stat label="This semester" value={<>{progress.inProgress.length}<span className="text-[17px] font-semibold text-ink-3"> {progress.inProgress.length === 1 ? "subject" : "subjects"}</span></>} sub={`${sumUnits(progress.inProgress)} units in total`} />
         <Stat label="Back subjects" value={<span className={progress.back.length ? "text-bad" : ""}>{progress.back.length}</span>} sub={progress.back.length ? "Need to be retaken" : "None. Keep it up."} />
       </div>
 
@@ -120,7 +123,7 @@ export default function Progress() {
         <div className="seg self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
-        <GradeLegend className="card px-5 py-3.5" />
+        <GradeLegend warnings className="card px-5 py-3.5" />
       </div>
 
       {years.map((y) => {
@@ -140,16 +143,21 @@ export default function Progress() {
                       <span className="text-[13px] text-ink-3">{rows.filter((r) => r.state === "passed").length} of {rows.length} passed</span>
                     </div>
                     <table className="data-table">
-                      <thead><tr><th>Subject</th><th>Status</th><th>Grade / note</th></tr></thead>
+                      <thead><tr><th>Subject</th><th>Status</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th></tr></thead>
                       <tbody>
                         {rows.map((s) => (
                           <tr key={s.id}>
                             <td>
                               <span className="block font-mono text-[13px] text-accent">{s.code}</span>
                               <span className="block font-medium">{s.title}</span>
+                              {s.state === "not_taken" && s.missingPrereqs.length > 0 && (
+                                <span className="mt-0.5 block text-[12px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>
+                              )}
+                              {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                             </td>
                             <td><Badge tone={SUBJECT_STATE[s.state].tone} dot>{SUBJECT_STATE[s.state].label}</Badge></td>
-                            <td><SubjectDetail s={s} /></td>
+                            <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
+                            <td className="text-center text-[13px]"><FinalCell s={s} /></td>
                           </tr>
                         ))}
                       </tbody>

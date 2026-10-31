@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getSectionInfo, getStudent, getTermClasses } from "../services/students";
 import { supabase, unwrap } from "../lib/supabase";
-import { ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
+import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
 import { formatGrade, scheduleLines, sumUnits, yearLabel } from "../lib/format";
 
 export default function StudentHome() {
@@ -96,13 +96,18 @@ export default function StudentHome() {
                           {lines.length ? lines.map((l) => <div key={l.days + l.time} className="whitespace-nowrap">{l.days} {l.time} · {l.room}</div>) : "To be arranged"}
                         </td>
                         <td className="num">{Number(s.units)}</td>
-                        <td className="num">{formatGrade(c.midterm_grade)}</td>
+                        <td className="num">
+                          <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                            {formatGrade(c.midterm_grade)}
+                            {midtermWarning(c.midterm_grade) && <Badge tone={midtermWarning(c.midterm_grade).level}>{midtermWarning(c.midterm_grade).text}</Badge>}
+                          </span>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              <GradeLegend className="border-t border-line px-5 py-3.5" />
+              <GradeLegend warnings className="border-t border-line px-5 py-3.5" />
             </div>
           )}
         </section>

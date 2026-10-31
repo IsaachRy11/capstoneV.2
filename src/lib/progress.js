@@ -30,11 +30,13 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
     if (passed) state = "passed";
     else if (current) state = "in_progress";
     else if (last && ["failed", "incomplete", "dropped"].includes(last.status)) state = "back";
+    // The attempt whose grades are shown: the pass, else this term's, else the latest.
+    const shown = passed || current || last;
     return {
       ...c,
       state,
-      grade: passed?.final_grade ?? null,
-      midterm: current?.midterm_grade ?? null,
+      midterm: shown?.midterm_grade ?? null,
+      final: shown?.final_grade ?? null,
       backReason: state === "back" ? BACK_LABEL[last.status] : null,
       attempts: rows.length,
     };
@@ -69,9 +71,12 @@ export function nextTermFor(term, yearLevel, durationYears) {
   return next.year > durationYears ? null : next;
 }
 
-// Midterm early warning. At SJC 1.00–3.00 passes and anything past 3.00 (5.00) fails,
-// so only a failing midterm is flagged.
+// Midterm early warning. At SJC 1.00–3.00 passes and anything past 3.00 (5.00) fails.
+// 2.75–3.00 still passes but is flagged so the student can act before finals.
 export function midtermWarning(grade) {
   if (grade === null || grade === undefined) return null;
-  return Number(grade) > 3 ? { level: "bad", text: "Failing at midterm" } : null;
+  const g = Number(grade);
+  if (g > 3) return { level: "bad", text: "Failing at midterm" };
+  if (g >= 2.75) return { level: "warn", text: "Close to the passing line" };
+  return null;
 }

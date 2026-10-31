@@ -31,7 +31,8 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Only a failing midterm (> 3.00) triggers a warning. Show `<GradeLegend />` wherever grades appear for students.
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` wherever grades appear for students (`warnings` prop where midterm warnings can show). Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
+- Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
 - Wording: say "Student type" (Student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)

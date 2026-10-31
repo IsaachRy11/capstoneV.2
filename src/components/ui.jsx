@@ -28,13 +28,16 @@ export const StandingBadge = ({ standing }) =>
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
 // How to read SJC grades: 1.00 is highest, 3.00 is the lowest passing grade, past 3.00 (5.00) fails.
-export function GradeLegend({ className = "" }) {
+// `warnings` adds the midterm warning badges shown next to midterm grades.
+export function GradeLegend({ className = "", warnings = false }) {
   const item = "inline-flex items-center gap-2";
   return (
     <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ink-2 ${className}`} aria-label="How grades work">
       <span className="font-semibold text-ink">How grades work:</span>
       <span className={item}><Badge tone="ok">1.00 – 3.00</Badge>Passed (1.00 is the highest)</span>
       <span className={item}><Badge tone="bad">5.00</Badge>Failed</span>
+      {warnings && <span className={item}><Badge tone="warn">Close to the passing line</Badge>Midterm of 2.75 – 3.00</span>}
+      {warnings && <span className={item}><Badge tone="bad">Failing at midterm</Badge>Midterm of 5.00</span>}
       <span className={item}><Badge tone="warn">INC</Badge>Incomplete</span>
       <span className={item}><Badge tone="neutral">Dropped</Badge>Withdrawn from the class</span>
     </div>
