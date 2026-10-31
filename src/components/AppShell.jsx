@@ -117,12 +117,9 @@ export default function AppShell() {
       {/* Full-width footer, under the sidebar too */}
       <footer className="no-print border-t border-line bg-surface px-6 py-7 sm:px-10">
         <div className="flex flex-wrap items-center justify-between gap-x-12 gap-y-5">
-          <div className="flex items-center gap-4">
-            <SealLogo size={44} />
-            <div>
-              <div className="font-display text-[16px] font-bold text-ink">CCS Subject Monitoring System</div>
-              <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
-            </div>
+          <div>
+            <div className="font-display text-[16px] font-bold text-ink">CCS Subject Monitoring System</div>
+            <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
           </div>
           <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
             <span>Questions about your records? Visit the CCS office.</span>
