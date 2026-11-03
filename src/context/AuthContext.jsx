@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { getAvatarUrl } from "../services/account";
-import { loginEmail } from "../lib/format";
+import { loginEmail } from "../lib/login";
 
 // Two roles only: "secretary" (row in public.secretaries) and "student" (row in public.students).
 // The role comes from the database, never from the client.

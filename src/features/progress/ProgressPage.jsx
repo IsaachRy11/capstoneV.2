@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { GraduationCap, TriangleAlert } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getHistory, getStudent } from "../services/students";
-import { getCurriculum, getPrerequisites, getPrograms } from "../services/catalog";
-import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../components/ui";
-import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
-import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../lib/progress";
+import { useAuth } from "../../context/AuthContext";
+import { useAsync } from "../../hooks/useAsync";
+import { getHistory, getStudent } from "../../services/students";
+import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
+import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
+import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../../lib/progress";
 
 const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Taking now"], ["back", "Back subjects"], ["not_taken", "Not yet taken"]];
 

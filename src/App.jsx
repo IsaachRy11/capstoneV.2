@@ -4,18 +4,18 @@ import { useAuth } from "./context/AuthContext";
 import AppShell from "./components/AppShell";
 import { LoadingState } from "./components/ui";
 
-const Login = lazy(() => import("./pages/Login"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const StudentHome = lazy(() => import("./pages/StudentHome"));
-const Students = lazy(() => import("./pages/Students"));
-const StudentRecord = lazy(() => import("./pages/StudentRecord"));
-const Sections = lazy(() => import("./pages/Sections"));
-const Curriculum = lazy(() => import("./pages/Curriculum"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Progress = lazy(() => import("./pages/Progress"));
-const Schedule = lazy(() => import("./pages/Schedule"));
-const SectionSchedules = lazy(() => import("./pages/SectionSchedules"));
-const Settings = lazy(() => import("./pages/Settings"));
+const Login = lazy(() => import("./features/account/LoginPage"));
+const Dashboard = lazy(() => import("./features/dashboard/DashboardPage"));
+const StudentHome = lazy(() => import("./features/home/StudentHomePage"));
+const Students = lazy(() => import("./features/students/StudentsPage"));
+const StudentRecord = lazy(() => import("./features/students/StudentRecordPage"));
+const Sections = lazy(() => import("./features/sections/SectionsPage"));
+const Curriculum = lazy(() => import("./features/curriculum/CurriculumPage"));
+const Profile = lazy(() => import("./features/account/ProfilePage"));
+const Progress = lazy(() => import("./features/progress/ProgressPage"));
+const Schedule = lazy(() => import("./features/schedules/StudentSchedulePage"));
+const SectionSchedules = lazy(() => import("./features/schedules/SectionSchedulesPage"));
+const Settings = lazy(() => import("./features/account/SettingsPage"));
 
 function SecretaryOnly({ children }) {
   const { user } = useAuth();

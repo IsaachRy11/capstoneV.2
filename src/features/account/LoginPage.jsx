@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
-import { FormError, SealLogo } from "../components/ui";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { FormError, SealLogo } from "../../components/ui";
 
 const DEMO_ACCOUNTS = [
   { id: "demo.secretary@ccs-monitor.test", label: "Demo secretary", hint: "Fills in the email" },

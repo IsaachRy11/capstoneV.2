@@ -1,11 +1,12 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
-import { midtermWarning } from "../lib/progress";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getDeficiencies, getSectionInfo, getStudent, getTermClasses } from "../services/students";
-import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../components/ui";
-import { formatGrade, scheduleLines, sumUnits, yearLabel } from "../lib/format";
+import { midtermWarning } from "../../lib/progress";
+import { useAuth } from "../../context/AuthContext";
+import { useAsync } from "../../hooks/useAsync";
+import { getDeficiencies, getSectionInfo, getStudent, getTermClasses } from "../../services/students";
+import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../../components/ui";
+import { formatGrade, sumUnits, yearLabel } from "../../lib/format";
+import { scheduleLines } from "../../lib/schedule";
 
 export default function StudentHome() {
   const { user } = useAuth();

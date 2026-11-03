@@ -1,11 +1,11 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { Plus, Printer } from "lucide-react";
-import { useAsync } from "../hooks/useAsync";
-import { listStudents } from "../services/students";
-import { listCurrentSections } from "../services/sections";
-import { countOfferings, getCurriculum, getPrograms } from "../services/catalog";
-import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../components/ui";
-import { shortProgramName, sumUnits, yearLabel } from "../lib/format";
+import { useAsync } from "../../hooks/useAsync";
+import { listStudents } from "../../services/students";
+import { listCurrentSections } from "../../services/sections";
+import { countOfferings, getCurriculum, getPrograms } from "../../services/catalog";
+import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
+import { shortProgramName, sumUnits, yearLabel } from "../../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (

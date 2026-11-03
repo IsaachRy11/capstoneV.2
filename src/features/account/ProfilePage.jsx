@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Camera, Trash2 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getStudent } from "../services/students";
-import { removeAvatar, updateSecretaryName, uploadAvatar } from "../services/account";
-import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StandingBadge } from "../components/ui";
-import { STUDENT_TYPE, yearLabel } from "../lib/format";
+import { useAuth } from "../../context/AuthContext";
+import { useAsync } from "../../hooks/useAsync";
+import { getStudent } from "../../services/students";
+import { removeAvatar, updateSecretaryName, uploadAvatar } from "../../services/account";
+import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StandingBadge } from "../../components/ui";
+import { STUDENT_TYPE, yearLabel } from "../../lib/format";
 
 
 function Row({ label, children }) {

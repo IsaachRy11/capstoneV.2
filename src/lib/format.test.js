@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  formatGrade, formatTime, inferSubjectKind, initials, isStudentId, loginEmail, meetingDays, normKey,
-  scheduleLines, shortProgramName, sumUnits, termLabel, timeRange, toCsv,
-} from "./format";
+import { formatGrade, inferSubjectKind, initials, normKey, shortProgramName, sumUnits, termLabel } from "./format";
+import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
+import { isStudentId, loginEmail } from "./login";
+import { toCsv } from "./csv";
 
 describe("grades and labels", () => {
   it("shows grades with two decimals and a dash when empty", () => {

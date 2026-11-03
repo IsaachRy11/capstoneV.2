@@ -1,10 +1,10 @@
 import { useOutletContext } from "react-router-dom";
 import { Printer } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getTermClasses } from "../services/students";
-import { ErrorState, LoadingState, PageHeader } from "../components/ui";
-import WeekTimetable from "../components/WeekTimetable";
+import { useAuth } from "../../context/AuthContext";
+import { useAsync } from "../../hooks/useAsync";
+import { getTermClasses } from "../../services/students";
+import { ErrorState, LoadingState, PageHeader } from "../../components/ui";
+import WeekTimetable from "./WeekTimetable";
 
 // Student's own weekly timetable for the current semester.
 export default function Schedule() {

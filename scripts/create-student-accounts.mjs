@@ -8,7 +8,7 @@
 // Safe to run again: students who already have a working ID login are skipped.
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
-import { STUDENT_LOGIN_DOMAIN, loginEmail } from "../src/lib/format.js";
+import { STUDENT_LOGIN_DOMAIN, loginEmail } from "../src/lib/login.js";
 
 function readEnv(file) {
   if (!existsSync(file)) return {};

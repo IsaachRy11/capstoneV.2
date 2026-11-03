@@ -34,3 +34,6 @@ supabase/.temp/
 backup.sql
 *.dump
 
+
+# Skills CLI lockfile for the unused .agents archive
+skills-lock.json

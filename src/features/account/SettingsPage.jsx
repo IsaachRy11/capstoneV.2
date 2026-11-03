@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Check, Moon, Sun } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
-import { FormError, PageHeader, SectionHeader } from "../components/ui";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { FormError, PageHeader, SectionHeader } from "../../components/ui";
 
 function PasswordForm() {
   const { changePassword } = useAuth();

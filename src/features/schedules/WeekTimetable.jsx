@@ -1,20 +1,19 @@
 import { CalendarClock } from "lucide-react";
-import { colorIndex, formatTime } from "../lib/format";
+import { colorIndex } from "../../lib/format";
+import { DAY_NAMES, formatTime, todayWeekday, toMinutes } from "../../lib/schedule";
 
 // Weekly timetable shared by the student Schedule and the secretary's section schedules.
 // items: [{ id, code, title, meetings: [{ weekday, starts_at, ends_at, rooms: { name } }] }]
 
-const DAY_NAMES = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const HOUR_PX = 64;
-const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 
 export default function WeekTimetable({ items, todaySummary = false, emptyText = "No scheduled classes this semester yet." }) {
   const events = items
     .flatMap((it) => it.meetings.map((m) => ({
       key: `${it.id}-${m.weekday}-${m.starts_at}`,
       day: m.weekday,
-      start: toMin(m.starts_at),
-      end: toMin(m.ends_at),
+      start: toMinutes(m.starts_at),
+      end: toMinutes(m.ends_at),
       time: `${formatTime(m.starts_at)} – ${formatTime(m.ends_at)}`,
       room: m.rooms?.name || "Room TBA",
       code: it.code,
@@ -27,7 +26,7 @@ export default function WeekTimetable({ items, todaySummary = false, emptyText =
   const dayStart = events.length ? Math.floor(Math.min(...events.map((e) => e.start)) / 60) * 60 : 7 * 60;
   const dayEnd = events.length ? Math.ceil(Math.max(...events.map((e) => e.end)) / 60) * 60 : 17 * 60;
   const hours = Array.from({ length: (dayEnd - dayStart) / 60 }, (_, i) => dayStart + i * 60);
-  const todayNum = ((new Date().getDay() + 6) % 7) + 1; // JS Sunday=0 → 7
+  const todayNum = todayWeekday();
   const todays = events.filter((e) => e.day === todayNum);
 
   return (
