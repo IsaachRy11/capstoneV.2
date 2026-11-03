@@ -86,7 +86,7 @@ export default function StudentHome() {
 
       <div className="flex flex-wrap items-start gap-5">
         <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
-          <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
+          <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
           {classes.length === 0 ? (
             <p className="px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any classes this semester.</p>
           ) : (

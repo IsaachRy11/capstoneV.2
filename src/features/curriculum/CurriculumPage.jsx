@@ -68,8 +68,8 @@ export default function Curriculum() {
                           <td className="num">{Number(s.units)}</td>
                           {isSecretary && (
                             <td className="whitespace-nowrap px-2 text-right">
-                              <button className="icon-btn h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
-                              <button className="icon-btn icon-btn-danger h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
+                              <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
+                              <button className="icon-btn icon-btn-danger touch-40 h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
                             </td>
                           )}
                         </tr>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -6,7 +6,7 @@ import { FormError, SealLogo } from "../../components/ui";
 
 const DEMO_ACCOUNTS = [
   { id: "demo.secretary@ccs-monitor.test", label: "Demo secretary", hint: "Fills in the email" },
-  { id: "2025-0001", label: "Demo student", hint: "Fills in student ID 2025-0001" },
+  { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001" },
 ];
 
 export default function Login() {
@@ -17,6 +17,7 @@ export default function Login() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const passwordRef = useRef(null);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -33,7 +34,7 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen flex-wrap bg-ground">
-      <section className="flex min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 p-8 sm:p-14"
+      <section className="hidden min-h-[320px] flex-[1_1_480px] flex-col lg:flex justify-between gap-12 p-8 sm:p-14"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
@@ -53,14 +54,27 @@ export default function Login() {
         </div>
       </section>
 
-      <section className="relative flex flex-[1_1_480px] items-center justify-center px-6 py-12">
-        <button className="icon-btn absolute right-4 top-4" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+      <section className="relative flex min-h-screen flex-[1_1_480px] flex-col lg:min-h-0">
+        {/* Phones and tablets: a slim brand bar instead of the big panel, so the form is on the first screen */}
+        <div className="flex items-center gap-3 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] lg:hidden"
+          style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={40} /></span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[15px] font-bold leading-tight">CCS Subject Monitoring System</div>
+            <div className="text-[12px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College · Computer Studies</div>
+          </div>
+          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ color: "var(--panel-ink)" }} onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+        <button className="icon-btn absolute right-4 top-4 hidden lg:inline-flex" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <div className="flex w-full max-w-[400px] flex-col gap-7">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-[28px] font-bold tracking-tight">Sign in</h2>
-            <p className="text-[15px] text-ink-2">Students: use your student ID. Staff: use your email.</p>
+        <div className="flex flex-1 justify-center px-5 pb-10 pt-7 sm:px-6 lg:items-center lg:py-12">
+        <div className="flex w-full max-w-[400px] flex-col gap-6 lg:gap-7">
+          <div className="flex flex-col gap-1.5 lg:gap-2">
+            <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
+            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Staff: use your email.</p>
           </div>
 
           {status === "unlinked" && (
@@ -74,12 +88,13 @@ export default function Login() {
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
               <label className="label" htmlFor="email">Student ID or email</label>
-              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
+              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
+                onKeyDown={(e) => { if (e.key === "Enter" && !password) { e.preventDefault(); passwordRef.current?.focus(); } }} />
             </div>
             <div>
               <label className="label" htmlFor="password">Password</label>
               <div className="relative">
-                <input id="password" type={show ? "text" : "password"} className="field h-11 pr-12" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+                <input id="password" ref={passwordRef} enterKeyHint="go" type={show ? "text" : "password"} className="field h-11 pr-12" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
                 <button type="button" className="icon-btn absolute right-0.5 top-0.5" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"}>
                   {show ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
@@ -98,7 +113,7 @@ export default function Login() {
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               {DEMO_ACCOUNTS.map((a) => (
-                <button key={a.id} type="button" onClick={() => setIdentifier(a.id)}
+                <button key={a.id} type="button" onClick={() => { setIdentifier(a.id); passwordRef.current?.focus(); }}
                   className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-left hover:border-accent">
                   <div className="text-[14px] font-semibold text-ink">{a.label}</div>
                   <div className="truncate text-[12px] text-ink-3">{a.hint}</div>
@@ -106,6 +121,7 @@ export default function Login() {
               ))}
             </div>
           </div>
+        </div>
         </div>
       </section>
     </div>

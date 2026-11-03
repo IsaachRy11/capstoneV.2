@@ -94,34 +94,34 @@ export default function Students() {
             <input id="find" className="field pl-9" placeholder="Name, student ID or section" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
           </div>
           <label htmlFor="prog" className="sr-only">Program</label>
-          <select id="prog" className="field w-auto flex-[0_1_220px]" value={programFilter} onChange={(e) => setParam("program", e.target.value)}>
+          <select id="prog" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_220px]" value={programFilter} onChange={(e) => setParam("program", e.target.value)}>
             <option value="all">All programs</option>
             {data.programs.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
           </select>
           <label htmlFor="stand" className="sr-only">Standing</label>
-          <select id="stand" className="field w-auto flex-[0_1_170px]" value={standing} onChange={(e) => { setStanding(e.target.value); setPage(0); }}>
+          <select id="stand" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={standing} onChange={(e) => { setStanding(e.target.value); setPage(0); }}>
             <option value="all">Any standing</option><option value="regular">Regular</option><option value="irregular">Irregular</option>
           </select>
         </div>
 
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Student</th><th>Student ID</th><th>Program</th><th>Year</th><th>Section</th><th>Standing</th><th><span className="sr-only">Open</span></th></tr></thead>
+            <thead><tr><th>Student</th><th className="hidden md:table-cell">Student ID</th><th className="hidden sm:table-cell">Program</th><th className="hidden md:table-cell">Year</th><th className="hidden md:table-cell">Section</th><th>Standing</th><th className="hidden sm:table-cell"><span className="sr-only">Open</span></th></tr></thead>
             <tbody>
               {pageRows.map((s) => (
                 <tr key={s.id}>
                   <td className="whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <Avatar name={s.full_name} size={34} />
-                      <Link to={`/students/${s.id}`} className="font-semibold text-ink">{s.last_name}, {s.first_name}</Link>
+                      <div className="flex min-w-0 flex-col"><Link to={`/students/${s.id}`} className="inline-flex min-h-10 items-center font-semibold text-ink md:min-h-0">{s.last_name}, {s.first_name}</Link><span className="text-[12px] text-ink-3 md:hidden"><span className="font-mono">{s.id}</span><span className="sm:hidden"> · {s.program_code}</span></span></div>
                     </div>
                   </td>
-                  <td className="font-mono text-[13px] text-ink-2">{s.id}</td>
-                  <td>{s.program_code}</td>
-                  <td className="whitespace-nowrap">{yearLabel(s.year_level)}</td>
-                  <td className="whitespace-nowrap">{s.section_name || "—"}</td>
+                  <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 md:table-cell">{s.id}</td>
+                  <td className="hidden sm:table-cell">{s.program_code}</td>
+                  <td className="hidden whitespace-nowrap md:table-cell">{yearLabel(s.year_level)}</td>
+                  <td className="hidden whitespace-nowrap md:table-cell">{s.section_name || "—"}</td>
                   <td><StandingBadge standing={s.standing} /></td>
-                  <td className="text-right"><Link to={`/students/${s.id}`} aria-label={`Open ${s.full_name}'s record`} className="icon-btn h-11 w-11"><ChevronRight size={18} /></Link></td>
+                  <td className="hidden text-right sm:table-cell"><Link to={`/students/${s.id}`} aria-label={`Open ${s.full_name}'s record`} className="icon-btn h-11 w-11"><ChevronRight size={18} /></Link></td>
                 </tr>
               ))}
             </tbody>
