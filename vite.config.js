@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from 'tailwindcss'
+import autoprefixer from 'autoprefixer'
 
 export default defineConfig({
   plugins: [react()],
+  // Tailwind + Autoprefixer (replaces a separate postcss.config.js)
+  css: {
+    postcss: { plugins: [tailwindcss(), autoprefixer()] },
+  },
   build: {
     target: 'esnext',
     cssCodeSplit: true,
