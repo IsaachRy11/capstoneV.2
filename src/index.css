@@ -164,6 +164,12 @@
     color: var(--ink-2); white-space: nowrap;
   }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  /* Touch screens: small controls grow to a finger-sized 40px. Mouse layouts stay compact. */
+  @media (pointer: coarse) {
+    .btn-sm, .seg button { height: 40px; }
+    .icon-btn.touch-40 { width: 40px; height: 40px; }
+  }
 }
 
 /* Initials avatars: 6 soft colors per theme, picked from the name so a person keeps theirs.

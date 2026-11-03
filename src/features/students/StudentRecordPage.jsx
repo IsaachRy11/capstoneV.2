@@ -37,7 +37,7 @@ export default function StudentRecord() {
     <>
       {isSecretary && (
         <nav aria-label="Breadcrumb" className="no-print -mb-2 text-[14px] text-ink-3">
-          <Link to="/students" className="text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
+          <Link to="/students" className="inline-flex min-h-10 items-center text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
         </nav>
       )}
 

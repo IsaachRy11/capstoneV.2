@@ -65,7 +65,7 @@ export default function Dashboard() {
               <h2 className="text-[17px] font-bold">Enrolment by year level</h2>
               <p className="mt-1 text-[13px] text-ink-3">Students per program and year · seats filled in each block section</p>
             </div>
-            <Link to="/students" className="whitespace-nowrap text-[14px] font-semibold">Open registry</Link>
+            <Link to="/students" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Open registry</Link>
           </div>
           <div className="overflow-x-auto">
             <div className="grid min-w-[560px] gap-2.5" style={{ gridTemplateColumns: `150px repeat(${maxYears}, minmax(96px, 1fr))` }}>
@@ -100,7 +100,7 @@ export default function Dashboard() {
               <h2 className="text-[17px] font-bold">Curriculum</h2>
               <p className="mt-1 text-[13px] text-ink-3">Subjects and units per program</p>
             </div>
-            <Link to="/curriculum" className="text-[14px] font-semibold">View</Link>
+            <Link to="/curriculum" className="inline-flex min-h-10 items-center text-[14px] font-semibold">View</Link>
           </div>
           {programs.map((p) => {
             const subs = curriculum.filter((c) => c.curricula.programs.code === p.code);
@@ -115,7 +115,7 @@ export default function Dashboard() {
       </div>
 
       <section className="card overflow-hidden">
-        <SectionHeader title="Sections this semester" subtitle="Block sections, rooms and seats" action={<Link to="/sections" className="whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
+        <SectionHeader title="Sections this semester" subtitle="Block sections, rooms and seats" action={<Link to="/sections" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Room</th><th className="w-[32%]">Seats</th></tr></thead>

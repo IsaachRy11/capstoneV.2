@@ -52,7 +52,7 @@ export default function Sections() {
           <section aria-label="Subjects" className="card flex flex-[1_1_320px] flex-col gap-0.5 p-2">
             <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-2.5">
               <span className="text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
-              <button className="text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
+              <button className="inline-flex min-h-10 items-center text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
             </div>
             {offerings.loading && <LoadingState />}
             {offerings.error && <ErrorState error={offerings.error} onRetry={offerings.reload} />}
@@ -101,7 +101,7 @@ export default function Sections() {
                           <td className="whitespace-nowrap">
                             <div className="flex items-center gap-2.5">
                               <Avatar name={r.name} size={30} />
-                              <Link to={`/students/${r.student_id}`} className="font-semibold text-ink">{r.name}</Link>
+                              <Link to={`/students/${r.student_id}`} className="inline-flex min-h-10 items-center font-semibold text-ink">{r.name}</Link>
                             </div>
                           </td>
                           <td className="font-mono text-[13px] text-ink-2">{r.student_id}</td>

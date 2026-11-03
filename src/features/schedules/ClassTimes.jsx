@@ -42,8 +42,8 @@ export default function ClassTimes({ offerings, rooms, onChanged }) {
                   <span key={m.id} className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 py-1 pl-3 pr-1 text-[13px]">
                     <span className="font-semibold text-ink">{DAY_SHORT[m.weekday]}</span>
                     <span className="text-ink-2">{timeRange(m.starts_at, m.ends_at)} · {m.rooms?.name || "Room TBA"}</span>
-                    <button className="icon-btn h-8 w-8" onClick={() => setEditing({ offering: o, meeting: m })} aria-label={`Change ${o.curriculum_subjects.code} on ${DAY_SHORT[m.weekday]}`} title="Change"><Pencil size={14} /></button>
-                    <button className="icon-btn icon-btn-danger h-8 w-8" onClick={() => { setError(""); setRemoving({ offering: o, meeting: m }); }} aria-label={`Remove ${o.curriculum_subjects.code} on ${DAY_SHORT[m.weekday]}`} title="Remove"><Trash2 size={14} /></button>
+                    <button className="icon-btn touch-40 h-8 w-8" onClick={() => setEditing({ offering: o, meeting: m })} aria-label={`Change ${o.curriculum_subjects.code} on ${DAY_SHORT[m.weekday]}`} title="Change"><Pencil size={14} /></button>
+                    <button className="icon-btn icon-btn-danger touch-40 h-8 w-8" onClick={() => { setError(""); setRemoving({ offering: o, meeting: m }); }} aria-label={`Remove ${o.curriculum_subjects.code} on ${DAY_SHORT[m.weekday]}`} title="Remove"><Trash2 size={14} /></button>
                   </span>
                 ))}
                 <button className="btn btn-secondary btn-sm" onClick={() => setEditing({ offering: o, meeting: null })}><Plus size={14} aria-hidden="true" />Add time</button>

@@ -91,6 +91,21 @@ describe("security rules (RLS)", () => {
   it("keeps the security helpers out of the public API", async () => {
     expect((await as("authenticated", SEC, `select public.is_secretary()`)).error).toBeTruthy();
   });
+
+  // Guards future migrations: a new table without RLS would be readable by anyone with the API key.
+  it("has RLS switched on for every table", async () => {
+    const open = (await db.query(`select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity order by 1`)).rows.map((r) => r.relname);
+    expect(open).toEqual([]);
+  });
+
+  // A view without security_invoker runs as its owner and skips RLS, leaking every row.
+  it("makes every view follow the caller's RLS", async () => {
+    const leaky = (await db.query(`select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'v'
+        and coalesce(array_to_string(c.reloptions, ','), '') !~ 'security_invoker=(true|on|1)' order by 1`)).rows.map((r) => r.relname);
+    expect(leaky).toEqual([]);
+  });
 });
 
 describe("add_student (one transaction)", () => {
