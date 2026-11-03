@@ -11,7 +11,9 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 ## Commands
 - `npm run dev` — dev server on :5173. **Restart it after changing `tailwind.config.js`**: Tailwind doesn't reload its config, so new theme classes (`bg-surface`, `text-ink-3`, `border-line`…) silently don't apply and the UI looks flat/white.
 - Logged-in visual checks: demo passwords are in `.env.local` (gitignored; `DEMO_SECRETARY_PASSWORD`, `DEMO_STUDENT_PASSWORD`). Start a fresh `npx vite --port 5174 --strictPort`, sign in with playwright-core + Edge (`#email`, `#password`, submit, wait for `aside nav`), screenshot, then stop the 5174 server. Never print the passwords.
-- Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
+- Visual check without Python: Edge is installed; `playwright-core` (a project dev dependency) with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles.
+- `npm run check:mobile [baseUrl] [role]` — phone-width check (390×844) of the landing screen, sign-in form and every page for both roles: overflow, small tap targets, back button. Needs a running dev server (default :5173). Screenshots go to `%TEMP%\ccs-mobile-check`. Run it after any layout change.
+- Phone sign-in flow: phones open on a landing screen (brand panel + Sign in button); `/?signin` shows the form. PC shows both side by side.
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
 - `npm test` — Vitest: unit tests for `src/lib` and database tests in `supabase/tests` (PGlite builds an in-memory Postgres from the migrations + seed; never touches Supabase). Add a test when changing that logic or a migration.
