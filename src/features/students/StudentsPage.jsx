@@ -1,75 +1,20 @@
 import { useMemo, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
 import { ChevronRight, Download, Plus, Search } from "lucide-react";
-import { useAsync } from "../hooks/useAsync";
-import { createStudent, listStudents } from "../services/students";
-import { getPrograms } from "../services/catalog";
-import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StandingBadge } from "../components/ui";
-import { STUDENT_TYPE, downloadFile, toCsv, yearLabel } from "../lib/format";
+import { useAsync } from "../../hooks/useAsync";
+import { listStudents } from "../../services/students";
+import { getPrograms } from "../../services/catalog";
+import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StandingBadge } from "../../components/ui";
+import { yearLabel } from "../../lib/format";
+import { downloadFile, toCsv } from "../../lib/csv";
+import AddStudentModal from "./AddStudentModal";
 
 const PAGE_SIZE = 25;
-
-function AddStudentModal({ programs, term, onClose, onCreated }) {
-  const [form, setForm] = useState({ id: "", first_name: "", last_name: "", email: "", programId: programs[0]?.id ?? "", year_level: 1, admission_type: "new" });
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const program = programs.find((p) => String(p.id) === String(form.programId));
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!/^\d{4}-\d{4}$/.test(form.id.trim())) return setError("Student ID must look like 2026-0001.");
-    setBusy(true);
-    setError("");
-    try {
-      const { sectionName } = await createStudent({ ...form, programId: Number(form.programId), year_level: Number(form.year_level) }, term);
-      onCreated(`${form.first_name} ${form.last_name} was added${sectionName ? ` to ${sectionName} and enrolled in its classes` : ""}.`);
-    } catch (err) {
-      setError(err.code === "23505" ? "A student with this ID or email already exists." : err.message);
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Modal title="Add student" onClose={onClose} width="max-w-lg"
-      footer={<>
-        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" type="submit" form="add-student" disabled={busy}>{busy ? "Adding…" : "Add student"}</button>
-      </>}>
-      <form id="add-student" onSubmit={submit} className="grid grid-cols-2 gap-4">
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="sid">Student ID</label><input id="sid" className="field font-mono" placeholder="2026-0001" value={form.id} onChange={set("id")} required /></div>
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="semail">Email</label><input id="semail" type="email" className="field" value={form.email} onChange={set("email")} required /></div>
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="sfirst">First name</label><input id="sfirst" className="field" value={form.first_name} onChange={set("first_name")} required /></div>
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="slast">Last name</label><input id="slast" className="field" value={form.last_name} onChange={set("last_name")} required /></div>
-        <div className="col-span-2 sm:col-span-1">
-          <label className="label" htmlFor="sprog">Program</label>
-          <select id="sprog" className="field" value={form.programId} onChange={set("programId")}>
-            {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <label className="label" htmlFor="syear">Year level</label>
-          <select id="syear" className="field" value={form.year_level} onChange={set("year_level")}>
-            {Array.from({ length: program?.duration_years || 4 }, (_, i) => <option key={i + 1} value={i + 1}>{yearLabel(i + 1)}</option>)}
-          </select>
-        </div>
-        <div className="col-span-2">
-          <label className="label" htmlFor="sadm">Student type</label>
-          <select id="sadm" className="field" value={form.admission_type} onChange={set("admission_type")}>
-            {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-        <p className="col-span-2 text-[13px] text-ink-3">They're placed in their block section for this semester and enrolled in its classes. To let them sign in, add a login with the same email under Authentication in Supabase.</p>
-        <div className="col-span-2"><FormError error={error} /></div>
-      </form>
-    </Modal>
-  );
-}
 
 export default function Students() {
   const { term } = useOutletContext();
   const [params, setParams] = useSearchParams();
-  const year = params.get("year") || "all";
+  const year = params.get("year") || "1";
   const programFilter = params.get("program") || "all";
   const [q, setQ] = useState(params.get("q") || "");
   const [standing, setStanding] = useState("all");
@@ -102,9 +47,11 @@ export default function Students() {
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const rows = base.filter((s) => year === "all" || String(s.year_level) === year);
+  // Searching looks across all years; otherwise one year level at a time.
+  const searching = q.trim().length > 0;
+  const rows = searching ? base : base.filter((s) => String(s.year_level) === year);
   const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const tabs = [["all", "All years"], ["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
+  const tabs = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
 
   const exportCsv = () => downloadFile("ccs-students.csv", toCsv(rows, [
     { label: "Student ID", value: (s) => s.id }, { label: "Last name", value: (s) => s.last_name },
@@ -117,7 +64,7 @@ export default function Students() {
     <>
       <PageHeader
         title="Students"
-        subtitle={`${year === "all" ? "All year levels" : yearLabel(Number(year))} · ${rows.length} of ${data.students.length} students`}
+        subtitle={searching ? `Search results from all years · ${rows.length} of ${data.students.length} students` : `${yearLabel(Number(year))} · ${rows.length} of ${data.students.length} students`}
         actions={<>
           <button className="btn btn-secondary" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
           <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Add student</button>
@@ -128,10 +75,10 @@ export default function Students() {
       <section className="card overflow-hidden">
         <div role="tablist" aria-label="Year level" className="flex gap-6 overflow-x-auto border-b border-line px-5">
           {tabs.map(([k, label]) => {
-            const n = k === "all" ? base.length : base.filter((s) => String(s.year_level) === k).length;
-            const on = year === k;
+            const n = base.filter((s) => String(s.year_level) === k).length;
+            const on = !searching && year === k;
             return (
-              <button key={k} role="tab" aria-selected={on} onClick={() => setParam("year", k)}
+              <button key={k} role="tab" aria-selected={on} onClick={() => { setQ(""); setParam("year", k); }}
                 className={`-mb-px inline-flex h-12 items-center gap-2 whitespace-nowrap border-b-[3px] px-1 text-[14px] ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
                 {label}
                 <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] font-semibold ${on ? "text-white" : "bg-hover text-ink-3"}`} style={on ? { background: "var(--btn)" } : undefined}>{n}</span>

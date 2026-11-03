@@ -7,7 +7,7 @@ export const listCurrentSections = () =>
 export const getSectionOfferings = (sectionId) =>
   unwrap(
     supabase.from("class_offerings")
-      .select("id, capacity, curriculum_subjects(id, code, title, units, kind, sort_order), class_meetings(weekday, starts_at, ends_at, rooms(name)), enrollments(count)")
+      .select("id, capacity, curriculum_subjects(id, code, title, units, kind, sort_order), class_meetings(id, weekday, starts_at, ends_at, room_id, rooms(name)), enrollments(count)")
       .eq("section_id", sectionId)
   ).then((rows) => rows
     .map((o) => ({ ...o, enrolled: o.enrollments?.[0]?.count ?? 0 }))
@@ -42,6 +42,19 @@ export const enrollStudent = (studentId, offeringId) =>
 
 export const removeEnrollment = (enrollmentId) =>
   unwrap(supabase.from("enrollments").delete().eq("id", enrollmentId));
+
+// ─── Class times (schedule editing). The database rejects section, room and student clashes. ──
+export const getRooms = () => unwrap(supabase.from("rooms").select("id, name, kind, is_shared").order("name"));
+
+// fields: { weekday (1–7), starts_at "HH:MM", ends_at "HH:MM", room_id | null }
+export const addMeeting = (offeringId, fields) =>
+  unwrap(supabase.from("class_meetings").insert({ offering_id: offeringId, ...fields }));
+
+export const updateMeeting = (meetingId, fields) =>
+  unwrap(supabase.from("class_meetings").update(fields).eq("id", meetingId));
+
+export const deleteMeeting = (meetingId) =>
+  unwrap(supabase.from("class_meetings").delete().eq("id", meetingId));
 
 export const updateSectionCapacity = (sectionId, capacity) =>
   unwrap(supabase.from("sections").update({ capacity }).eq("id", sectionId));

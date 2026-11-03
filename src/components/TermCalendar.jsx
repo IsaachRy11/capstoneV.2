@@ -45,7 +45,7 @@ export default function TermCalendar({ term }) {
   return (
     <div ref={wrap} className="relative hidden sm:block">
       <button onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open}
-        className={`inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-[13px] font-semibold ${open ? "border-accent text-ink" : "border-line text-ink-2 hover:bg-hover hover:text-ink"}`}>
+        className={`inline-flex h-11 min-w-[290px] items-center justify-center gap-2.5 whitespace-nowrap rounded-lg border px-5 text-[14px] font-semibold ${open ? "border-accent text-ink" : "border-line text-ink-2 hover:bg-hover hover:text-ink"}`}>
         <Calendar size={16} aria-hidden="true" />{termLabel(term)}
       </button>
 

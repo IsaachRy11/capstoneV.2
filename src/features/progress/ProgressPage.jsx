@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { GraduationCap, TriangleAlert } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getHistory, getStudent } from "../services/students";
-import { getCurriculum, getPrerequisites, getPrograms } from "../services/catalog";
-import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../components/ui";
-import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../lib/format";
-import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../lib/progress";
+import { useAuth } from "../../context/AuthContext";
+import { useAsync } from "../../hooks/useAsync";
+import { getHistory, getStudent } from "../../services/students";
+import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
+import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
+import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../../lib/progress";
 
 const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Taking now"], ["back", "Back subjects"], ["not_taken", "Not yet taken"]];
 
@@ -68,7 +68,7 @@ export default function Progress() {
 
   return (
     <>
-      <PageHeader title="Subject tracker" subtitle={`${student.program_name} · where you stand on every subject in your curriculum`} />
+      <PageHeader title="Subject tracker" subtitle={student.program_name} />
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <Stat label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
@@ -123,7 +123,7 @@ export default function Progress() {
         <div className="seg self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
-        <GradeLegend warnings className="card px-5 py-3.5" />
+        <GradeLegend className="card px-5 py-3.5" />
       </div>
 
       {years.map((y) => {

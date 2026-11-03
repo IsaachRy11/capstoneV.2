@@ -1,66 +1,50 @@
-import { useOutletContext } from "react-router-dom";
-import { CalendarClock, Printer } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { useAsync } from "../hooks/useAsync";
-import { getTermClasses } from "../services/students";
-import { ErrorState, LoadingState, PageHeader } from "../components/ui";
-import { colorIndex, formatTime, termLabel } from "../lib/format";
+import { CalendarClock } from "lucide-react";
+import { colorIndex } from "../../lib/format";
+import { DAY_NAMES, formatTime, todayWeekday, toMinutes } from "../../lib/schedule";
 
-const DAY_NAMES = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// Weekly timetable shared by the student Schedule and the secretary's section schedules.
+// items: [{ id, code, title, meetings: [{ weekday, starts_at, ends_at, rooms: { name } }] }]
+
 const HOUR_PX = 64;
-const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 
-export default function Schedule() {
-  const { user } = useAuth();
-  const { term, termLoading } = useOutletContext();
-  const { data: classes, error, loading, reload } = useAsync(
-    () => (term ? getTermClasses(user.studentId, term.id) : Promise.resolve([])),
-    [user.studentId, term?.id]
-  );
-
-  if (loading || termLoading) return <LoadingState />;
-  if (error) return <ErrorState error={error} onRetry={reload} />;
-
-  // One entry per meeting of every class the student is still in.
-  const events = classes
-    .filter((c) => c.status !== "dropped")
-    .flatMap((c) => c.class_offerings.class_meetings.map((m) => ({
-      key: `${c.id}-${m.weekday}-${m.starts_at}`,
+export default function WeekTimetable({ items, todaySummary = false, emptyText = "No scheduled classes this semester yet." }) {
+  const events = items
+    .flatMap((it) => it.meetings.map((m) => ({
+      key: `${it.id}-${m.weekday}-${m.starts_at}`,
       day: m.weekday,
-      start: toMin(m.starts_at),
-      end: toMin(m.ends_at),
+      start: toMinutes(m.starts_at),
+      end: toMinutes(m.ends_at),
       time: `${formatTime(m.starts_at)} – ${formatTime(m.ends_at)}`,
       room: m.rooms?.name || "Room TBA",
-      code: c.class_offerings.curriculum_subjects.code,
-      title: c.class_offerings.curriculum_subjects.title,
+      code: it.code,
+      title: it.title,
     })))
     .sort((a, b) => a.day - b.day || a.start - b.start);
 
-  const unscheduled = classes.filter((c) => c.status !== "dropped" && c.class_offerings.class_meetings.length === 0);
+  const unscheduled = items.filter((it) => it.meetings.length === 0);
   const days = [1, 2, 3, 4, 5, ...[6, 7].filter((d) => events.some((e) => e.day === d))];
   const dayStart = events.length ? Math.floor(Math.min(...events.map((e) => e.start)) / 60) * 60 : 7 * 60;
   const dayEnd = events.length ? Math.ceil(Math.max(...events.map((e) => e.end)) / 60) * 60 : 17 * 60;
   const hours = Array.from({ length: (dayEnd - dayStart) / 60 }, (_, i) => dayStart + i * 60);
-  const todayNum = ((new Date().getDay() + 6) % 7) + 1; // JS Sunday=0 → 7
+  const todayNum = todayWeekday();
   const todays = events.filter((e) => e.day === todayNum);
 
   return (
     <>
-      <PageHeader title="Class schedule" subtitle={termLabel(term)}
-        actions={events.length > 0 && <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
-
-      <section className="card flex items-start gap-3.5 px-5 py-4">
-        <CalendarClock size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
-        <div className="text-[14px] text-ink-2">
-          <span className="font-semibold text-ink">Today, {DAY_NAMES[todayNum]}: </span>
-          {todays.length === 0
-            ? "no classes."
-            : `${todays.length} ${todays.length === 1 ? "class" : "classes"}. First is ${todays[0].code} at ${todays[0].time.split(" – ")[0]} in ${todays[0].room}.`}
-        </div>
-      </section>
+      {todaySummary && (
+        <section className="card flex items-start gap-3.5 px-5 py-4">
+          <CalendarClock size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
+          <div className="text-[14px] text-ink-2">
+            <span className="font-semibold text-ink">Today, {DAY_NAMES[todayNum]}: </span>
+            {todays.length === 0
+              ? "no classes."
+              : `${todays.length} ${todays.length === 1 ? "class" : "classes"}. First is ${todays[0].code} at ${todays[0].time.split(" – ")[0]} in ${todays[0].room}.`}
+          </div>
+        </section>
+      )}
 
       {events.length === 0 ? (
-        <div className="card px-5 py-12 text-center text-[14px] text-ink-3">No scheduled classes this semester yet.</div>
+        <div className="card px-5 py-12 text-center text-[14px] text-ink-3">{emptyText}</div>
       ) : (
         <>
           {/* Weekly grid (tablet and up) */}
@@ -123,7 +107,7 @@ export default function Schedule() {
 
       {unscheduled.length > 0 && (
         <p className="text-[13px] text-ink-3">
-          No fixed schedule yet: {unscheduled.map((c) => c.class_offerings.curriculum_subjects.code).join(", ")}. Ask the CCS office for the arrangement.
+          No fixed schedule yet: {unscheduled.map((it) => it.code).join(", ")}.
         </p>
       )}
     </>

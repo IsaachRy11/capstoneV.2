@@ -28,40 +28,35 @@ export const getTermClasses = (studentId, termId) =>
   ).then((rows) => rows.sort((a, b) =>
     a.class_offerings.curriculum_subjects.sort_order - b.class_offerings.curriculum_subjects.sort_order));
 
-// midterm/final: number or null. status: "auto" lets the database derive it from the final grade.
-export const updateGrade = (enrollmentId, { midterm, final, status }) =>
+// Failed / INC / dropped subjects not cleared by a later pass (computed by the database view).
+export const getDeficiencies = (id) =>
   unwrap(
-    supabase.from("enrollments").update({
-      midterm_grade: midterm,
-      final_grade: status === "incomplete" || status === "dropped" ? null : final,
-      status: status === "auto" ? "enrolled" : status,
-    }).eq("id", enrollmentId)
+    supabase.from("v_student_deficiencies")
+      .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year")
+      .eq("student_id", id)
   );
 
-// Creates the student, registers them in their block section for the current term,
-// and enrolls them in that section's classes.
-export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }, term) {
-  const curriculum = await unwrap(
-    supabase.from("curricula").select("id").eq("program_id", programId).eq("is_active", true).single()
-  );
-  await unwrap(
-    supabase.from("students").insert({
-      id: id.trim(), first_name: first_name.trim(), last_name: last_name.trim(), email: email.trim().toLowerCase(),
-      program_id: programId, curriculum_id: curriculum.id, year_level, admission_type,
+// Who changed which grade, newest first (secretary only; RLS returns nothing to students).
+export const getGradeChanges = (id) =>
+  unwrap(supabase.from("v_grade_changes").select("*").eq("student_id", id).order("changed_at", { ascending: false }).limit(50));
+
+// Saves several grades in ONE database transaction: all succeed or none do.
+// changes: [{ enrollmentId, midterm, final, status: "auto" | "incomplete" | "dropped" }]
+export const saveGrades = (changes) =>
+  unwrap(
+    supabase.rpc("save_grades", {
+      p_changes: changes.map((c) => ({ enrollment_id: c.enrollmentId, midterm: c.midterm, final: c.final, status: c.status })),
     })
   );
-  if (!term) return { sectionName: null };
 
-  const section = await unwrap(
-    supabase.from("sections").select("id, name").eq("school_term_id", term.id)
-      .eq("program_id", programId).eq("year_level", year_level).order("name").limit(1).maybeSingle()
+// Creates the student, registers them in their block section for the current term and enrolls
+// them in that section's classes, all in one database transaction (public.add_student).
+export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }) {
+  const sectionName = await unwrap(
+    supabase.rpc("add_student", {
+      p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
+      p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
+    })
   );
-  if (!section) return { sectionName: null };
-
-  await unwrap(supabase.from("registrations").insert({ student_id: id.trim(), school_term_id: term.id, section_id: section.id, year_level }));
-  const offerings = await unwrap(supabase.from("class_offerings").select("id").eq("section_id", section.id));
-  if (offerings.length) {
-    await unwrap(supabase.from("enrollments").insert(offerings.map((o) => ({ student_id: id.trim(), offering_id: o.id }))));
-  }
-  return { sectionName: section.name };
+  return { sectionName };
 }

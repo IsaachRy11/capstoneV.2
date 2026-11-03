@@ -1,11 +1,11 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { Plus, Printer } from "lucide-react";
-import { useAsync } from "../hooks/useAsync";
-import { listStudents } from "../services/students";
-import { listCurrentSections } from "../services/sections";
-import { countOfferings, getCurriculum, getPrograms } from "../services/catalog";
-import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../components/ui";
-import { shortProgramName, sumUnits, yearLabel } from "../lib/format";
+import { useAsync } from "../../hooks/useAsync";
+import { listStudents } from "../../services/students";
+import { listCurrentSections } from "../../services/sections";
+import { countOfferings, getCurriculum, getPrograms } from "../../services/catalog";
+import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
+import { shortProgramName, sumUnits, yearLabel } from "../../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (
@@ -41,7 +41,6 @@ export default function Dashboard() {
     <>
       <PageHeader
         title="Department overview"
-        subtitle="College of Computer Studies · enrolment and sections this semester"
         actions={<>
           <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print summary</button>
           <Link className="btn btn-primary no-print" to="/students?add=1"><Plus size={16} aria-hidden="true" />Add student</Link>
@@ -99,7 +98,7 @@ export default function Dashboard() {
           <div className="flex items-start justify-between gap-3 pb-3">
             <div>
               <h2 className="text-[17px] font-bold">Curriculum</h2>
-              <p className="mt-1 text-[13px] text-ink-3">Official SJC checklist</p>
+              <p className="mt-1 text-[13px] text-ink-3">Subjects and units per program</p>
             </div>
             <Link to="/curriculum" className="text-[14px] font-semibold">View</Link>
           </div>

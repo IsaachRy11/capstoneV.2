@@ -1,4 +1,4 @@
-# CCS Monitor · Saint Joseph College
+# CCS Subject Monitoring System · Saint Joseph College
 
 Subject, section and academic-standing monitor for the **College of Computer Studies, Saint Joseph College** (Maasin City, Southern Leyte). It covers the BSIT, BSCS and ACT programs.
 
@@ -28,16 +28,26 @@ Regular/irregular standing and grade status are calculated in the database, not 
 ## Project structure
 
 ```
-supabase/
-  migrations/      schema, access rules, official SJC curriculum
-  seed.sql         demo students, sections, schedules and grades (not real people)
-  README.md        how the database fits together and how to apply it
 src/
-  services/        every database query (catalog, students, sections)
-  context/         AuthContext (Supabase Auth + role), ThemeContext (light/dark)
-  components/      AppShell (sidebar, top bar) and shared UI pieces
-  pages/           Login, Dashboard, StudentHome, Students, StudentRecord, Sections, Curriculum
-  hooks/ lib/      data-loading hook, display helpers
+  features/        one folder per area: its page + the dialogs and parts only it uses
+    account/       sign in, profile, settings
+    dashboard/     secretary overview
+    students/      student list, student record (grades, grade history)
+    sections/      section allocations (class lists, enrolment, capacity)
+    schedules/     weekly timetables, class-time editing
+    curriculum/    official curriculum per program
+    home/          student home
+    progress/      student subject tracker
+  components/      app-wide pieces: sidebar and top bar, menus, shared UI
+  services/        every database query
+  hooks/           data loading, section picker
+  lib/             pure helpers: labels, schedules, progress, CSV, login
+  context/         sign-in and theme
+supabase/
+  migrations/      schema, security rules, official SJC curriculum, enrollment and schedule rules
+  seed.sql         demo students, sections, schedules and grades (not real people)
+  tests/           database tests (in-memory Postgres, never touches Supabase)
+scripts/           one-off tools (create student logins)
 ```
 
 ## Run it locally
@@ -50,6 +60,7 @@ src/
    ```
 3. Set up the database once by following [supabase/README.md](supabase/README.md).
 4. `npm run dev`, then open http://localhost:5173
+5. `npm test` runs the unit tests.
 
 Sign-in uses Supabase Auth. An account gets its role from a matching email in the `secretaries` or `students` table.
 

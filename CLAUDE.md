@@ -1,4 +1,4 @@
-# CCS Monitor
+# CCS Subject Monitoring System
 
 Subject monitoring system for Saint Joseph College, College of Computer Studies (BSIT, BSCS, ACT).
 Tracks students, enrolment per section, grades, back subjects and prerequisite compliance.
@@ -10,9 +10,11 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 
 ## Commands
 - `npm run dev` — dev server on :5173. **Restart it after changing `tailwind.config.js`**: Tailwind doesn't reload its config, so new theme classes (`bg-surface`, `text-ink-3`, `border-line`…) silently don't apply and the UI looks flat/white.
+- Logged-in visual checks: demo passwords are in `.env.local` (gitignored; `DEMO_SECRETARY_PASSWORD`, `DEMO_STUDENT_PASSWORD`). Start a fresh `npx vite --port 5174 --strictPort`, sign in with playwright-core + Edge (`#email`, `#password`, submit, wait for `aside nav`), screenshot, then stop the 5174 server. Never print the passwords.
 - Visual check without Python: Edge is installed; `playwright-core` with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles (install it in the scratchpad, not the project).
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
+- `npm test` — Vitest: unit tests for `src/lib` and database tests in `supabase/tests` (PGlite builds an in-memory Postgres from the migrations + seed; never touches Supabase). Add a test when changing that logic or a migration.
 
 ## Roles (exactly two — no adviser/teacher/department roles)
 - `secretary` — full admin: add students, encode grades, edit section capacity, edit curriculum
@@ -20,33 +22,38 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Failed/INC/dropped info is shown ONLY inside a student's record and as a standing badge in the student list. No "needs attention"/concern/flag widgets on dashboards.
 
 ## Code layout
-- `src/services/*.js` — every Supabase query lives here (catalog, students, sections). Pages never call `supabase` directly except small one-off reads.
-- `src/hooks/useAsync.js` — `{ data, error, loading, reload }` for page data. `src/lib/format.js` — display helpers (labels, grades, schedules, CSV).
-- `src/context/AuthContext.jsx` — Supabase Auth; role comes from `secretaries` / `students` rows linked by `auth_user_id`. `ThemeContext.jsx` — light/dark via `data-theme` on `<html>`.
-- `src/components/AppShell.jsx` (sidebar nav, top bar), `TermCalendar.jsx` (term chip → month calendar from `school_terms` dates only; never invent events), `UserMenu.jsx` (top-right avatar menu: Profile, Settings, Appearance toggle, Sign out — keep it to items that fit this app), `ui.jsx` (Badge, PageHeader, Modal, Loading/Error/Empty states).
-- `src/lib/progress.js` — per-subject curriculum progress (passed / taking now / back subject / not taken), next-semester subjects, midterm early warnings. Pure functions; used by the student tracker and home page.
+Organized by feature: each area's page lives next to the dialogs and parts only it uses. Shared pieces live in `components/`, `hooks/`, `lib/`, `services/`.
+- `src/features/<area>/` — `account/` (Login, Profile, Settings), `dashboard/`, `students/` (Students list, StudentRecord, AddStudentModal, TermTable, GradeHistory), `sections/` (SectionsPage, EnrollBox, CapacityModal), `schedules/` (secretary SectionSchedulesPage, student StudentSchedulePage, WeekTimetable, WeekStrip, ClassTimes, MeetingModal), `curriculum/` (CurriculumPage, SubjectModal, DeleteSubjectModal), `home/` (StudentHomePage), `progress/` (Subject tracker). Pages are named `*Page.jsx`. Once a page passes ~200 lines, put page-only dialogs/parts in their own file in the same feature folder.
+- `src/components/` — app-wide: `AppShell` (sidebar, top bar), `UserMenu` (Profile, Settings, Appearance, Sign out — keep to items that fit this app), `TermCalendar` (term dates from `school_terms` only; never invent events), `SectionPicker` (program + year buttons), `ErrorBoundary`, `ui.jsx` (Badge, Avatar, GradeLegend, PageHeader, Modal, Loading/Error/Empty states).
+- `src/services/*.js` — every Supabase query (catalog, students, sections, account). Pages never call `supabase` directly.
+- `src/hooks/` — `useAsync` (`{ data, error, loading, reload }`), `useSectionPicker` (which program/year section a page is on).
+- `src/lib/` — pure functions, one topic per file: `format.js` (labels, grades, student type, subject kind), `schedule.js` (day names, times, meeting days; the only place day names are defined), `progress.js` (subject tracker, next semester, midterm warnings), `csv.js` (export), `login.js` (student-ID sign-in), `supabase.js` (client + `unwrap`).
+- `src/context/` — `AuthContext` (Supabase Auth; role from `secretaries` / `students` rows), `ThemeContext` (light/dark via `data-theme`).
 - Product direction: the student finds out first (tracker, midterm warnings, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
-- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
+- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/schedules` (section timetables, current semester only), `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
 
 ## Data rules
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` wherever grades appear for students (`warnings` prop where midterm warnings can show). Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` (one legend for midterm and final grades) wherever grades appear for students. Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
 - Grade colors mean the same thing everywhere: red = failing/failed, green = passed, yellow = close to the passing line only, grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend`.
 - UI reviews: Vercel's Web Interface Guidelines (https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) are a useful checklist; this file's conventions win where they differ (sentence case, not Title Case).
 - Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
-- Wording: say "Student type" (Student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
+- Wording: say "Student type" (Regular student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)
 - Schema, RLS and the official SJC curriculum are migrations in `supabase/migrations/`. Demo students/sections/schedules/grades are in `supabase/seed.sql`.
 - Curriculum is official data (sjc.edu.ph): never invent subjects, units or prerequisites. Only students, schedules and rooms may be made up.
 - Standing (regular/irregular) is computed by the `v_student_overview` view; grade → status is a DB trigger. Don't recompute these in React.
+- Multi-step writes go through database functions (one transaction): `add_student()`, `save_grades()` via `supabase.rpc`. Enrollment capacity and schedule clashes are enforced by a trigger (friendly error messages come back from the DB). Every grade change is logged in `grade_changes` / `v_grade_changes` (secretary only).
+- RLS helpers live in the `private` schema (`private.is_secretary()`, `private.current_student_id()`), always wrapped as `(select …)` in policies. Index every new foreign key.
 - Schema changes = a new migration file; never edit an applied one.
 
 ## Known state (Oct 31 2026)
 - Schema, curriculum and seed are LIVE on the Supabase project (migrations 0001–0004 recorded). Old prototype tables kept as `legacy_*` with RLS on (locked). The user is on Supabase's free plan: no dashboard backups, no Docker; keep data by renaming, not dropping.
-- React app rebuilt on the new schema with real Supabase Auth and both themes (Oct 31 2026). Demo logins: demo.secretary@ccs-monitor.test, demo.student@ccs-monitor.test (passwords set by the user, unknown to Claude).
+- React app rebuilt on the new schema with real Supabase Auth and both themes (Oct 31 2026). Sign-in: students use their **student ID** (login address `<id>@students.ccs-monitor.test`, created by `npm run accounts:students`, which needs `SUPABASE_SERVICE_ROLE_KEY` + `STUDENT_DEFAULT_PASSWORD` in `.env.local`); the secretary uses her email (demo.secretary@ccs-monitor.test). Demo student: 2025-0001.
+- Secretary can edit/delete curriculum subjects (delete blocked if scheduled or graded) and add/change/remove class times on Schedules; migration 0008 blocks section, room (gym is shared) and student time clashes. Students list has no "All years" tab; searching spans all years.
 - Writing to the live DB (db push, migrations) needs the user's explicit OK; the auto-mode classifier blocks it otherwise. Read-only `npx supabase db query --linked` checks are fine.
 - Prerequisites: not in the official source; `subject_prerequisites` is empty until the user provides the official list.
 

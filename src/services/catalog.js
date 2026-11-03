@@ -44,6 +44,17 @@ export async function addCurriculumSubject({ programCode, year_level, semester, 
   );
 }
 
+export const updateCurriculumSubject = (id, { year_level, semester, code, title, units, kind }) =>
+  unwrap(
+    supabase.from("curriculum_subjects")
+      .update({ year_level, semester, code: code.trim(), title: title.trim(), units, kind })
+      .eq("id", id)
+  );
+
+// Fails with code 23503 if the subject is scheduled or has grades (protects student records).
+export const deleteCurriculumSubject = (id) =>
+  unwrap(supabase.from("curriculum_subjects").delete().eq("id", id));
+
 // Number of class offerings in a term (sections × subjects)
 export const countOfferings = (termId) =>
   unwrap(
