@@ -1,7 +1,7 @@
 # CCS Subject Monitoring System
 
 Subject monitoring system for Saint Joseph College, College of Computer Studies (BSIT, BSCS, ACT).
-Tracks students, enrolment per section, grades, back subjects and prerequisite compliance.
+Tracks students, enrollment per section, grades, back subjects and prerequisite compliance.
 
 ## Stack
 - React 19 + Vite 8, React Router 7, Tailwind CSS 3 (config in `tailwind.config.js`), lucide-react icons
@@ -13,7 +13,7 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 - Logged-in visual checks: demo passwords are in `.env.local` (gitignored; `DEMO_SECRETARY_PASSWORD`, `DEMO_STUDENT_PASSWORD`). Start a fresh `npx vite --port 5174 --strictPort`, sign in with playwright-core + Edge (`#email`, `#password`, submit, wait for `aside nav`), screenshot, then stop the 5174 server. Never print the passwords.
 - Visual check without Python: Edge is installed; `playwright-core` (a project dev dependency) with `executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"` can screenshot pages and read computed styles.
 - `npm run check:mobile [baseUrl] [role]` — phone-width check (390×844) of the landing screen, sign-in form and every page for both roles: overflow, small tap targets, back button. Needs a running dev server (default :5173). Screenshots go to `%TEMP%\ccs-mobile-check`. Run it after any layout change.
-- Phone sign-in flow: phones open on a landing screen (brand panel + Sign in button); `/?signin` shows the form. PC shows both side by side.
+- Signed out: `/` is the public landing page (LandingPage: headline, who it is for, how it works; no data), `/signin` is the sign-in page (brand panel with the CCS quote “An open door to the limitless horizon.” on PC; form directly on phones). Any other path goes to `/signin`.
 - `npm run build` — production build (run before saying a change works)
 - `npm run lint`
 - `npm test` — Vitest: unit tests for `src/lib` and database tests in `supabase/tests` (PGlite builds an in-memory Postgres from the migrations + seed; never touches Supabase). Add a test when changing that logic or a migration.
@@ -25,23 +25,24 @@ Tracks students, enrolment per section, grades, back subjects and prerequisite c
 
 ## Code layout
 Organized by feature: each area's page lives next to the dialogs and parts only it uses. Shared pieces live in `components/`, `hooks/`, `lib/`, `services/`.
-- `src/features/<area>/` — `account/` (Login, Profile, Settings), `dashboard/`, `students/` (Students list, StudentRecord, AddStudentModal, TermTable, GradeHistory), `sections/` (SectionsPage, EnrollBox, CapacityModal), `schedules/` (secretary SectionSchedulesPage, student StudentSchedulePage, WeekTimetable, WeekStrip, ClassTimes, MeetingModal), `curriculum/` (CurriculumPage, SubjectModal, DeleteSubjectModal), `home/` (StudentHomePage), `progress/` (Subject tracker). Pages are named `*Page.jsx`. Once a page passes ~200 lines, put page-only dialogs/parts in their own file in the same feature folder.
-- `src/components/` — app-wide: `AppShell` (sidebar, top bar), `UserMenu` (Profile, Settings, Appearance, Sign out — keep to items that fit this app), `TermCalendar` (term dates from `school_terms` only; never invent events), `SectionPicker` (program + year buttons), `ErrorBoundary`, `ui.jsx` (Badge, Avatar, GradeLegend, PageHeader, Modal, Loading/Error/Empty states).
+- `src/features/<area>/` — `account/` (Login, Profile, Settings, Help center, Privacy), `dashboard/`, `students/` (Students list, StudentRecord, AddStudentModal, TermTable, GradeHistory), `sections/` (SectionsPage, EnrollBox, CapacityModal), `schedules/` (secretary SectionSchedulesPage, student StudentSchedulePage, WeekTimetable, WeekStrip, ClassTimes, MeetingModal), `curriculum/` (CurriculumPage, SubjectModal, DeleteSubjectModal), `landing/` (public LandingPage), `home/` (StudentHomePage), `progress/` (Subject tracker), `calendar/` (CalendarPage: full month view of school_terms dates). Pages are named `*Page.jsx`. Once a page passes ~200 lines, put page-only dialogs/parts in their own file in the same feature folder.
+- `src/components/` — app-wide: `AppShell` (sidebar, top bar), `UserMenu` (profile card, Settings, Appearance, Help center, Privacy, Sign out; the current page is tinted like the active sidebar link — keep to items that fit this app), sidebar collapses to an icon rail on desktop (button at the sidebar bottom, remembered per browser), `TermCalendar` (term dates from `school_terms` only; never invent events), `SectionPicker` (program + year buttons), `ErrorBoundary`, `ui.jsx` (Badge, Avatar, GradeLegend, PageHeader, Modal, Loading/Error/Empty states).
 - `src/services/*.js` — every Supabase query (catalog, students, sections, account). Pages never call `supabase` directly.
 - `src/hooks/` — `useAsync` (`{ data, error, loading, reload }`), `useSectionPicker` (which program/year section a page is on).
-- `src/lib/` — pure functions, one topic per file: `format.js` (labels, grades, student type, subject kind), `schedule.js` (day names, times, meeting days; the only place day names are defined), `progress.js` (subject tracker, next semester, midterm warnings), `csv.js` (export), `login.js` (student-ID sign-in), `supabase.js` (client + `unwrap`).
+- `src/lib/` — pure functions, one topic per file: `format.js` (labels, grades, student type, subject kind), `schedule.js` (day names, times, meeting days; the only place day names are defined), `progress.js` (subject tracker, next semester), `csv.js` (export), `calendar.js` (month grid, term ranges, days left), `login.js` (student-ID sign-in), `supabase.js` (client + `unwrap`).
 - `src/context/` — `AuthContext` (Supabase Auth; role from `secretaries` / `students` rows), `ThemeContext` (light/dark via `data-theme`).
-- Product direction: the student finds out first (tracker, midterm warnings, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
-- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/schedules` (section timetables, current semester only), `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password).
+- Product direction: the student finds out first (subject tracker, back subjects, retake hints) and then goes to the CCS office. Don't build secretary-side "notify the student" or flag widgets.
+- `src/App.jsx` — routes. Secretary: `/`, `/students`, `/students/:id`, `/sections`, `/schedules` (section timetables, current semester only), `/curriculum`. Student: `/`, `/schedule` (weekly timetable), `/progress` (Subject tracker), `/record`, `/curriculum`. Both: `/profile`, `/settings` (theme + change password), `/help` (role-aware FAQ), `/privacy` (what is stored, who can see it), `/calendar` (full calendar; opened from the term calendar popup or the account menu).
 
 ## Data rules
 - All counts, capacities, codes and sections come from Supabase via `src/services`. No hard-coded figures or seed data in React.
 - Normalize identifiers before comparing: `s.replace(/\s+/g, '').toLowerCase()` (subject codes, section names).
 - Admin controls are gated by role in the UI AND must be enforced by Supabase RLS, not just hidden.
-- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Midterm warnings: > 3.00 "Failing at midterm", 2.75–3.00 "Close to the passing line" (still passing). Show `<GradeLegend />` (one legend for midterm and final grades) wherever grades appear for students. Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
-- Grade colors mean the same thing everywhere: red = failing/failed, green = passed, yellow = close to the passing line only, grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend`.
+- Grade scale: 1.00 best … 3.00 is still passing, anything past 3.00 (5.00) fails; INC and Dropped are statuses, not grades. Show `<GradeLegend />` (one legend for midterm and final grades) wherever grades appear for students. Grade tables use separate Midterm and Final columns; never a combined "Grade / note".
+- Grade colors mean the same thing everywhere: red = failing/failed, green = passed, no yellow grade state (midterm warnings were removed in Nov 2026), grey = INC or Dropped. Always pair a color with words. Legends use the colored-line swatch from `GradeLegend` (bright `--mark-*` colors; text keeps the darker status colors). Legend rows are short: Passed 1.00–3.00 · Failed 5.00 · INC or Dropped.
 - UI reviews: Vercel's Web Interface Guidelines (https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) are a useful checklist; this file's conventions win where they differ (sentence case, not Title Case).
 - Every number on screen is computed from Supabase; label counts with their unit ("6 subjects", "17 units"), never a bare number.
+- Spelling: US English everywhere (enrollment, color, center, organize), in the app and in documents.
 - Wording: say "Student type" (Regular student / Transferee / Shiftee / Returnee), never "New student"; say "Room", not "Home room"; never show "Major" (CCS has no majors; subject kind is inferred from the code).
 
 ## Database (`supabase/`, see `supabase/README.md`)

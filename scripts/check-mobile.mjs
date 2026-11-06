@@ -1,4 +1,4 @@
-// Phone-width check. Opens the login page and every page for each role at 390×844,
+// Phone-width check. Opens the landing page, the sign-in page and every page for each role at 390×844,
 // reports sideways overflow, small tap targets (<36px) and the login field position,
 // saves a full-page screenshot per page, and exits 1 if anything needs fixing.
 //
@@ -37,31 +37,31 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH 
 const phone = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
 let problems = 0;
 
-// Phones open on a landing screen: its Sign in button must be on the first screen,
-// and tapping it must show the form near the top.
+// Signed-out visitors land on "/": a Sign in link must be on the first screen, the page must not
+// scroll sideways, and following it must open /signin with the form near the top.
 const lctx = await browser.newContext(phone);
 const lp = await lctx.newPage();
 await lp.goto(base + "/", { waitUntil: "networkidle" });
-await lp.screenshot({ path: join(outDir, "landing.png") });
+await lp.screenshot({ path: join(outDir, "landing.png"), fullPage: true });
 const landing = await lp.evaluate(() => {
-  const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim().startsWith("Sign in") && x.offsetParent);
-  const r = b?.getBoundingClientRect();
-  return { bottom: r ? Math.round(r.bottom) : -1, height: r ? Math.round(r.height) : 0, overflow: document.documentElement.scrollHeight - innerHeight };
+  const links = [...document.querySelectorAll("a, button")].filter((x) => x.textContent.trim().startsWith("Sign in") && x.offsetParent);
+  const r = links[0]?.getBoundingClientRect();
+  return { bottom: r ? Math.round(r.bottom) : -1, height: r ? Math.round(r.height) : 0, sideways: document.documentElement.scrollWidth - innerWidth };
 });
-const landingOk = landing.bottom > 0 && landing.bottom <= 844 && landing.height >= 44;
+const landingOk = landing.bottom > 0 && landing.bottom <= 844 && landing.height >= 40 && landing.sideways <= 0;
 if (!landingOk) problems++;
-console.log(`${landingOk ? "ok  " : "FIX "} landing    Sign in button ends ${landing.bottom}px down (screen 844px), ${landing.height}px tall, page scrolls ${Math.max(0, landing.overflow)}px`);
-if (landing.bottom > 0) await lp.getByRole("button", { name: "Sign in" }).first().click();
+console.log(`${landingOk ? "ok  " : "FIX "} landing    Sign in link ends ${landing.bottom}px down (screen 844px), ${landing.height}px tall, sideways scroll ${Math.max(0, landing.sideways)}px`);
+if (landing.bottom > 0) await lp.getByRole("link", { name: /^Sign in/ }).first().click();
 await lp.waitForSelector("#email", { state: "visible", timeout: 5000 }).catch(() => {});
 await lp.screenshot({ path: join(outDir, "login.png") });
 const formTop = Math.round(await lp.evaluate(() => { const e = document.querySelector("#email"); return e?.offsetParent ? e.getBoundingClientRect().top : -1; }));
-const loginOk = formTop >= 0 && formTop < 400;
+const loginOk = formTop >= 0 && formTop < 400 && lp.url().endsWith("/signin");
 if (!loginOk) problems++;
-console.log(`${loginOk ? "ok  " : "FIX "} login      email field starts ${formTop}px from the top (should be well under 400px)`);
+console.log(`${loginOk ? "ok  " : "FIX "} login      /signin form starts ${formTop}px from the top (should be well under 400px)`);
 await lp.goBack();
-const backOk = await lp.evaluate(() => !new URLSearchParams(location.search).has("signin"));
+const backOk = await lp.evaluate(() => location.pathname === "/");
 if (!backOk) problems++;
-console.log(`${backOk ? "ok  " : "FIX "} back       phone back button ${backOk ? "returns to the landing screen" : "does not return to the landing screen"}`);
+console.log(`${backOk ? "ok  " : "FIX "} back       phone back button ${backOk ? "returns to the landing page" : "does not return to the landing page"}`);
 await lctx.close();
 
 for (const [role, cfg] of Object.entries(roles)) {
@@ -69,7 +69,7 @@ for (const [role, cfg] of Object.entries(roles)) {
   if (!cfg.pw) { console.log(`skip ${role}: no password in .env.local`); continue; }
   const ctx = await browser.newContext(phone);
   const page = await ctx.newPage();
-  await page.goto(base + "/?signin", { waitUntil: "networkidle" });
+  await page.goto(base + "/signin", { waitUntil: "networkidle" });
   await page.fill("#email", cfg.id);
   await page.fill("#password", cfg.pw);
   await page.click('button[type="submit"]');

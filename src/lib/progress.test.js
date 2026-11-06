@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, midtermWarning, nextTermFor } from "./progress";
+import { buildProgress, nextTermFor } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -48,27 +48,6 @@ describe("buildProgress", () => {
     expect(p).toMatchObject({ unitsEarned: 3, totalUnits: 15, passedCount: 1 });
     expect(p.back).toHaveLength(2);
     expect(p.inProgress).toHaveLength(1);
-  });
-});
-
-describe("midtermWarning", () => {
-  it("passes quietly at 2.50 and better", () => {
-    expect(midtermWarning(1)).toBeNull();
-    expect(midtermWarning(2.5)).toBeNull();
-  });
-
-  it("warns at 2.75 – 3.00 (still passing)", () => {
-    expect(midtermWarning(2.75)?.level).toBe("warn");
-    expect(midtermWarning(3)?.level).toBe("warn");
-  });
-
-  it("flags anything past 3.00 as failing", () => {
-    expect(midtermWarning(5)?.level).toBe("bad");
-  });
-
-  it("ignores a missing grade", () => {
-    expect(midtermWarning(null)).toBeNull();
-    expect(midtermWarning(undefined)).toBeNull();
   });
 });
 

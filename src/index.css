@@ -35,6 +35,8 @@
   --bad: #b91c1c;    --bad-bg: #fef2f2;  --bad-line: #fecaca;
   --info: #1e40af;   --info-bg: #eff4ff;
   --neutral: #44403c; --neutral-bg: #f5f5f4;
+  /* Grade swatches (legend lines): bright, clearly different hues; always shown next to words */
+  --mark-ok: #16a34a; --mark-bad: #dc2626; --mark-none: #a8a29e;
 }
 
 [data-theme="dark"] {
@@ -66,6 +68,7 @@
   --bad: #fca5a5;    --bad-bg: rgba(239, 68, 68, 0.14);  --bad-line: rgba(239, 68, 68, 0.35);
   --info: #a5c4ff;   --info-bg: rgba(96, 140, 255, 0.16);
   --neutral: #b4bccd; --neutral-bg: rgba(148, 163, 184, 0.14);
+  --mark-ok: #4ade80; --mark-bad: #f87171; --mark-none: #7c869c;
 }
 
 @layer base {
@@ -157,6 +160,18 @@
   }
   .nav-link:hover { background: var(--hover); color: var(--ink); }
   .nav-link.active { background: var(--tint); color: var(--tint-ink); font-weight: 600; }
+  /* Sidebar labels fade (never rewrap) when the desktop sidebar collapses to an icon rail */
+  .nav-label { white-space: nowrap; transition: opacity .16s ease; }
+  .sidebar-collapsed .nav-label { opacity: 0; }
+  /* Landing page: the path-to-graduation tiles fade up once, in order */
+  .path-tile { animation: path-in .45s ease-out both; }
+  @keyframes path-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .path-tile { animation: none; } }
+  /* Account menu: short fade + lift when it opens */
+  .menu-in { animation: menu-in .14s ease-out; transform-origin: top right; }
+  @keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .menu-in { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .nav-label { transition: none; } }
 
   .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--track); }
   .seg button {

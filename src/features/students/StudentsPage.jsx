@@ -9,7 +9,11 @@ import { yearLabel } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
 import AddStudentModal from "./AddStudentModal";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZES = [10, 25, 50, 100];
+const SIZE_KEY = "ccs-students-per-page";
+function readPageSize() {
+  try { const n = Number(localStorage.getItem(SIZE_KEY)); return PAGE_SIZES.includes(n) ? n : 25; } catch { return 25; }
+}
 
 export default function Students() {
   const { term } = useOutletContext();
@@ -19,6 +23,12 @@ export default function Students() {
   const [q, setQ] = useState(params.get("q") || "");
   const [standing, setStanding] = useState("all");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(readPageSize);
+  const changePageSize = (n) => {
+    setPageSize(n);
+    setPage(0);
+    try { localStorage.setItem(SIZE_KEY, String(n)); } catch { /* not remembered in private mode */ }
+  };
   const [adding, setAdding] = useState(params.get("add") === "1");
   const [notice, setNotice] = useState("");
 
@@ -50,7 +60,7 @@ export default function Students() {
   // Searching looks across all years; otherwise one year level at a time.
   const searching = q.trim().length > 0;
   const rows = searching ? base : base.filter((s) => String(s.year_level) === year);
-  const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
   const tabs = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
 
   const exportCsv = () => downloadFile("ccs-students.csv", toCsv(rows, [
@@ -131,10 +141,14 @@ export default function Students() {
 
         {rows.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
-            <span>Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, rows.length)} of {rows.length}</span>
-            <div className="flex gap-2">
+            <span>Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, rows.length)} of {rows.length} students</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="per-page" className="text-[13px] text-ink-3">Rows</label>
+              <select id="per-page" className="field h-[34px] w-auto py-0 pr-8 text-[13px]" value={pageSize} onChange={(e) => changePageSize(Number(e.target.value))}>
+                {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
               <button className="btn btn-secondary btn-sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Previous</button>
-              <button className="btn btn-secondary btn-sm" disabled={(page + 1) * PAGE_SIZE >= rows.length} onClick={() => setPage((p) => p + 1)}>Next</button>
+              <button className="btn btn-secondary btn-sm" disabled={(page + 1) * pageSize >= rows.length} onClick={() => setPage((p) => p + 1)}>Next</button>
             </div>
           </div>
         )}

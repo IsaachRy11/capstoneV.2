@@ -59,39 +59,75 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-wrap items-start gap-6">
-        <section className="card min-w-0 flex-[999_1_560px] p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
+        <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
+          <div className="flex items-start justify-between gap-3 px-5 pb-4 pt-5">
             <div>
-              <h2 className="text-[17px] font-bold">Enrolment by year level</h2>
-              <p className="mt-1 text-[13px] text-ink-3">Students per program and year · seats filled in each block section</p>
+              <h2 className="text-[17px] font-bold">Enrollment by year level</h2>
+              <p className="mt-1 text-[13px] text-ink-3">Students in each program and year, and seats filled in their block section</p>
             </div>
             <Link to="/students" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Open registry</Link>
           </div>
           <div className="overflow-x-auto">
-            <div className="grid min-w-[560px] gap-2.5" style={{ gridTemplateColumns: `150px repeat(${maxYears}, minmax(96px, 1fr))` }}>
-              <span />
-              {Array.from({ length: maxYears }, (_, i) => <span key={i} className="pb-1 text-center text-[12px] font-semibold text-ink-3">{yearLabel(i + 1)}</span>)}
-              {programs.map((p) => (
-                <div key={p.code} className="contents">
-                  <div className="flex flex-col justify-center gap-0.5 text-[14px] font-bold">{p.code}<span className="text-[12px] font-medium text-ink-3">{p.name.replace(/^Bachelor of Science in |^Associate in /, "")}</span></div>
-                  {Array.from({ length: maxYears }, (_, i) => {
-                    const y = i + 1;
-                    if (y > p.duration_years) {
-                      return <div key={y} className="flex min-h-[76px] items-center justify-center rounded-[10px] border border-dashed border-line text-[12px] text-ink-3">{p.duration_years}-year program</div>;
-                    }
-                    const n = students.filter((s) => s.program_code === p.code && s.year_level === y).length;
-                    const sec = sectionFor(p.code, y);
-                    return (
-                      <Link key={y} to={`/students?year=${y}&program=${p.code}`} className="flex min-h-[76px] flex-col gap-2 rounded-[10px] border border-line-2 bg-surface-2 px-4 py-3.5 text-ink hover:border-accent">
-                        <span className="font-display text-[22px] font-bold">{n}</span>
-                        <div className="bar" aria-hidden="true"><span style={{ width: sec ? `${(sec.enrolled / sec.capacity) * 100}%` : "0%" }} /></div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+            <table className="w-full min-w-[640px] border-collapse text-left">
+              <thead>
+                <tr className="border-y border-line bg-surface-2 text-[12px] font-semibold text-ink-3">
+                  <th className="px-5 py-2.5 font-semibold">Program</th>
+                  {Array.from({ length: maxYears }, (_, i) => (
+                    <th key={i} className="px-3 py-2.5 font-semibold">
+                      <span className="block text-ink-2">{yearLabel(i + 1)}</span>
+                      <span className="block font-medium">{students.filter((s) => s.year_level === i + 1).length} students</span>
+                    </th>
+                  ))}
+                  <th className="px-5 py-2.5 text-right font-semibold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {programs.map((p) => (
+                  <tr key={p.code} className="border-b border-line-2 last:border-b-0">
+                    <th scope="row" className="px-5 py-3 align-top">
+                      <span className="block text-[14px] font-bold text-ink">{p.code}</span>
+                      <span className="block text-[12px] font-medium text-ink-3">{p.duration_years}-year program</span>
+                    </th>
+                    {Array.from({ length: maxYears }, (_, i) => {
+                      const y = i + 1;
+                      if (y > p.duration_years) {
+                        return <td key={y} className="px-3 py-3 align-top text-[13px] text-ink-3"><span className="inline-block pt-1">—</span></td>;
+                      }
+                      const n = students.filter((s) => s.program_code === p.code && s.year_level === y).length;
+                      const sec = sectionFor(p.code, y);
+                      const pct = sec ? Math.min(100, Math.round((sec.enrolled / sec.capacity) * 100)) : 0;
+                      return (
+                        <td key={y} className="px-1.5 py-1.5 align-top">
+                          <Link to={`/students?year=${y}&program=${p.code}`}
+                            aria-label={`${p.code} ${yearLabel(y)}: ${n} students${sec ? `, section ${sec.name}, ${sec.enrolled} of ${sec.capacity} seats filled` : ", no section this semester"}`}
+                            className="flex flex-col gap-1.5 rounded-lg px-1.5 py-1.5 text-ink transition-colors hover:bg-hover">
+                            <span className="flex items-baseline gap-1.5">
+                              <span className="font-display text-[20px] font-bold leading-none">{n}</span>
+                              <span className="text-[12px] text-ink-3">students</span>
+                            </span>
+                            {sec ? (
+                              <>
+                                <span className="text-[12px] font-medium text-ink-2">{sec.name}</span>
+                                <span className="flex items-center gap-2">
+                                  <span className="bar flex-1"><span style={{ width: `${pct}%` }} /></span>
+                                  <span className="whitespace-nowrap font-mono text-[12px] text-ink-3">{sec.enrolled}/{sec.capacity}</span>
+                                </span>
+                              </>
+                            ) : <span className="text-[12px] text-ink-3">No section yet</span>}
+                          </Link>
+                        </td>
+                      );
+                    })}
+                    <td className="px-5 py-3 text-right align-top">
+                      <span className="font-display text-[20px] font-bold leading-none text-ink">{byProgram(p.code).length}</span>
+                      <span className="block text-[12px] text-ink-3">students</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <p className="border-t border-line px-5 py-3 text-[12px] text-ink-3">Bar = seats filled in the year's block section. Select a cell to see those students.</p>
         </section>
 
         <section className="card flex-[1_1_300px] p-5">
@@ -115,17 +151,16 @@ export default function Dashboard() {
       </div>
 
       <section className="card overflow-hidden">
-        <SectionHeader title="Sections this semester" subtitle="Block sections, rooms and seats" action={<Link to="/sections" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
+        <SectionHeader title="Sections this semester" subtitle="Block sections and seats filled" action={<Link to="/sections" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th>Room</th><th className="w-[32%]">Seats</th></tr></thead>
+            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th className="w-[40%]">Seats</th></tr></thead>
             <tbody>
               {sections.map((s) => (
                 <tr key={s.id}>
                   <td className="font-semibold">{s.name}</td>
                   <td className="text-ink-2">{s.program_code}</td>
                   <td className="text-ink-2">{yearLabel(s.year_level)}</td>
-                  <td className="text-ink-2">{s.home_room || "TBA"}</td>
                   <td>
                     <div className="flex items-center gap-3">
                       <div className="bar flex-1"><span style={{ width: `${(s.enrolled / s.capacity) * 100}%` }} /></div>

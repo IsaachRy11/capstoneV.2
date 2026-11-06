@@ -28,19 +28,19 @@ export const StandingBadge = ({ standing }) =>
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
 // Grade color meanings, used everywhere: red = failing, green = passed,
-// yellow = close to the passing line (still passing), grey = INC or Dropped (no final grade).
+// grey = INC or Dropped (no final grade).
 // Each color always comes with words, so meaning never depends on color alone.
 const LEGEND = {
-  failing: { color: "var(--bad)", label: "Failed", detail: "5.00" },
-  passed: { color: "var(--ok)", label: "Passed", detail: "1.00 – 3.00 · 1.00 is the highest" },
-  close: { color: "var(--warn)", label: "Close to the passing line", detail: "2.75 – 3.00 · still passing" },
-  other: { color: "var(--ink-3)", label: "INC or Dropped", detail: "No final grade" },
+  passed: { color: "var(--mark-ok)", label: "Passed", detail: "1.00 – 3.00" },
+  failing: { color: "var(--mark-bad)", label: "Failed", detail: "5.00" },
+  other: { color: "var(--mark-none)", label: "INC or Dropped", detail: "No grade" },
 };
 
+// Swatches use the brighter --mark-* colors (distinct at a glance); text keeps the darker readable tones.
 function LegendRow({ color, label, detail }) {
   return (
     <li className="flex items-start gap-3">
-      <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
+      <span className="mt-[7px] h-1.5 w-8 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
       <span className="flex flex-col">
         <span className="text-[13px] font-semibold text-ink">{label}</span>
         <span className="text-[12px] text-ink-3">{detail}</span>
@@ -49,14 +49,14 @@ function LegendRow({ color, label, detail }) {
   );
 }
 
-// `compact`: vertical list for side panels. `warnings`: include the midterm warning color.
+// `compact`: vertical list for side panels.
 export function GradeLegend({ className = "", compact = false }) {
   if (compact) {
     return (
       <div className={className}>
         <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
         <ul className="flex flex-col gap-2.5">
-          {[LEGEND.passed, LEGEND.close, LEGEND.failing, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
+          {[LEGEND.passed, LEGEND.failing, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
         </ul>
       </div>
     );
@@ -66,7 +66,6 @@ export function GradeLegend({ className = "", compact = false }) {
     <div className={className} aria-label="What the grade colors mean">
       <ul className="grid gap-x-8 gap-y-2.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <LegendRow {...LEGEND.passed} />
-        <LegendRow {...LEGEND.close} />
         <LegendRow {...LEGEND.failing} />
         <LegendRow {...LEGEND.other} />
       </ul>

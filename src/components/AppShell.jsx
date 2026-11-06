@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Menu, Search, Users, X } from "lucide-react";
+import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Menu, PanelLeftClose, PanelLeftOpen, Search, Users, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -21,13 +21,17 @@ const PAGE_TITLES = [
   [/^\/schedule/, "Schedule"],
   [/^\/profile/, "Profile"],
   [/^\/settings/, "Settings"],
+  [/^\/help/, "Help center"],
+  [/^\/privacy/, "Privacy"],
+  [/^\/calendar/, "Calendar"],
 ];
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-5 pb-4 pt-5">
-      <SealLogo size={44} />
-      <div>
+    <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+      <span className="shrink-0"><SealLogo size={44} /></span>
+      {/* fixed width so the text never rewraps while the sidebar animates; it is clipped and faded instead */}
+      <div className="nav-label w-[190px] shrink-0 whitespace-normal">
         <div className="font-display text-[16px] font-bold leading-tight text-ink">CCS Subject Monitoring System</div>
         <div className="text-[13px] text-ink-3">Saint Joseph College</div>
       </div>
@@ -35,38 +39,60 @@ function Brand() {
   );
 }
 
-function Sidebar({ onNavigate }) {
+// Collapsed (desktop only): an icon rail. Only the width animates; labels fade but keep their place,
+// so icons never move and nothing reflows. The label stays in the DOM, so screen readers still read it.
+function NavItem({ to, end, icon: Icon, label, collapsed }) {
+  return (
+    <NavLink to={to} end={end} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`} title={collapsed ? label : undefined}>
+      <Icon size={20} className="shrink-0" aria-hidden="true" /><span className="nav-label">{label}</span>
+    </NavLink>
+  );
+}
+
+function Sidebar({ onNavigate, collapsed = false, onToggle }) {
   const { user } = useAuth();
   const isSecretary = user.role === "secretary";
-  const link = ({ isActive }) => `nav-link ${isActive ? "active" : ""}`;
 
   return (
-    <aside className="flex h-full w-[280px] flex-col border-r border-line bg-surface">
+    <aside className={`flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
       <Brand />
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-3" onClick={onNavigate}>
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 py-3" onClick={onNavigate}>
         {isSecretary ? (
           <>
-            <NavLink to="/" end className={link}><LayoutDashboard size={20} aria-hidden="true" />Dashboard</NavLink>
-            <div className="px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">Records</div>
-            <NavLink to="/students" className={link}>
-              <Users size={20} aria-hidden="true" />Students
-            </NavLink>
-            <NavLink to="/sections" className={link}><Layers size={20} aria-hidden="true" />Section allocations</NavLink>
-            <NavLink to="/schedules" className={link}><CalendarClock size={20} aria-hidden="true" />Schedules</NavLink>
-            <NavLink to="/curriculum" className={link}><BookOpen size={20} aria-hidden="true" />Curriculum</NavLink>
+            <NavItem collapsed={collapsed} to="/" end icon={LayoutDashboard} label="Dashboard" />
+            <div className="nav-label px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3" aria-hidden={collapsed}>Records</div>
+            <NavItem collapsed={collapsed} to="/students" icon={Users} label="Students" />
+            <NavItem collapsed={collapsed} to="/sections" icon={Layers} label="Section allocations" />
+            <NavItem collapsed={collapsed} to="/schedules" icon={CalendarClock} label="Schedules" />
+            <NavItem collapsed={collapsed} to="/curriculum" icon={BookOpen} label="Curriculum" />
           </>
         ) : (
           <>
-            <NavLink to="/" end className={link}><Home size={20} aria-hidden="true" />Home</NavLink>
-            <NavLink to="/schedule" className={link}><CalendarClock size={20} aria-hidden="true" />Schedule</NavLink>
-            <NavLink to="/progress" className={link}><ListChecks size={20} aria-hidden="true" />Subject tracker</NavLink>
-            <NavLink to="/record" className={link}><FileText size={20} aria-hidden="true" />Academic record</NavLink>
-            <NavLink to="/curriculum" className={link}><BookOpen size={20} aria-hidden="true" />Curriculum</NavLink>
+            <NavItem collapsed={collapsed} to="/" end icon={Home} label="Home" />
+            <NavItem collapsed={collapsed} to="/schedule" icon={CalendarClock} label="Schedule" />
+            <NavItem collapsed={collapsed} to="/progress" icon={ListChecks} label="Subject tracker" />
+            <NavItem collapsed={collapsed} to="/record" icon={FileText} label="Academic record" />
+            <NavItem collapsed={collapsed} to="/curriculum" icon={BookOpen} label="Curriculum" />
           </>
         )}
       </nav>
+      {/* Desktop only: collapse control sits at the bottom of the sidebar, not in the top bar */}
+      {onToggle && (
+        <div className="border-t border-line px-3 py-3">
+          <button type="button" className="nav-link w-full" onClick={onToggle} aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : undefined}>
+            {collapsed ? <PanelLeftOpen size={20} className="shrink-0" aria-hidden="true" /> : <PanelLeftClose size={20} className="shrink-0" aria-hidden="true" />}
+            <span className="nav-label">Collapse</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
+}
+
+const SIDEBAR_KEY = "ccs-sidebar";
+function readCollapsed() {
+  try { return localStorage.getItem(SIDEBAR_KEY) === "collapsed"; } catch { return false; }
 }
 
 export default function AppShell() {
@@ -74,6 +100,11 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const toggleSidebar = () => setCollapsed((c) => {
+    try { localStorage.setItem(SIDEBAR_KEY, c ? "open" : "collapsed"); } catch { /* private mode: just don't remember */ }
+    return !c;
+  });
   const [q, setQ] = useState("");
   const term = useAsync(getCurrentTerm, []);
 
@@ -89,7 +120,7 @@ export default function AppShell() {
     <div className="flex min-h-screen flex-col bg-ground">
     <div className="flex flex-1">
       <div className="no-print sticky top-0 hidden h-screen lg:block">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
       </div>
       {menuOpen && (
         <div className="no-print fixed inset-0 z-40 flex lg:hidden">
@@ -100,8 +131,7 @@ export default function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print flex min-h-16 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-8">
-          <button className="icon-btn lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
-          <div className="flex-1 font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
+          <button className="icon-btn lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>          <div className="flex-1 font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
             <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
               <label htmlFor="global-search" className="sr-only">Search students</label>

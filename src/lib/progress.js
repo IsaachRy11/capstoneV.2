@@ -71,12 +71,3 @@ export function nextTermFor(term, yearLevel, durationYears) {
   return next.year > durationYears ? null : next;
 }
 
-// Midterm early warning. At SJC 1.00–3.00 passes and anything past 3.00 (5.00) fails.
-// 2.75–3.00 still passes but is flagged so the student can act before finals.
-export function midtermWarning(grade) {
-  if (grade === null || grade === undefined) return null;
-  const g = Number(grade);
-  if (g > 3) return { level: "bad", text: "Failing at midterm" };
-  if (g >= 2.75) return { level: "warn", text: "Close to the passing line" };
-  return null;
-}

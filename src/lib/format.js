@@ -12,7 +12,7 @@ export const formatGrade = (g) => (g === null || g === undefined ? "—" : Numbe
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 
 export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "INC", dropped: "Dropped" };
-// Yellow is reserved for "close to the passing line"; INC and Dropped are grey (no final grade).
+// INC and Dropped are grey (no final grade).
 export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
 // admission_type values shown as "Student type". "new" is shown as "Regular student" (every year, not just 1st).
