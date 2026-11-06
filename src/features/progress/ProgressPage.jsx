@@ -7,7 +7,7 @@ import { getHistory, getStudent } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
 import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
-import { SUBJECT_STATE, buildProgress, midtermWarning, nextTermFor } from "../../lib/progress";
+import { SUBJECT_STATE, buildProgress, nextTermFor } from "../../lib/progress";
 
 const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Taking now"], ["back", "Back subjects"], ["not_taken", "Not yet taken"]];
 
@@ -26,12 +26,8 @@ const dash = <span className="text-ink-3">—</span>;
 
 function MidtermCell({ s }) {
   if (s.midterm === null) return dash;
-  const w = s.state === "in_progress" ? midtermWarning(s.midterm) : null;
   return (
-    <span className="inline-flex flex-wrap items-center justify-center gap-2">
-      <span className={`font-mono font-semibold ${Number(s.midterm) > 3 ? "text-bad" : ""}`}>{formatGrade(s.midterm)}</span>
-      {w && <Badge tone={w.level}>{w.text}</Badge>}
-    </span>
+    <span className={`font-mono font-semibold ${Number(s.midterm) > 3 ? "text-bad" : ""}`}>{formatGrade(s.midterm)}</span>
   );
 }
 

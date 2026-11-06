@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Calendar, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useAsync } from "../hooks/useAsync";
 import { getTerms } from "../services/catalog";
 import { semesterLabel, termLabel } from "../lib/format";
+import { WEEKDAYS, daysLeft as daysLeftIn, monthCells, sameDay, termOn as termOnDay, termRanges } from "../lib/calendar";
 
 // Top-bar chip showing the current term; opens a month calendar with every term's real dates
-// (school_terms.starts_on / ends_on). No invented events.
+// (school_terms.starts_on / ends_on). No invented events. "Open full calendar" goes to /calendar.
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const parseDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
-const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const fmt = (d, opts) => d.toLocaleDateString("en-PH", opts);
 
 export default function TermCalendar({ term }) {
@@ -28,18 +27,12 @@ export default function TermCalendar({ term }) {
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  const ranges = (terms.data || [])
-    .filter((t) => t.starts_on && t.ends_on)
-    .map((t) => ({ ...t, start: parseDate(t.starts_on), end: parseDate(t.ends_on) }));
-  const termOn = (d) => ranges.find((r) => d >= r.start && d <= r.end);
-
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const cells = Array.from({ length: 42 }, (_, i) => new Date(first.getFullYear(), first.getMonth(), i - first.getDay() + 1));
-  const lastRow = cells.slice(35).every((d) => d.getMonth() !== month.getMonth());
-  const shown = lastRow ? cells.slice(0, 35) : cells;
+  const ranges = termRanges(terms.data || []);
+  const termOn = (d) => termOnDay(ranges, d);
+  const shown = monthCells(month);
 
   const current = ranges.find((r) => r.is_current);
-  const daysLeft = current ? Math.max(0, Math.ceil((current.end - today) / 86400000)) : null;
+  const daysLeft = current ? daysLeftIn(current, today) : null;
 
   if (!term) return null;
   return (
@@ -107,6 +100,9 @@ export default function TermCalendar({ term }) {
             </ul>
           )}
           {daysLeft !== null && <p className="mt-2 px-2 text-[12px] text-ink-3">{daysLeft === 0 ? "This semester ends today." : `${daysLeft} days left in this semester.`}</p>}
+          <Link to="/calendar" onClick={() => setOpen(false)} className="btn btn-secondary mt-3 w-full">
+            <Maximize2 size={15} aria-hidden="true" />Open full calendar
+          </Link>
         </div>
       )}
     </div>

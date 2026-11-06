@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -19,15 +19,6 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const passwordRef = useRef(null);
-  const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Phones show a landing screen first; "?signin" opens the form (PC always shows both side by side).
-  // A sign-in problem keeps the form open so its message is visible.
-  const formOpen = params.has("signin") || status === "unlinked" || status === "error";
-  const openForm = () => navigate({ search: "?signin" }, { state: { fromLanding: true } });
-  const backToLanding = () => (location.state?.fromLanding ? navigate(-1) : setParams({}, { replace: true }));
   const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
 
   const submit = async (e) => {
@@ -45,44 +36,38 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen flex-wrap bg-ground">
-      {/* Brand panel: the left half on PC, the whole landing screen on phones */}
-      <section className={`${formOpen ? "hidden" : "flex"} min-h-[100svh] flex-[1_1_480px] flex-col justify-between gap-10 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:p-14 lg:flex lg:min-h-[320px] lg:gap-12`}
+      {/* Brand panel (PC only): the college's own words, set large */}
+      <section className="hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 p-14 lg:flex"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-[16px] font-bold">CCS Subject Monitoring System</div>
-            <div className="text-[13px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College</div>
-          </div>
-          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg lg:hidden" style={{ color: "var(--panel-ink)" }} onClick={toggleTheme} aria-label={themeLabel}>
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-        </div>
-        <div className="flex max-w-[520px] flex-col gap-4 sm:gap-5">
-          <div className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--panel-soft)" }}>College of Computer Studies</div>
-          <h1 className="text-[34px] font-extrabold leading-[1.12] tracking-tight sm:text-[44px]" style={{ color: "var(--panel-ink)" }}>Every subject, section and standing in one place.</h1>
-          <p className="text-[16px] leading-relaxed sm:text-[17px]" style={{ color: "var(--panel-soft)" }}>Track enrolment, grades and academic standing for BSIT, BSCS and ACT students, from first year to graduation.</p>
-        </div>
-        {/* Phones: the way in, at thumb height */}
-        <div className="flex flex-col gap-3 lg:hidden">
-          <button onClick={openForm} className="btn h-12 w-full text-[15px]" style={{ background: "var(--panel-ink)", color: "var(--panel)" }}>
-            Sign in <ArrowRight size={17} aria-hidden="true" />
-          </button>
-          <p className="text-center text-[13px]" style={{ color: "var(--panel-soft)" }}>Students use their student ID. Staff use their email.</p>
-        </div>
-        <div className="hidden flex-wrap items-center justify-between gap-4 text-[13px] lg:flex" style={{ color: "var(--panel-soft)" }}>
+          <span className="min-w-0">
+            <span className="block font-display text-[16px] font-bold">CCS Subject Monitoring System</span>
+            <span className="block text-[13px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College</span>
+          </span>
+        </Link>
+        <figure className="flex max-w-[540px] flex-col gap-6">
+          <span className="font-display text-[96px] font-extrabold leading-[0.6]" style={{ color: "var(--panel-soft)", opacity: 0.55 }} aria-hidden="true">&ldquo;</span>
+          <blockquote>
+            <p className="text-balance font-display text-[44px] font-extrabold leading-[1.1] tracking-tight" style={{ color: "var(--panel-ink)" }}>
+              An open door to the limitless horizon.
+            </p>
+          </blockquote>
+          <figcaption className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--panel-soft)" }}>College of Computer Studies</figcaption>
+        </figure>
+        <div className="flex flex-wrap items-center justify-between gap-4 text-[13px]" style={{ color: "var(--panel-soft)" }}>
           <span className="font-mono tracking-wide">CODE · INNOVATE · TRANSFORM</span>
           <span>Maasin City, Southern Leyte</span>
         </div>
       </section>
 
-      <section className={`${formOpen ? "flex" : "hidden"} relative min-h-[100svh] flex-[1_1_480px] flex-col lg:flex lg:min-h-0`}>
-        {/* Phones: slim brand bar with a way back to the landing screen */}
+      <section className="relative flex min-h-[100svh] flex-[1_1_480px] flex-col lg:min-h-0">
+        {/* Phones: slim brand bar with a way back to the landing page */}
         <div className="flex items-center gap-2 px-3 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden"
           style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
-          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ color: "var(--panel-ink)" }} onClick={backToLanding} aria-label="Back">
+          <Link to="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="Back to home">
             <ArrowLeft size={20} />
-          </button>
+          </Link>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={36} /></span>
           <div className="min-w-0 flex-1 pl-1">
             <div className="font-display text-[15px] font-bold leading-tight">CCS Subject Monitoring System</div>
@@ -92,6 +77,9 @@ export default function Login() {
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
+        <Link to="/" className="absolute left-5 top-4 hidden min-h-10 items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink lg:inline-flex">
+          <ArrowLeft size={16} aria-hidden="true" />Back to home
+        </Link>
         <button className="icon-btn absolute right-4 top-4 hidden lg:inline-flex" onClick={toggleTheme} aria-label={themeLabel}>
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>

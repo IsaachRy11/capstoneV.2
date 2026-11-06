@@ -33,7 +33,7 @@ src/
     account/       sign in, profile, settings
     dashboard/     secretary overview
     students/      student list, student record (grades, grade history)
-    sections/      section allocations (class lists, enrolment, capacity)
+    sections/      section allocations (class lists, enrollment, capacity)
     schedules/     weekly timetables, class-time editing
     curriculum/    official curriculum per program
     home/          student home

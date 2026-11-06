@@ -1,11 +1,10 @@
 import { Link, useOutletContext } from "react-router-dom";
 import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
-import { midtermWarning } from "../../lib/progress";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getSectionInfo, getStudent, getTermClasses } from "../../services/students";
-import { Badge, ErrorState, GradeLegend, LoadingState, StandingBadge, SectionHeader } from "../../components/ui";
-import { formatGrade, sumUnits, yearLabel } from "../../lib/format";
+import { getDeficiencies, getStudent, getTermClasses } from "../../services/students";
+import { ErrorState, LoadingState, StandingBadge, SectionHeader } from "../../components/ui";
+import { sumUnits, yearLabel } from "../../lib/format";
 import { scheduleLines } from "../../lib/schedule";
 
 export default function StudentHome() {
@@ -14,24 +13,19 @@ export default function StudentHome() {
 
   const { data, error, loading, reload } = useAsync(async () => {
     const student = await getStudent(user.studentId);
-    const [classes, section, deficiencies] = await Promise.all([
+    const [classes, deficiencies] = await Promise.all([
       term ? getTermClasses(user.studentId, term.id) : [],
-      getSectionInfo(student?.section_id),
       getDeficiencies(user.studentId),
     ]);
-    return { student, classes, section, deficiencies };
+    return { student, classes, deficiencies };
   }, [user.studentId, term?.id]);
 
   if (loading || termLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const { student, classes, section, deficiencies } = data;
+  const { student, classes, deficiencies } = data;
   const active = classes.filter((c) => c.status !== "dropped");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
-  const warnings = active
-    .map((c) => ({ c, w: midtermWarning(c.midterm_grade) }))
-    .filter((x) => x.w)
-    .sort((a, b) => (a.w.level === "bad" ? -1 : 1) - (b.w.level === "bad" ? -1 : 1));
 
   return (
     <>
@@ -48,7 +42,6 @@ export default function StudentHome() {
           {[
             ["Year level", yearLabel(student.year_level)],
             ["Section", student.section_name || "Not registered"],
-            ["Room", section?.rooms?.name || "TBA"],
             ["Subjects this term", `${active.length} subjects`],
             ["Units this term", `${units} units`],
           ].map(([k, v]) => (
@@ -56,33 +49,6 @@ export default function StudentHome() {
           ))}
         </dl>
       </section>
-
-      {warnings.length > 0 && (
-        <section role="alert" className="card flex flex-wrap gap-x-8 gap-y-5 px-5 py-5">
-          <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
-            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
-            <div className="flex min-w-0 flex-col gap-3">
-              <h2 className="text-[16px] font-bold text-ink">Heads up on your midterm grades</h2>
-              <ul className="flex flex-col gap-2.5">
-                {warnings.map(({ c, w }) => (
-                  <li key={c.id} className="flex items-start gap-3">
-                    <span className="mt-[9px] h-1 w-7 shrink-0 rounded-full" style={{ background: w.level === "bad" ? "var(--bad)" : "var(--warn)" }} aria-hidden="true" />
-                    <span className="min-w-0 text-[14px] text-ink-2">
-                      <span className="font-mono text-ink">{c.class_offerings.curriculum_subjects.code}</span> {c.class_offerings.curriculum_subjects.title}
-                      <span className="block">
-                        Midterm <span className={`font-mono font-semibold ${w.level === "bad" ? "text-bad" : "text-warn"}`}>{formatGrade(c.midterm_grade)}</span>
-                        <span className="text-ink-3"> · {w.text.toLowerCase()}</span>
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-[13px] text-ink-3">There's still time before finals. Talk to your instructor about what you can do to pull it up.</p>
-            </div>
-          </div>
-          <GradeLegend compact className="flex-[1_1_240px] border-t border-line pt-5 sm:flex-[0_1_260px] sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0" />
-        </section>
-      )}
 
       <div className="flex flex-wrap items-start gap-5">
         <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
@@ -92,12 +58,11 @@ export default function StudentHome() {
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>Subject</th><th>Schedule</th><th className="!text-center">Units</th><th className="!text-center">Midterm</th></tr></thead>
+                <thead><tr><th>Subject</th><th>Schedule</th><th className="!text-center">Units</th></tr></thead>
                 <tbody>
                   {classes.map((c) => {
                     const s = c.class_offerings.curriculum_subjects;
                     const lines = scheduleLines(c.class_offerings.class_meetings);
-                    const w = midtermWarning(c.midterm_grade);
                     return (
                       <tr key={c.id}>
                         <td className="min-w-[200px]">
@@ -113,18 +78,11 @@ export default function StudentHome() {
                           )) : <span className="text-ink-3">To be arranged</span>}
                         </td>
                         <td className="num">{Number(s.units)}</td>
-                        <td className="text-center">
-                          <span className={`font-mono text-[13px] font-semibold ${w?.level === "bad" ? "text-bad" : w ? "text-warn" : ""}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-                            {formatGrade(c.midterm_grade)}
-                          </span>
-                          {w && <span className="mt-1 block"><Badge tone={w.level}>{w.text}</Badge></span>}
-                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              <GradeLegend className="border-t border-line px-5 py-3.5" />
             </div>
           )}
         </section>

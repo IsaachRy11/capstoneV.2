@@ -5,6 +5,7 @@ import AppShell from "./components/AppShell";
 import { LoadingState } from "./components/ui";
 
 const Login = lazy(() => import("./features/account/LoginPage"));
+const Landing = lazy(() => import("./features/landing/LandingPage"));
 const Dashboard = lazy(() => import("./features/dashboard/DashboardPage"));
 const StudentHome = lazy(() => import("./features/home/StudentHomePage"));
 const Students = lazy(() => import("./features/students/StudentsPage"));
@@ -16,6 +17,9 @@ const Progress = lazy(() => import("./features/progress/ProgressPage"));
 const Schedule = lazy(() => import("./features/schedules/StudentSchedulePage"));
 const SectionSchedules = lazy(() => import("./features/schedules/SectionSchedulesPage"));
 const Settings = lazy(() => import("./features/account/SettingsPage"));
+const Help = lazy(() => import("./features/account/HelpPage"));
+const Privacy = lazy(() => import("./features/account/PrivacyPage"));
+const CalendarPage = lazy(() => import("./features/calendar/CalendarPage"));
 
 function SecretaryOnly({ children }) {
   const { user } = useAuth();
@@ -29,9 +33,14 @@ export default function App() {
 
   return (
     <Suspense fallback={<LoadingState />}>
-      {status !== "ready" ? (
+      {status === "unlinked" || status === "error" ? (
+        <Login />
+      ) : status !== "ready" ? (
+        // Signed out: public landing page, sign-in page; anything else goes to sign-in.
         <Routes>
-          <Route path="*" element={<Login />} />
+          <Route index element={<Landing />} />
+          <Route path="signin" element={<Login />} />
+          <Route path="*" element={<Navigate to="/signin" replace />} />
         </Routes>
       ) : (
         <Routes>
@@ -47,6 +56,9 @@ export default function App() {
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="help" element={<Help />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
