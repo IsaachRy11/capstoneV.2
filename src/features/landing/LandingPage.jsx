@@ -11,7 +11,7 @@ import { SealLogo } from "../../components/ui";
 
 const FOR_STUDENTS = [
   { icon: ListChecks, title: "Subject tracker", text: "See what you've passed, what you're taking and what's left." },
-  { icon: AlertTriangle, title: "Back subjects", text: "See any failed or incomplete subject, and when it's offered again." },
+  { icon: AlertTriangle, title: "Failed subjects", text: "See any failed or incomplete subject, and when it's offered again." },
   { icon: CalendarClock, title: "Weekly schedule", text: "Your classes by day, time and room." },
   { icon: FileText, title: "Academic record", text: "Every midterm and final grade, term by term." },
 ];
@@ -24,7 +24,7 @@ const FOR_OFFICE = [
 const STEPS = [
   { title: "Sign in with your student ID", text: "Staff sign in with their email." },
   { title: "Check your subjects and grades", text: "Your schedule, grades and standing in one place." },
-  { title: "Spot a back subject? Act early", text: "Visit the CCS office while there's still time to plan." },
+  { title: "Spot a failed subject? Act early", text: "Visit the CCS office while there's still time to plan." },
 ];
 
 // The hero's picture: four years of subjects, colored the way the app colors grades.

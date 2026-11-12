@@ -2,14 +2,14 @@
 // Standing (regular/irregular) still comes from the database view; this only describes each subject.
 
 // passed      — passed at least once
-// in_progress — enrolled this term and not yet passed
-// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies)
-// not_taken   — never enrolled
+// in_progress — enrolled this term and not yet passed (shown as "Enrolled")
+// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies); shown as "Failed subjects"
+// not_taken   — never enrolled (shown as "Not yet enrolled")
 export const SUBJECT_STATE = {
   passed: { label: "Passed", tone: "ok" },
-  in_progress: { label: "Taking now", tone: "info" },
-  back: { label: "Back subject", tone: "bad" },
-  not_taken: { label: "Not yet taken", tone: "neutral" },
+  in_progress: { label: "Enrolled", tone: "info" },
+  back: { label: "Failed", tone: "bad" },
+  not_taken: { label: "Not yet enrolled", tone: "neutral" },
 };
 
 const BACK_LABEL = { failed: "Failed", incomplete: "INC", dropped: "Dropped" };

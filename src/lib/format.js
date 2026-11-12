@@ -16,6 +16,11 @@ export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "F
 export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
 // admission_type values shown as "Student type". "new" is shown as "Regular student" (every year, not just 1st).
+// "BSIT 1-T" -> "T" (the block section letter)
+export const sectionLetter = (name) => String(name).split("-").pop();
+
+// students.status: only "active" students can be enrolled in classes.
+export const STUDENT_STATUS = { active: "Active", inactive: "Inactive", graduated: "Graduated", dropped: "Left the college" };
 export const STUDENT_TYPE = { new: "Regular student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
 
 export const initials = (name = "") =>

@@ -40,6 +40,10 @@ export const getDeficiencies = (id) =>
 export const getGradeChanges = (id) =>
   unwrap(supabase.from("v_grade_changes").select("*").eq("student_id", id).order("changed_at", { ascending: false }).limit(50));
 
+// Secretary only (row-level security). Only "active" students can be enrolled in classes.
+export const updateStudentStatus = (id, status) =>
+  unwrap(supabase.from("students").update({ status }).eq("id", id));
+
 // Saves several grades in ONE database transaction: all succeed or none do.
 // changes: [{ enrollmentId, midterm, final, status: "auto" | "incomplete" | "dropped" }]
 export const saveGrades = (changes) =>
@@ -51,12 +55,16 @@ export const saveGrades = (changes) =>
 
 // Creates the student, registers them in their block section for the current term and enrolls
 // them in that section's classes, all in one database transaction (public.add_student).
-export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }) {
-  const sectionName = await unwrap(
-    supabase.rpc("add_student", {
-      p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
-      p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
-    })
-  );
-  return { sectionName };
+export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type, sectionId = null }) {
+  const params = {
+    p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
+    p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
+  };
+  // Sent only when a section was picked, so "Automatic" also works on a database that predates migration 0010.
+  if (sectionId) params.p_section_id = sectionId;
+  const sectionName = await unwrap(supabase.rpc("add_student", params));
+  // The sign-in account is made on the server (it needs a secret key). If that fails the student still exists.
+  const { data, error } = await supabase.functions.invoke("create-student-login", { body: { studentId: id } });
+  const loginCreated = !error && data?.ok === true;
+  return { sectionName, loginCreated };
 }

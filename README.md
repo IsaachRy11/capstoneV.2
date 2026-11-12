@@ -44,7 +44,7 @@ src/
   lib/             pure helpers: labels, schedules, progress, CSV, login
   context/         sign-in and theme
 supabase/
-  migrations/      schema, security rules, official SJC curriculum, enrollment and schedule rules
+  migrations/      schema, security rules, official SJC curriculum, enrollment, schedule and state rules
   seed.sql         demo students, sections, schedules and grades (not real people)
   tests/           database tests (in-memory Postgres, never touches Supabase)
 scripts/           one-off tools (create student logins)

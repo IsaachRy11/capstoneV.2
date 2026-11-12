@@ -1,10 +1,11 @@
 import { Link, useParams } from "react-router-dom";
 import { AlertTriangle, Printer } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getGradeChanges, getHistory, getStudent } from "../../services/students";
-import { Avatar, ErrorState, GradeLegend, LoadingState, StandingBadge } from "../../components/ui";
-import { STUDENT_TYPE, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { getDeficiencies, getGradeChanges, getHistory, getStudent, updateStudentStatus } from "../../services/students";
+import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StandingBadge } from "../../components/ui";
+import { STUDENT_STATUS, STUDENT_TYPE, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 
@@ -13,6 +14,8 @@ export default function StudentRecord() {
   const params = useParams();
   const id = params.id || user.studentId;
   const isSecretary = user.role === "secretary";
+  const [statusError, setStatusError] = useState("");
+  const [statusBusy, setStatusBusy] = useState(false);
 
   const { data, error, loading, reload } = useAsync(async () => {
     const [student, history, deficiencies, changes] = await Promise.all([
@@ -28,6 +31,18 @@ export default function StudentRecord() {
   }
 
   const { student, history, deficiencies, changes } = data;
+  const changeStatus = async (status) => {
+    setStatusError("");
+    setStatusBusy(true);
+    try {
+      await updateStudentStatus(student.id, status);
+      reload();
+    } catch (err) {
+      setStatusError(err.message);
+    } finally {
+      setStatusBusy(false);
+    }
+  };
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
   const current = history.filter((r) => r.is_current && r.status !== "dropped");
@@ -36,9 +51,12 @@ export default function StudentRecord() {
   return (
     <>
       {isSecretary && (
-        <nav aria-label="Breadcrumb" className="no-print -mb-2 text-[14px] text-ink-3">
+        <div className="no-print -mb-2 flex flex-wrap items-center gap-x-4">
+        <BackButton fallback="/students" />
+        <nav aria-label="Breadcrumb" className="text-[14px] text-ink-3">
           <Link to="/students" className="inline-flex min-h-10 items-center text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
         </nav>
+        </div>
       )}
 
       <section className="card flex flex-col gap-6 p-6">
@@ -64,7 +82,21 @@ export default function StudentRecord() {
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
           ))}
-          <div><dt className="text-[12px] font-semibold text-ink-3">Back subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length}</dd></div>
+          <div>
+            <dt className="text-[12px] font-semibold text-ink-3"><label htmlFor="student-status">Student status</label></dt>
+            <dd className="mt-1 text-[15px] font-semibold text-ink">
+              {isSecretary ? (
+                <>
+                  <select id="student-status" className="field no-print h-9 w-auto min-w-[150px] py-0 text-[14px]" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
+                    {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  </select>
+                  <span className="hidden print:inline">{STUDENT_STATUS[student.status]}</span>
+                  {statusError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={statusError} /></div>}
+                </>
+              ) : STUDENT_STATUS[student.status]}
+            </dd>
+          </div>
+          <div><dt className="text-[12px] font-semibold text-ink-3">Failed subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
         </dl>
       </section>
 
@@ -72,7 +104,7 @@ export default function StudentRecord() {
         <div role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
           <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
           <div className="flex flex-col gap-1">
-            <div className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 back subject" : `${deficiencies.length} back subjects`} to resolve</div>
+            <div className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`} to resolve</div>
             <ul className="text-[14px] leading-relaxed text-ink-2">
               {deficiencies.map((d) => (
                 <li key={d.enrollment_id}>

@@ -1,6 +1,22 @@
 import { useEffect, useRef } from "react";
-import { AlertTriangle, Loader2, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { AlertTriangle, ArrowLeft, Loader2, X } from "lucide-react";
 import { STATUS_LABEL, STATUS_TONE, colorIndex, initials } from "../lib/format";
+
+// "Back" for pages you reach by clicking. With `to` it always goes there (a detail view back to its list).
+// Without it, it steps back in history, or goes to `fallback` when the page was opened directly.
+export function BackButton({ to, fallback = "/", label = "Back" }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const cls = "no-print -ml-2 inline-flex min-h-10 w-fit items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink";
+  const icon = <ArrowLeft size={16} aria-hidden="true" />;
+  if (to) return <Link to={to} className={cls}>{icon}{label}</Link>;
+  return (
+    <button type="button" className={cls} onClick={() => (location.key === "default" ? navigate(fallback) : navigate(-1))}>
+      {icon}{label}
+    </button>
+  );
+}
 
 // Profile photo if there is one, otherwise initials on a colored circle. `size` in px.
 export function Avatar({ name, url, size = 40, className = "" }) {

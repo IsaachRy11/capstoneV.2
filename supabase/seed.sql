@@ -1,7 +1,12 @@
 -- CCS Monitor · demo data (NOT official): students, sections, schedules, grades.
 -- Runs after the migrations (`supabase db reset` loads it automatically).
 -- Subjects always come from the official curriculum tables; nothing academic is invented here.
--- Deterministic: the same seed produces the same students and grades every time.
+-- Safe to run again: it only adds what is missing (new terms, rooms, and any block section that doesn't
+-- exist yet this semester, with its students). That is how new sections are added to a live project
+-- without touching the students already there.
+-- Sections per program year: 1st year S T U V · 2nd year S T U · 3rd and 4th year S T (ACT stops at 2nd year).
+-- Each section gets 10 students: a shiftee, a transferee, a returnee, two with an INC or dropped class,
+-- and one transferee with a failed subject, so every kind of student has examples.
 
 select setseed(0.4217);
 
@@ -13,7 +18,8 @@ select sy, sem,
        (y = 2026 and sem = 1)
 from generate_series(2023, 2026) as y,
      lateral (select y || '-' || (y + 1) as sy) s,
-     generate_series(1, 2) as sem;
+     generate_series(1, 2) as sem
+on conflict do nothing;
 
 -- ─── Rooms (made up) ──────────────────────────────────────────────────────
 insert into public.rooms (name, kind, capacity) values
@@ -23,13 +29,23 @@ insert into public.rooms (name, kind, capacity) values
   ('Room 301',  'lecture',    45), ('Room 302',  'lecture',    45),
   ('Room 303',  'lecture',    45), ('Room 304',  'lecture',    45),
   ('Room 305',  'lecture',    45), ('Room 306',  'lecture',    45),
-  ('Gymnasium', 'lecture',   120);
+  ('CCS Lab 7', 'laboratory', 40), ('CCS Lab 8', 'laboratory', 40),
+  ('CCS Lab 9', 'laboratory', 40), ('CCS Lab 10', 'laboratory', 40),
+  ('CCS Lab 11', 'laboratory', 40), ('CCS Lab 12', 'laboratory', 40),
+  ('CCS Lab 13', 'laboratory', 40), ('CCS Lab 14', 'laboratory', 40),
+  ('CCS Lab 15', 'laboratory', 40), ('CCS Lab 16', 'laboratory', 40),
+  ('Room 307',  'lecture',    45), ('Room 308',  'lecture',    45),
+  ('Room 309',  'lecture',    45), ('Room 310',  'lecture',    45),
+  ('Room 311',  'lecture',    45), ('Room 312',  'lecture',    45),
+  ('Gymnasium', 'lecture',   120)
+on conflict do nothing;
 -- The gym hosts several PATHFIT classes at once, so it's exempt from the room double-booking rule.
 update public.rooms set is_shared = true where name = 'Gymnasium';
 
 -- ─── Demo login (link it by creating an Auth user with this email) ────────
 insert into public.secretaries (full_name, email) values
-  ('Demo Secretary', 'demo.secretary@ccs-monitor.test');
+  ('Demo Secretary', 'demo.secretary@ccs-monitor.test')
+on conflict do nothing;
 
 -- ─── Students, sections, registrations, offerings, schedules, grades ──────
 do $$
@@ -42,9 +58,9 @@ declare
     'Kintanar','Labra','Mabini','Nacua','Ocariza','Pacaña','Quijano','Rosales','Sumalpong','Tagalog',
     'Uy','Villaflor','Wenceslao','Yap','Zamora','Alcuizar','Baguio','Canoy','Dumaguit','Estrella'];
   programs_cfg jsonb := '[
-    {"code":"BSIT","letters":["S"],"per_section":10},
-    {"code":"BSCS","letters":["S"],"per_section":10},
-    {"code":"ACT","letters":["S"],"per_section":10}
+    {"code":"BSIT","per_section":10,"letters":{"1":["S","T","U","V"],"2":["S","T","U"],"3":["S","T"],"4":["S","T"]}},
+    {"code":"BSCS","per_section":10,"letters":{"1":["S","T","U","V"],"2":["S","T","U"],"3":["S","T"],"4":["S","T"]}},
+    {"code":"ACT","per_section":10,"letters":{"1":["S","T","U","V"],"2":["S","T","U"]}}
   ]';
   pc jsonb;
   prog record;
@@ -74,11 +90,21 @@ declare
   passing numeric[] := array[1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00];
   fg numeric;
   st public.enrollment_status;
+  adm public.admission_type;
+  force_state text;
+  forced_done boolean;
+  i int;
+  max_n int;
   room_lab bigint[];
   room_lec bigint[];
   room_gym bigint;
 begin
   select * into cur_term from public.school_terms where is_current;
+  -- Continue student numbers after the ones already in the database (entry years 2023..2027).
+  for i in 0..4 loop
+    select coalesce(max(right(id, 4)::int), 0) into max_n from public.students where left(id, 4) = (2023 + i)::text;
+    counters[i + 1] := max_n;
+  end loop;
   select array_agg(id order by name) into room_lab from public.rooms where kind = 'laboratory';
   select array_agg(id order by name) into room_lec from public.rooms where kind = 'lecture' and name like 'Room%';
   select id into room_gym from public.rooms where name = 'Gymnasium';
@@ -90,19 +116,28 @@ begin
     for y in 1..prog.duration_years loop
       entry_year := 2026 - (y - 1);
 
-      for letter in select jsonb_array_elements_text(pc->'letters') loop
+      for letter in select jsonb_array_elements_text(pc->'letters'->(y::text)) loop
+        -- Skip a section that already exists this semester (keeps re-runs from duplicating it).
+        if exists (select 1 from public.sections x
+                   where x.school_term_id = cur_term.id and x.name_key = public.norm_key(prog.code || ' ' || y || '-' || letter)) then
+          continue;
+        end if;
         for k in 1..(pc->>'per_section')::int loop
           counters[entry_year - 2022] := counters[entry_year - 2022] + 1;
           sid   := entry_year || '-' || lpad(counters[entry_year - 2022]::text, 4, '0');
           fname := first_names[1 + floor(random() * array_length(first_names, 1))::int];
           lname := last_names[1 + floor(random() * array_length(last_names, 1))::int];
           bias  := random() * 2 - 1;   -- -1 strong … +1 struggling
+          -- Examples of every kind of student in each section.
+          adm := (case k when 1 then 'shiftee' when 2 then 'transferee' when 3 then 'returnee' else 'new' end)::public.admission_type;
+          force_state := case k when 2 then 'failed' when 5 then 'incomplete' when 8 then 'dropped' else null end;
+          forced_done := false;
 
           insert into public.students (id, first_name, last_name, email, program_id, curriculum_id, year_level, admission_type)
           values (sid, fname, lname,
                   lower(replace(fname, ' ', '') || '.' || replace(replace(lname, ' ', ''), 'ñ', 'n')) || '.' || replace(sid, '-', '') || '@student.ccs-monitor.test',
                   prog.id, cur_curriculum, y,
-                  (case when random() < 0.05 then 'transferee' when random() < 0.04 then 'shiftee' else 'new' end)::public.admission_type);
+                  adm);
 
           -- Walk every term from the student's entry term up to the current term
           term_index := 0;
@@ -196,6 +231,23 @@ begin
                   st := 'dropped';
                 else
                   fg := passing[grade_idx];
+                end if;
+              end if;
+
+              -- Give the students picked above their example problem once: a failed / INC / dropped class in
+              -- a past term, or (1st years, who only have this term) a class dropped this semester.
+              if force_state is not null and not forced_done then
+                if not term.is_current then
+                  forced_done := true;
+                  if force_state = 'failed' then
+                    fg := 5.00; st := 'enrolled';
+                  elsif force_state = 'incomplete' then
+                    fg := null; st := 'incomplete';
+                  else
+                    fg := null; st := 'dropped';
+                  end if;
+                elsif y = 1 then
+                  forced_done := true; fg := null; st := 'dropped';
                 end if;
               end if;
 
