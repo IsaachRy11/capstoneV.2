@@ -5,7 +5,7 @@ import { useAsync } from "../../hooks/useAsync";
 import { getTerms } from "../../services/catalog";
 import { semesterLabel, termLabel } from "../../lib/format";
 import { WEEKDAYS, addMonths, daysLeft, monthCells, sameDay, startOfMonth, termOn, termRanges } from "../../lib/calendar";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
+import { BackButton, EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 
 // Full-page academic calendar. Shows only real term dates from school_terms (start, end, the days
 // in between) and today. No invented events.
@@ -35,6 +35,7 @@ export default function CalendarPage() {
 
   return (
     <>
+      <BackButton fallback="/" />
       <PageHeader title="Calendar" subtitle={term ? `Current term: ${termLabel(term)}` : "Academic calendar"} />
 
       <div className="flex flex-wrap items-start gap-5">

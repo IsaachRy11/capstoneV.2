@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, CircleHelp, Building2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { GradeLegend, PageHeader } from "../../components/ui";
+import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
 
 // Short answers to the questions people actually have about this system. Facts only; for anything
 // about a real record, the answer is the CCS office.
@@ -25,7 +25,7 @@ const COMMON = [
   },
   {
     q: "What do Regular and Irregular mean?",
-    a: <>Regular: no back subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
+    a: <>Regular: no failed subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
 ];
 
@@ -43,7 +43,19 @@ const STUDENT = [
 const SECRETARY = [
   {
     q: "Why can't I enroll a student in a class?",
-    a: <>The class is full, or its schedule clashes with another class of that student. The message tells you which. Raise the section's capacity or pick another class.</>,
+    a: <>The class is full, its schedule clashes with another class of that student, or the student's status isn't Active. The message tells you which. Raise the section's capacity, pick another class, or change the status on the student's record.</>,
+  },
+  {
+    q: "Why can't I remove a student from a class?",
+    a: <>Once a class has a grade, a status such as INC or Dropped, or any grade history, it can't be removed, so the history is kept. Mark the class as Dropped on the student's record instead. Removing only works for a class added by mistake.</>,
+  },
+  {
+    q: "Why can't I put a dropped student back in a class?",
+    a: <>Bringing a student back runs the same checks as a new enrollment: the class must have a free seat and no schedule clash.</>,
+  },
+  {
+    q: "What does Student status do?",
+    a: <>It is set on the student's record. Only Active students can be enrolled in classes. Inactive, Graduated and Left the college students can't.</>,
   },
   {
     q: "Why can't I delete a subject?",
@@ -78,6 +90,7 @@ export default function HelpPage() {
 
   return (
     <>
+      <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
         <div className="flex items-center gap-2.5 border-b border-line px-5 py-3.5">

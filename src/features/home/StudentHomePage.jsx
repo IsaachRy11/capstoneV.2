@@ -92,7 +92,7 @@ export default function StudentHome() {
             <section className="card flex items-start gap-3.5 p-5" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
               <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
               <div>
-                <h2 className="text-[15px] font-bold text-ok">No back subjects</h2>
+                <h2 className="text-[15px] font-bold text-ok">No failed subjects</h2>
                 <p className="mt-1 text-[14px] leading-relaxed text-ink-2">Every subject you've finished is passed.</p>
               </div>
             </section>
@@ -100,7 +100,7 @@ export default function StudentHome() {
             <section className="card flex items-start gap-3.5 p-5" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
               <AlertTriangle size={22} className="shrink-0 text-bad" aria-hidden="true" />
               <div>
-                <h2 className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 back subject" : `${deficiencies.length} back subjects`}</h2>
+                <h2 className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`}</h2>
                 <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
                   {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
                 </ul>

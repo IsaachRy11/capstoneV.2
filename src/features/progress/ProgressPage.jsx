@@ -1,46 +1,38 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import { GraduationCap, TriangleAlert } from "lucide-react";
+import { Link, useOutletContext, useSearchParams } from "react-router-dom";
+import { ChevronRight, GraduationCap, TriangleAlert } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getHistory, getStudent } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
-import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import { SUBJECT_STATE, buildProgress, nextTermFor } from "../../lib/progress";
+import ProgressDetail, { FinalCell, MidtermCell } from "./ProgressDetail";
+import { VIEWS } from "./progressViews";
 
-const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Taking now"], ["back", "Back subjects"], ["not_taken", "Not yet taken"]];
+const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Enrolled"], ["back", "Failed subjects"], ["not_taken", "Not yet enrolled"]];
 
-function Stat({ label, value, sub, children }) {
+function Stat({ to, label, value, sub, children }) {
   return (
-    <div className="card flex flex-col gap-2 p-5">
+    <Link to={to} className="card group flex flex-col gap-2 p-5 text-ink transition-colors hover:border-accent focus-visible:border-accent">
       <span className="text-[13px] font-semibold text-ink-2">{label}</span>
       <span className="font-display text-[30px] font-bold tracking-tight text-ink">{value}</span>
       {sub && <span className="text-[13px] text-ink-3">{sub}</span>}
       {children}
-    </div>
+      <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[13px] font-semibold text-accent">
+        See the list<ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+      </span>
+    </Link>
   );
-}
-
-const dash = <span className="text-ink-3">—</span>;
-
-function MidtermCell({ s }) {
-  if (s.midterm === null) return dash;
-  return (
-    <span className={`font-mono font-semibold ${Number(s.midterm) > 3 ? "text-bad" : ""}`}>{formatGrade(s.midterm)}</span>
-  );
-}
-
-function FinalCell({ s }) {
-  if (s.state === "back" && s.backReason !== "Failed") return <span className="font-semibold text-ink-2">{s.backReason}</span>;
-  if (s.final === null) return dash;
-  return <span className={`font-mono font-semibold ${Number(s.final) > 3 ? "text-bad" : ""}`}>{formatGrade(s.final)}</span>;
 }
 
 export default function Progress() {
   const { user } = useAuth();
   const { term } = useOutletContext();
   const [filter, setFilter] = useState("all");
+  const [params] = useSearchParams();
+  const view = VIEWS[params.get("view")] ? params.get("view") : null;
 
   const { data, error, loading, reload } = useAsync(async () => {
     const student = await getStudent(user.studentId);
@@ -62,17 +54,19 @@ export default function Progress() {
   const years = [...new Set(progress.subjects.map((s) => s.year_level))].sort();
   const visible = (s) => filter === "all" || s.state === filter;
 
+  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
+
   return (
     <>
       <PageHeader title="Subject tracker" subtitle={student.program_name} />
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-        <Stat label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
+        <Stat to="/progress?view=units" label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
           <div className="bar" role="img" aria-label={`${pct} percent of units earned`}><span style={{ width: `${pct}%` }} /></div>
         </Stat>
-        <Stat label="Subjects passed" value={<>{progress.passedCount}<span className="text-[17px] font-semibold text-ink-3"> / {progress.total}</span></>} sub="Out of every subject in your curriculum" />
-        <Stat label="This semester" value={<>{progress.inProgress.length}<span className="text-[17px] font-semibold text-ink-3"> {progress.inProgress.length === 1 ? "subject" : "subjects"}</span></>} sub={`${sumUnits(progress.inProgress)} units in total`} />
-        <Stat label="Back subjects" value={<span className={progress.back.length ? "text-bad" : ""}>{progress.back.length}</span>} sub={progress.back.length ? "Need to be retaken" : "None. Keep it up."} />
+        <Stat to="/progress?view=passed" label="Subjects passed" value={<>{progress.passedCount}<span className="text-[17px] font-semibold text-ink-3"> / {progress.total}</span></>} sub="Out of every subject in your curriculum" />
+        <Stat to="/progress?view=enrolled" label="This semester" value={<>{progress.inProgress.length}<span className="text-[17px] font-semibold text-ink-3"> {progress.inProgress.length === 1 ? "subject" : "subjects"}</span></>} sub={`${sumUnits(progress.inProgress)} units in total`} />
+        <Stat to="/progress?view=failed" label="Failed subjects" value={<span className={progress.back.length ? "text-bad" : ""}>{progress.back.length}<span className="text-[17px] font-semibold text-ink-3"> {progress.back.length === 1 ? "subject" : "subjects"}</span></span>} sub={progress.back.length ? "Failed, INC or dropped. Retake when offered." : "None. Keep it up."} />
       </div>
 
       <section className="card overflow-hidden">
@@ -85,7 +79,7 @@ export default function Progress() {
         {!next ? (
           <div className="flex items-center gap-3 px-5 py-5 text-[14px] text-ink-2">
             <GraduationCap size={20} className="text-accent" aria-hidden="true" />
-            This is the last semester of your program. Clear any back subjects to finish on time.
+            This is the last semester of your program. Clear any failed subjects to finish on time.
           </div>
         ) : (
           <div className="flex flex-col gap-4 px-5 py-5">
@@ -151,7 +145,7 @@ export default function Progress() {
                               )}
                               {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                             </td>
-                            <td><Badge tone={SUBJECT_STATE[s.state].tone} dot>{SUBJECT_STATE[s.state].label}</Badge></td>
+                            <td><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></td>
                             <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
                             <td className="text-center text-[13px]"><FinalCell s={s} /></td>
                           </tr>

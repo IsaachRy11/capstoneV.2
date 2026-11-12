@@ -55,10 +55,41 @@ beforeAll(async () => {
 }, 120_000);
 
 describe("seed data", () => {
-  it("has the official curriculum and 10 students per program per year", async () => {
+  it("has the official curriculum", async () => {
     expect(await one(`select count(*)::int n from curriculum_subjects`)).toEqual({ n: 91 });
-    const perGroup = (await db.query(`select count(*)::int n from students group by program_id, year_level`)).rows;
-    expect(perGroup.every((r) => r.n === 10)).toBe(true);
+  });
+
+  it("has S, T, U, V sections in 1st year, S, T, U in 2nd, S, T in 3rd and 4th (ACT stops at 2nd year)", async () => {
+    const rows = (await db.query(`select program_code p, year_level y, string_agg(right(name, 1), '' order by name) letters
+      from v_section_capacity group by 1, 2 order by 1, 2`)).rows;
+    expect(rows).toEqual([
+      { p: "ACT", y: 1, letters: "STUV" }, { p: "ACT", y: 2, letters: "STU" },
+      { p: "BSCS", y: 1, letters: "STUV" }, { p: "BSCS", y: 2, letters: "STU" }, { p: "BSCS", y: 3, letters: "ST" }, { p: "BSCS", y: 4, letters: "ST" },
+      { p: "BSIT", y: 1, letters: "STUV" }, { p: "BSIT", y: 2, letters: "STU" }, { p: "BSIT", y: 3, letters: "ST" }, { p: "BSIT", y: 4, letters: "ST" },
+    ]);
+  });
+
+  it("puts 10 students in every section", async () => {
+    const counts = (await db.query(`select enrolled::int n from v_section_capacity`)).rows;
+    expect(counts).toHaveLength(29);
+    expect(counts.every((r) => r.n === 10)).toBe(true);
+  });
+
+  it("gives every section a shiftee, a transferee, a returnee and some irregular students", async () => {
+    const rows = (await db.query(`
+      select sec.name,
+             count(*) filter (where s.admission_type = 'shiftee')::int shiftee,
+             count(*) filter (where s.admission_type = 'transferee')::int transferee,
+             count(*) filter (where s.admission_type = 'returnee')::int returnee,
+             count(*) filter (where v.standing = 'irregular')::int irregular
+      from students s join v_student_overview v on v.id = s.id
+      join registrations r on r.student_id = s.id join sections sec on sec.id = r.section_id
+      join school_terms t on t.id = sec.school_term_id and t.is_current
+      group by sec.name`)).rows;
+    expect(rows).toHaveLength(29);
+    for (const r of rows) {
+      expect([r.name, r.shiftee >= 1, r.transferee >= 1, r.returnee >= 1, r.irregular >= 1]).toEqual([r.name, true, true, true, true]);
+    }
   });
 
   it("keeps each class in one room with no double-booked rooms", async () => {
@@ -80,7 +111,9 @@ describe("security rules (RLS)", () => {
   });
 
   it("lets the secretary see every student", async () => {
-    expect((await as("authenticated", SEC, `select count(*)::int n from students`)).rows[0].n).toBe(100);
+    const everyone = await one(`select count(*)::int n from students`);
+    expect(everyone.n).toBeGreaterThan(100);
+    expect((await as("authenticated", SEC, `select count(*)::int n from students`)).rows[0].n).toBe(everyone.n);
   });
 
   it("does not let a student change grades or the curriculum", async () => {
@@ -110,27 +143,48 @@ describe("security rules (RLS)", () => {
 
 describe("add_student (one transaction)", () => {
   it("creates the student, registers them and enrolls them in every class of their section", async () => {
-    const r = await as("authenticated", SEC, `select public.add_student('2026-0099','Test','Student','test.student@x.test',${bsit},1::smallint,'new') sec`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student','test.student@x.test',${bsit},1::smallint,'new') sec`);
     expect(r.rows[0].sec).toBe("BSIT 1-S");
-    const made = await one(`select (select count(*)::int from registrations where student_id='2026-0099') r, (select count(*)::int from enrollments where student_id='2026-0099') e`);
+    const made = await one(`select (select count(*)::int from registrations where student_id='2026-9099') r, (select count(*)::int from enrollments where student_id='2026-9099') e`);
     expect(made).toEqual({ r: 1, e: 7 });
   });
 
   it("leaves nothing behind when it fails", async () => {
-    const r = await as("authenticated", SEC, `select public.add_student('2026-0098','Dup','Email','test.student@x.test',${bsit},1::smallint,'new')`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9098','Dup','Email','test.student@x.test',${bsit},1::smallint,'new')`);
     expect(r.error).toBeTruthy();
-    expect(await one(`select count(*)::int n from students where id='2026-0098'`)).toEqual({ n: 0 });
+    expect(await one(`select count(*)::int n from students where id='2026-9098'`)).toEqual({ n: 0 });
+  });
+
+  it("puts the student in the section you choose", async () => {
+    const t = await one(`select id from sections where name = 'BSIT 1-T' and school_term_id = (select id from school_terms where is_current)`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9096','Pick','Section','pick.section@x.test',${bsit},1::smallint,'new',${t.id}) sec`);
+    expect(r.error).toBeUndefined();
+    expect(r.rows[0].sec).toBe("BSIT 1-T");
+  });
+
+  it("refuses a section from another program or year, and adds nobody", async () => {
+    const other = await one(`select id from sections where name = 'BSCS 2-S' and school_term_id = (select id from school_terms where is_current)`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9095','Wrong','Section','wrong.section@x.test',${bsit},1::smallint,'new',${other.id})`);
+    expect(r.error).toMatch(/isn't open for this program and year/);
+    expect(await one(`select count(*)::int n from students where id='2026-9095'`)).toEqual({ n: 0 });
+  });
+
+  it("without a choice, uses the section with the most free seats", async () => {
+    await db.exec(`update sections set capacity = 60 where name = 'BSIT 1-V' and school_term_id = (select id from school_terms where is_current)`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9094','Most','Seats','most.seats@x.test',${bsit},1::smallint,'new') sec`);
+    await db.exec(`update sections set capacity = 40 where name = 'BSIT 1-V' and school_term_id = (select id from school_terms where is_current)`);
+    expect(r.rows[0].sec).toBe("BSIT 1-V");
   });
 
   it("refuses students", async () => {
-    expect((await as("authenticated", STU, `select public.add_student('2026-0097','X','Y','x@y.test',${bsit},1::smallint,'new')`)).error).toBeTruthy();
+    expect((await as("authenticated", STU, `select public.add_student('2026-9097','X','Y','x@y.test',${bsit},1::smallint,'new')`)).error).toBeTruthy();
   });
 });
 
 describe("save_grades and the grade change log", () => {
   let enr;
   beforeAll(async () => {
-    enr = (await db.query(`select e.id from enrollments e join class_offerings o on o.id = e.offering_id join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current where e.student_id = '2026-0099' order by e.id limit 2`)).rows.map((r) => Number(r.id));
+    enr = (await db.query(`select e.id from enrollments e join class_offerings o on o.id = e.offering_id join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current where e.student_id = '2026-9099' order by e.id limit 2`)).rows.map((r) => Number(r.id));
   });
 
   it("saves several grades at once and derives the status", async () => {
@@ -142,7 +196,7 @@ describe("save_grades and the grade change log", () => {
   });
 
   it("records who changed each grade", async () => {
-    const log = (await as("authenticated", SEC, `select changed_by_name from v_grade_changes where student_id = '2026-0099'`)).rows;
+    const log = (await as("authenticated", SEC, `select changed_by_name from v_grade_changes where student_id = '2026-9099'`)).rows;
     expect(log).toHaveLength(2);
     expect(log.every((r) => r.changed_by_name === "Demo Secretary")).toBe(true);
   });
@@ -190,12 +244,18 @@ describe("schedule editing rules", () => {
   });
 
   it("blocks a time that clashes for a student already in the class", async () => {
-    // Put a BSCS 2-S student into one BSCS 3-S class (at a free Saturday time), then try to move
-    // another BSCS 2-S class onto that same time.
-    const extra = await offeringOf("BSCS 3-S", 1);
-    await db.exec(`insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${extra.id}, 6, '13:00', '14:00')`);
+    // Put a BSCS 2-S student into a class from another section (at a free Saturday time), then try to give
+    // one of that student's own classes an overlapping Saturday time. Sections share weekly slots, so search
+    // for a class whose weekly times don't already clash with the student's.
     const student = await one(`select r.student_id from registrations r join sections s on s.id = r.section_id join school_terms t on t.id = s.school_term_id and t.is_current where s.name = 'BSCS 2-S' order by r.student_id limit 1`);
-    await db.exec(`insert into enrollments (student_id, offering_id) values ('${student.student_id}', ${extra.id})`);
+    const candidates = (await db.query(`select o.id from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current where s.name <> 'BSCS 2-S' order by o.id`)).rows;
+    let extra = null;
+    for (const c of candidates) {
+      const added = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('${student.student_id}', ${c.id}) returning id`);
+      if (!added.error) { extra = c; break; }
+    }
+    expect(extra).not.toBeNull();
+    await db.exec(`insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${extra.id}, 6, '13:00', '14:00')`);
     const own = await offeringOf("BSCS 2-S");
     const r = await as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${own.id}, 6, '13:30', '14:30')`);
     expect(r.error).toMatch(/^Student .* in this class has/);
@@ -240,5 +300,91 @@ describe("enrollment rules", () => {
       limit 1`);
     const r = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('2026-0001', ${pair.id})`);
     expect(r.error).toMatch(/^Schedule clash with/);
+  });
+});
+
+// Gaps found by mapping the implicit state machines (migration 0009). Each test reproduces a hole that
+// used to be open: a dropped student sneaking back into a full class, history erased by a delete,
+// INC with a grade, enrolling a graduated student, and capacity below the headcount.
+describe("state machine rules", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const firstOffering = (section, n = 0) => one(`
+    select o.id from class_offerings o join sections s on s.id = o.section_id
+    join school_terms t on t.id = s.school_term_id and t.is_current
+    where s.name = '${section}' order by o.id offset ${n} limit 1`);
+  const enrollmentIds = async (offeringId) =>
+    (await db.query(`select id, student_id from enrollments where offering_id = ${offeringId} order by id`)).rows.map((r) => ({ id: Number(r.id), student_id: r.student_id }));
+  const save = (id, patch) => asSec(`select public.save_grades('[${JSON.stringify({ enrollment_id: id, ...patch })}]'::jsonb)`);
+  const newStudent = (id, status = "active") => db.exec(`
+    insert into students (id, first_name, last_name, email, program_id, curriculum_id, year_level, status)
+    select '${id}', 'Test', 'Student', 'test${id}@x.test', p.id, c.id, 3, '${status}'
+    from programs p join curricula c on c.program_id = p.id and c.is_active where p.code = 'BSIT'`);
+
+  it("re-checks seats when a dropped student is brought back", async () => {
+    const off = await firstOffering("BSIT 3-S");
+    const rows = await enrollmentIds(off.id);
+    await db.exec(`update class_offerings set capacity = ${rows.length} where id = ${off.id}`); // exactly full
+    // Grading must keep working in a full class.
+    expect((await save(rows[1].id, { midterm: 2.0, final: null, status: "auto" })).error).toBeUndefined();
+    expect((await save(rows[0].id, { midterm: null, final: null, status: "dropped" })).error).toBeUndefined();
+    await newStudent("2026-9090");
+    expect((await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9090', ${off.id})`)).error).toBeUndefined();
+    const back = await save(rows[0].id, { midterm: null, final: null, status: "auto" });
+    expect(back.error).toMatch(/^This class is full/);
+    expect((await one(`select status from enrollments where id = ${rows[0].id}`)).status).toBe("dropped");
+  });
+
+  it("lets a dropped student come back when a seat is free", async () => {
+    const off = await firstOffering("BSIT 3-S", 1);
+    const [e] = await enrollmentIds(off.id);
+    expect((await save(e.id, { midterm: null, final: null, status: "dropped" })).error).toBeUndefined();
+    expect((await save(e.id, { midterm: null, final: null, status: "auto" })).error).toBeUndefined();
+    expect((await one(`select status from enrollments where id = ${e.id}`)).status).toBe("enrolled");
+  });
+
+  it("only enrolls students whose status is active", async () => {
+    await newStudent("2026-9091", "graduated");
+    const off = await firstOffering("BSIT 4-S");
+    const r = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9091', ${off.id})`);
+    expect(r.error).toMatch(/marked as graduated/);
+  });
+
+  it("keeps INC and Dropped classes free of final grades", async () => {
+    const off = await firstOffering("BSIT 4-S");
+    const [e] = await enrollmentIds(off.id);
+    expect((await save(e.id, { midterm: null, final: null, status: "incomplete" })).error).toBeUndefined();
+    const direct = await asSec(`update enrollments set final_grade = 2.0 where id = ${e.id}`);
+    expect(direct.error).toMatch(/can't have a final grade/);
+    // The app's route (save_grades) resolves the INC by grading it.
+    expect((await save(e.id, { midterm: null, final: 2.0, status: "auto" })).error).toBeUndefined();
+    expect((await one(`select status from enrollments where id = ${e.id}`)).status).toBe("passed");
+  });
+
+  it("won't delete a class that has grades, and keeps the history", async () => {
+    const off = await firstOffering("BSIT 4-S");
+    const id = (await enrollmentIds(off.id))[3].id;
+    await save(id, { midterm: 2.0, final: 2.25, status: "auto" });
+    const r = await asSec(`delete from enrollments where id = ${id}`);
+    expect(r.error).toMatch(/Mark the class as Dropped/);
+    expect((await one(`select count(*)::int n from grade_changes where enrollment_id = ${id}`)).n).toBe(1);
+  });
+
+  it("still lets the secretary remove a class entered by mistake", async () => {
+    // A brand-new enrollment has no grades and no history (demo students already have midterm grades).
+    await newStudent("2026-9092");
+    const off = await firstOffering("BSIT 4-S");
+    const added = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9092', ${off.id}) returning id`);
+    expect(added.error).toBeUndefined();
+    const r = await asSec(`delete from enrollments where id = ${added.rows[0].id} returning id`);
+    expect(r.error).toBeUndefined();
+    expect(r.rows).toHaveLength(1);
+  });
+
+  it("won't lower a section's capacity below the students already enrolled", async () => {
+    const where = `name = 'BSIT 4-S' and school_term_id = (select id from school_terms where is_current)`;
+    const low = await asSec(`update sections set capacity = 5 where ${where}`);
+    expect(low.error).toMatch(/Capacity can't be lower than the 10 students/);
+    expect((await asSec(`update sections set capacity = 10 where ${where}`)).error).toBeUndefined();
+    expect((await asSec(`update sections set capacity = 40 where ${where}`)).error).toBeUndefined();
   });
 });

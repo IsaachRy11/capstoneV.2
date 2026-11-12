@@ -5,7 +5,7 @@ import { listStudents } from "../../services/students";
 import { listCurrentSections } from "../../services/sections";
 import { countOfferings, getCurriculum, getPrograms } from "../../services/catalog";
 import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
-import { shortProgramName, sumUnits, yearLabel } from "../../lib/format";
+import { sectionLetter, shortProgramName, sumUnits, yearLabel } from "../../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const seats = sections.reduce((t, s) => t + s.capacity, 0);
   const filled = sections.reduce((t, s) => t + s.enrolled, 0);
   const maxYears = Math.max(...programs.map((p) => p.duration_years), 4);
-  const sectionFor = (code, y) => sections.find((s) => s.program_code === code && s.year_level === y);
+  const sectionsFor = (code, y) => sections.filter((s) => s.program_code === code && s.year_level === y);
 
   return (
     <>
@@ -63,7 +63,7 @@ export default function Dashboard() {
           <div className="flex items-start justify-between gap-3 px-5 pb-4 pt-5">
             <div>
               <h2 className="text-[17px] font-bold">Enrollment by year level</h2>
-              <p className="mt-1 text-[13px] text-ink-3">Students in each program and year, and seats filled in their block section</p>
+              <p className="mt-1 text-[13px] text-ink-3">Students in each program and year, and seats filled across their block sections</p>
             </div>
             <Link to="/students" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Open registry</Link>
           </div>
@@ -94,23 +94,25 @@ export default function Dashboard() {
                         return <td key={y} className="px-3 py-3 align-top text-[13px] text-ink-3"><span className="inline-block pt-1">—</span></td>;
                       }
                       const n = students.filter((s) => s.program_code === p.code && s.year_level === y).length;
-                      const sec = sectionFor(p.code, y);
-                      const pct = sec ? Math.min(100, Math.round((sec.enrolled / sec.capacity) * 100)) : 0;
+                      const secs = sectionsFor(p.code, y);
+                      const seatsFilled = secs.reduce((t, x) => t + x.enrolled, 0);
+                      const seatsTotal = secs.reduce((t, x) => t + x.capacity, 0);
+                      const pct = seatsTotal ? Math.min(100, Math.round((seatsFilled / seatsTotal) * 100)) : 0;
                       return (
                         <td key={y} className="px-1.5 py-1.5 align-top">
                           <Link to={`/students?year=${y}&program=${p.code}`}
-                            aria-label={`${p.code} ${yearLabel(y)}: ${n} students${sec ? `, section ${sec.name}, ${sec.enrolled} of ${sec.capacity} seats filled` : ", no section this semester"}`}
+                            aria-label={`${p.code} ${yearLabel(y)}: ${n} students${secs.length ? `, ${secs.length === 1 ? "1 section" : `${secs.length} sections`}, ${seatsFilled} of ${seatsTotal} seats filled` : ", no section this semester"}`}
                             className="flex flex-col gap-1.5 rounded-lg px-1.5 py-1.5 text-ink transition-colors hover:bg-hover">
                             <span className="flex items-baseline gap-1.5">
                               <span className="font-display text-[20px] font-bold leading-none">{n}</span>
                               <span className="text-[12px] text-ink-3">students</span>
                             </span>
-                            {sec ? (
+                            {secs.length ? (
                               <>
-                                <span className="text-[12px] font-medium text-ink-2">{sec.name}</span>
+                                <span className="text-[12px] font-medium text-ink-2">{secs.length === 1 ? secs[0].name : `${secs.length} sections · ${secs.map((x) => sectionLetter(x.name)).join(" ")}`}</span>
                                 <span className="flex items-center gap-2">
                                   <span className="bar flex-1"><span style={{ width: `${pct}%` }} /></span>
-                                  <span className="whitespace-nowrap font-mono text-[12px] text-ink-3">{sec.enrolled}/{sec.capacity}</span>
+                                  <span className="whitespace-nowrap font-mono text-[12px] text-ink-3">{seatsFilled}/{seatsTotal}</span>
                                 </span>
                               </>
                             ) : <span className="text-[12px] text-ink-3">No section yet</span>}
@@ -127,7 +129,7 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <p className="border-t border-line px-5 py-3 text-[12px] text-ink-3">Bar = seats filled in the year's block section. Select a cell to see those students.</p>
+          <p className="border-t border-line px-5 py-3 text-[12px] text-ink-3">Bar = seats filled across the year's block sections. Select a cell to see those students.</p>
         </section>
 
         <section className="card flex-[1_1_300px] p-5">

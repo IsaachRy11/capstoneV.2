@@ -30,7 +30,7 @@ const roles = {
   secretary: { id: "demo.secretary@ccs-monitor.test", pw: env.DEMO_SECRETARY_PASSWORD,
     pages: ["/", "/students", "/students/2025-0002", "/sections", "/schedules", "/curriculum", "/profile", "/settings"] },
   student: { id: "2025-0001", pw: env.STUDENT_DEFAULT_PASSWORD || env.DEMO_STUDENT_PASSWORD,
-    pages: ["/", "/schedule", "/progress", "/record", "/curriculum"] },
+    pages: ["/", "/schedule", "/progress", "/progress?view=units", "/progress?view=failed", "/record", "/curriculum", "/calendar", "/help", "/privacy"] },
 };
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || EDGE });
@@ -96,7 +96,7 @@ for (const [role, cfg] of Object.entries(roles)) {
     const bad = r.pageOverflow > 0 || r.offenders.length > 0;
     if (bad) problems++;
     console.log(`${bad ? "FIX " : "ok  "} ${role.padEnd(9)} ${p.padEnd(20)} overflow ${r.pageOverflow}px · small tap targets ${r.small}${r.offenders.length ? " · " + r.offenders.join(", ") : ""}`);
-    await page.screenshot({ path: join(outDir, `${role}${p.replace(/\//g, "_") || "_home"}.png`), fullPage: true });
+    await page.screenshot({ path: join(outDir, `${role}${p.replace(/[/?=&]/g, "_") || "_home"}.png`), fullPage: true });
   }
   await ctx.close();
 }

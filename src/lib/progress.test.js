@@ -27,15 +27,15 @@ describe("buildProgress", () => {
     expect(s["IT 101"]).toMatchObject({ state: "passed", midterm: 2, final: 2.25, attempts: 2 });
   });
 
-  it("marks a failed subject that was never passed as a back subject", () => {
+  it("marks a failed subject that was never passed as a failed subject", () => {
     expect(s["IT 103"]).toMatchObject({ state: "back", backReason: "Failed" });
   });
 
-  it("treats INC as a back subject", () => {
+  it("treats INC as a failed subject (unresolved)", () => {
     expect(s["GE 4"]).toMatchObject({ state: "back", backReason: "INC" });
   });
 
-  it("shows a current-term subject as taking now, with its midterm", () => {
+  it("shows a current-term subject as enrolled, with its midterm", () => {
     expect(s["IT 201"]).toMatchObject({ state: "in_progress", midterm: 2.75, final: null });
   });
 
