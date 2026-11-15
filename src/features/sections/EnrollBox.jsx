@@ -45,7 +45,7 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
         <span className="text-[13px] text-ink-2">
           <span className="font-semibold text-ink">{offering.enrolled} {offering.enrolled === 1 ? "student" : "students"}</span> · {seatsText}
         </span>
-        <button className="btn btn-secondary btn-sm" onClick={() => setOpen(true)} disabled={seatsLeft <= 0}>
+        <button className="btn btn-secondary btn-sm hidden lg:inline-flex" onClick={() => setOpen(true)} disabled={seatsLeft <= 0}>
           <Plus size={14} aria-hidden="true" />Add a student
         </button>
       </div>

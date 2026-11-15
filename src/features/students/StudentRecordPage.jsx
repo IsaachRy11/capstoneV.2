@@ -77,17 +77,8 @@ export default function StudentRecord() {
               <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
             </div>
           </div>
-          {/* Phones: the secretary gets three equal action tiles (icon over label) instead of stacked buttons. */}
-          {isSecretary && (
-            <div className="no-print grid w-full grid-cols-3 gap-2 sm:hidden">
-              {[[Printer, "Print", () => window.print(), ""], [KeyRound, "Reset password", () => setResetting(true), ""], [Trash2, "Delete", () => setDeleting(true), "text-bad"]].map(([Icon, label, onClick, tone]) => (
-                <button key={label} onClick={onClick} className={`press flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-1 py-3 text-[12px] font-semibold ${tone || "text-ink"}`}>
-                  <Icon size={19} aria-hidden="true" />{label}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className={`no-print flex-wrap gap-2 ${isSecretary ? "hidden sm:flex" : "flex"}`}>
+          {/* Secretary on phones and tablets: view only. Printing, password resets and deleting are done on a computer. */}
+          <div className={`no-print flex-wrap gap-2 ${isSecretary ? "hidden lg:flex" : "flex"}`}>
             <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print record</button>
             {isSecretary && <button className="btn btn-secondary" onClick={() => setResetting(true)}><KeyRound size={16} aria-hidden="true" />Reset password</button>}
             {isSecretary && <button className="btn btn-secondary text-bad" onClick={() => setDeleting(true)}><Trash2 size={16} aria-hidden="true" />Delete student</button>}
@@ -107,7 +98,8 @@ export default function StudentRecord() {
             <dd className="mt-1 text-[15px] font-semibold text-ink">
               {isSecretary ? (
                 <>
-                  <select id="student-status" className="field no-print h-9 w-full max-w-[180px] py-0 text-[14px]" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
+                  <span className="lg:hidden">{STUDENT_STATUS[student.status]}</span>
+                  <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
                     {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{STUDENT_STATUS[student.status]}</span>

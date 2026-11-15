@@ -83,8 +83,6 @@ export default function Students() {
           <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Create student</button>
         </>}
       />
-      {/* Phones: the main action floats above the tab bar. */}
-      <button className="fab no-print lg:hidden" onClick={() => setAdding(true)}><Plus size={20} aria-hidden="true" />Create student</button>
       {notice && <p role="status" className="rounded-lg px-4 py-3 text-[14px] tone-ok">{notice}</p>}
 
       <section className="card overflow-hidden">

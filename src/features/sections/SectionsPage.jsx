@@ -53,7 +53,7 @@ export default function Sections() {
           <section aria-label="Subjects" className="flex w-full flex-col gap-2.5 sm:hidden">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[13px] font-semibold text-ink-2">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
-              <button className="inline-flex min-h-10 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>{section.enrolled} / {section.capacity} seats</button>
+              <span className="inline-flex min-h-8 items-center rounded-full border border-line bg-surface px-3 font-mono text-[13px] font-semibold text-ink-2">{section.enrolled} / {section.capacity} seats</span>
             </div>
             {offerings.loading && <LoadingState />}
             <div className="chip-row">
@@ -68,7 +68,8 @@ export default function Sections() {
           <section aria-label="Subjects" className="card hidden flex-[1_1_320px] flex-col gap-0.5 p-2 sm:flex">
             <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-2.5">
               <span className="text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
-              <button className="inline-flex min-h-10 items-center text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
+              <button className="hidden min-h-10 items-center text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
+              <span className="font-mono text-[13px] font-semibold text-ink-2 lg:hidden">{section.enrolled} / {section.capacity} seats</span>
             </div>
             {offerings.loading && <LoadingState />}
             {offerings.error && <ErrorState error={offerings.error} onRetry={offerings.reload} />}
@@ -110,7 +111,7 @@ export default function Sections() {
               {roster.loading ? <LoadingState /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">
                   <table className="data-table">
-                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Standing</th><th><span className="sr-only">Remove</span></th></tr></thead>
+                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Standing</th><th className="hidden lg:table-cell"><span className="sr-only">Remove</span></th></tr></thead>
                     <tbody>
                       {roster.data.map((r) => (
                         <tr key={r.id}>
@@ -125,7 +126,7 @@ export default function Sections() {
                           </td>
                           <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 sm:table-cell">{r.student_id}</td>
                           <td><StandingBadge standing={r.standing} /></td>
-                          <td className="text-right"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this class`}><Trash2 size={16} /></button></td>
+                          <td className="hidden text-right lg:table-cell"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this class`}><Trash2 size={16} /></button></td>
                         </tr>
                       ))}
                     </tbody>

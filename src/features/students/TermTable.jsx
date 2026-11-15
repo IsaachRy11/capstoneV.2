@@ -68,8 +68,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
   })();
 
   return (
-    // No overflow clipping on phones: it would stop the save bar from sticking while scrolling.
-    <section className="card sm:overflow-hidden">
+    <section className="card overflow-hidden">
       {/* Phones: title row (tap to open/close), details under it, then the badges and Encode button on their own row. */}
       <div className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:border-b sm:border-line ${open ? "border-b border-line" : ""}`}>
         <div className="min-w-0 sm:flex-1">
@@ -86,27 +85,11 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
           <div className="flex flex-wrap items-center gap-3">
             {term.is_current && <Badge tone="info" dot>Current term</Badge>}
             {termAvg && <span className="text-[13px] text-ink-2">Term average <span className="font-mono font-semibold text-ink">{termAvg}</span></span>}
-            {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print ml-auto sm:ml-0" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
+            {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print hidden lg:inline-flex" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
           </div>
         )}
       </div>
-      {/* Phones while encoding: one card per subject, three full-width pickers, no sideways scrolling. */}
-      {editing && (
-        <ul className="divide-y divide-line-2 sm:hidden">
-          {rows.map((r) => (
-            <li key={r.enrollment_id} className="px-5 py-4">
-              <span className="block font-mono text-[12px] text-accent">{r.code} <span className="text-ink-3">· {Number(r.units)} {Number(r.units) === 1 ? "unit" : "units"}</span></span>
-              <span className="block text-[15px] font-semibold text-ink">{r.title}</span>
-              <div className="mt-3 grid grid-cols-2 gap-2.5">
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-ink-3">Midterm{gradeSelect(r.enrollment_id, "midterm", `Midterm grade for ${r.code}`, "h-11 w-full")}</label>
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-ink-3">Final{gradeSelect(r.enrollment_id, "final", `Final grade for ${r.code}`, "h-11 w-full")}</label>
-                <label className="col-span-2 flex flex-col gap-1 text-[12px] font-semibold text-ink-3">Mark as{statusSelect(r, "h-11 w-full")}</label>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className={`overflow-x-auto sm:block print:block ${open && !editing ? "" : "hidden"}`}>
+      <div className={`overflow-x-auto sm:block print:block ${open ? "" : "hidden"}`}>
         <table className="data-table">
           {/* Phones: code, units and status sit under the subject name so Midterm and Final always fit. */}
           <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="hidden !text-center sm:table-cell">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className={editing ? "" : "hidden sm:table-cell"}>{editing ? "Mark as" : "Status"}</th></tr></thead>
@@ -142,12 +125,11 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
         </table>
       </div>
       {editing && (
-        // Phones: the save bar sticks above the tab bar so it is always one tap away while scrolling the list.
-        <div className="sticky bottom-[calc(68px+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center justify-end gap-2.5 rounded-b-xl border-t border-line bg-surface px-5 py-3 lg:static">
-          <div className="w-full sm:mr-auto sm:w-auto"><FormError error={error} /></div>
-          <p className="w-full text-[13px] text-ink-3 sm:w-auto">1.00 is highest, 3.00 is passing, 5.00 is failed.</p>
-          <button className="btn btn-secondary btn-sm flex-1 sm:flex-none" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
-          <button className="btn btn-primary btn-sm flex-1 sm:flex-none" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save grades"}</button>
+        <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-line px-5 py-3">
+          <div className="mr-auto"><FormError error={error} /></div>
+          <p className="text-[13px] text-ink-3">1.00 is highest, 3.00 is passing, 5.00 is failed.</p>
+          <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save grades"}</button>
         </div>
       )}
     </section>

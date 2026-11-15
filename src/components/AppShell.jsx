@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
+import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -160,6 +160,12 @@ export default function AppShell() {
         </header>
 
         <main className="flex w-full flex-1 flex-col gap-4 px-4 pb-28 pt-4 sm:gap-6 sm:px-8 sm:pt-8 lg:pb-8">
+          {/* Secretary on phones and tablets: view only (editing is desktop work). */}
+          {user.role === "secretary" && (
+            <p className="no-print -mb-1 flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] text-ink-2 lg:hidden">
+              <Monitor size={15} className="shrink-0 text-ink-3" aria-hidden="true" />View only on this screen. Use a computer to add, edit or encode.
+            </p>
+          )}
           <ErrorBoundary key={location.pathname}>
             <Outlet context={{ term: term.data, termLoading: term.loading }} />
           </ErrorBoundary>

@@ -39,7 +39,6 @@ export default function Curriculum() {
         subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years`}
         actions={isSecretary && <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
       />
-      {isSecretary && <button className="fab no-print lg:hidden" onClick={() => setEditing("new")}><Plus size={20} aria-hidden="true" />Add subject</button>}
 
       {isSecretary && (
         <div className="seg seg-fill self-start" role="group" aria-label="Program">
@@ -60,7 +59,7 @@ export default function Curriculum() {
                     <span className="font-mono text-[13px] text-ink-2">{sumUnits(rows)} units</span>
                   </div>
                   <table className="data-table">
-                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th><span className="sr-only">Actions</span></th>}</tr></thead>
+                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th className="hidden lg:table-cell"><span className="sr-only">Actions</span></th>}</tr></thead>
                     <tbody>
                       {rows.map((s) => (
                         <tr key={s.id}>
@@ -68,7 +67,7 @@ export default function Curriculum() {
                           <td className="font-medium"><span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>{s.title}</td>
                           <td className="num">{Number(s.units)}</td>
                           {isSecretary && (
-                            <td className="whitespace-nowrap px-2 text-right">
+                            <td className="hidden whitespace-nowrap px-2 text-right lg:table-cell">
                               <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
                               <button className="icon-btn icon-btn-danger touch-40 h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
                             </td>
