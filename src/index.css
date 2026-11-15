@@ -180,6 +180,70 @@
   }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 
+  /* ── Phone app shell (below lg): bottom tab bar, bottom-sheet dialogs, floating main action ── */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; justify-content: space-around; gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 2px 0; font-size: 12px; font-weight: 500; color: var(--ink-3);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab-icon {
+    display: flex; align-items: center; justify-content: center; width: 56px; height: 30px; border-radius: 999px;
+    transition: background-color .15s ease, transform .1s ease;
+  }
+  .tab:active .tab-icon { transform: scale(.92); }
+  .tab.active { color: var(--tint-ink); font-weight: 700; }
+  .tab.active .tab-icon { background: var(--tint); }
+
+  /* Dialogs: centered box on PC, a sheet that slides up from the bottom edge on phones. */
+  .sheet-wrap { display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { border-radius: 18px 18px 0 0; border-bottom: 0; max-height: 92dvh; animation: sheet-up .22s cubic-bezier(.2,.8,.2,1); }
+  .sheet-grip { display: block; width: 38px; height: 4px; margin: 8px auto 0; border-radius: 999px; background: var(--line); }
+  .sheet-footer { display: flex; flex-direction: column-reverse; gap: 10px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .sheet-footer > .btn { height: 46px; }
+  @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (min-width: 640px) {
+    .sheet-wrap { align-items: center; padding: 16px; }
+    .sheet { border-radius: 12px; border-bottom: 1px solid var(--line); max-height: 90vh; animation: none; }
+    .sheet-grip { display: none; }
+    .sheet-footer { flex-direction: row; justify-content: flex-end; padding-bottom: 16px; }
+    .sheet-footer > .btn { height: 40px; }
+  }
+
+  /* The page's main action floats above the tab bar on phones (PC keeps it in the page header). */
+  .fab {
+    position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 35;
+    display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 20px; border-radius: 999px;
+    background: var(--btn); color: #fff; font-size: 15px; font-weight: 600;
+    box-shadow: 0 6px 18px rgba(0,0,0,.22);
+  }
+  .fab:active { transform: scale(.97); }
+
+  /* Touch: buttons and rows answer the finger. */
+  @media (pointer: coarse) {
+    .btn:active:not(:disabled) { transform: scale(.98); }
+    .press:active { background: var(--hover); }
+  }
+  @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tab-icon { transition: none; } }
+
+  /* Label/value facts (student header, home card): two per row on phones, as many as fit on wider screens. */
+  .stat-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+
+  /* Phones: tables get tighter side padding so grade columns fit without sideways scrolling. */
+  @media (max-width: 639px) {
+    .data-table th { padding: 10px 10px; }
+    .data-table td { padding: 12px 10px; }
+    .data-table th:first-child, .data-table td:first-child { padding-left: 16px; }
+    .data-table th:last-child, .data-table td:last-child { padding-right: 16px; }
+  }
+
   /* Touch screens: small controls grow to a finger-sized 40px. Mouse layouts stay compact. */
   @media (pointer: coarse) {
     .btn-sm, .seg button { height: 40px; }

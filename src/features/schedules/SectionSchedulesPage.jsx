@@ -12,8 +12,8 @@ import ClassTimes from "./ClassTimes";
 export default function SectionSchedules() {
   const picker = useSectionPicker();
   const { program, year, section } = picker;
-  const rooms = useAsync(getRooms, []);
-  const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id]);
+  const rooms = useAsync(getRooms, [], "rooms");
+  const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
   if (picker.loading || rooms.loading) return <LoadingState />;
   if (picker.error || rooms.error) {

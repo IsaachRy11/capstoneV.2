@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Menu, PanelLeftClose, PanelLeftOpen, Search, Users, X } from "lucide-react";
+import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -49,32 +49,53 @@ function NavItem({ to, end, icon: Icon, label, collapsed }) {
   );
 }
 
-function Sidebar({ onNavigate, collapsed = false, onToggle }) {
+// One list drives both navigations: the sidebar on PC and the bottom tab bar on phones.
+// "tab" is the short label that fits under a tab icon.
+const NAV = {
+  secretary: [
+    { to: "/", end: true, icon: LayoutDashboard, label: "Dashboard", tab: "Home" },
+    { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records" },
+    { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
+    { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules" },
+    { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
+  ],
+  student: [
+    { to: "/", end: true, icon: Home, label: "Home", tab: "Home" },
+    { to: "/schedule", icon: CalendarClock, label: "Schedule", tab: "Schedule" },
+    { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker" },
+    { to: "/record", icon: FileText, label: "Academic record", tab: "Grades" },
+    { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
+  ],
+};
+
+// Phones and tablets: the main pages are one thumb-tap away at the bottom of the screen, like an app.
+function BottomTabs() {
   const { user } = useAuth();
-  const isSecretary = user.role === "secretary";
+  return (
+    <nav aria-label="Main" className="tabbar no-print lg:hidden">
+      {NAV[user.role].map(({ to, end, icon: Icon, label, tab }) => (
+        <NavLink key={to} to={to} end={end} aria-label={label} className={({ isActive }) => `tab ${isActive ? "active" : ""}`}>
+          <span className="tab-icon"><Icon size={21} aria-hidden="true" /></span>
+          <span>{tab}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+function Sidebar({ collapsed = false, onToggle }) {
+  const { user } = useAuth();
 
   return (
     <aside className={`flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
       <Brand />
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 py-3" onClick={onNavigate}>
-        {isSecretary ? (
-          <>
-            <NavItem collapsed={collapsed} to="/" end icon={LayoutDashboard} label="Dashboard" />
-            <div className="nav-label px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3" aria-hidden={collapsed}>Records</div>
-            <NavItem collapsed={collapsed} to="/students" icon={Users} label="Students" />
-            <NavItem collapsed={collapsed} to="/sections" icon={Layers} label="Section allocations" />
-            <NavItem collapsed={collapsed} to="/schedules" icon={CalendarClock} label="Schedules" />
-            <NavItem collapsed={collapsed} to="/curriculum" icon={BookOpen} label="Curriculum" />
-          </>
-        ) : (
-          <>
-            <NavItem collapsed={collapsed} to="/" end icon={Home} label="Home" />
-            <NavItem collapsed={collapsed} to="/schedule" icon={CalendarClock} label="Schedule" />
-            <NavItem collapsed={collapsed} to="/progress" icon={ListChecks} label="Subject tracker" />
-            <NavItem collapsed={collapsed} to="/record" icon={FileText} label="Academic record" />
-            <NavItem collapsed={collapsed} to="/curriculum" icon={BookOpen} label="Curriculum" />
-          </>
-        )}
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 py-3">
+        {NAV[user.role].map((item) => (
+          <Fragment key={item.to}>
+            {item.group && <div className="nav-label px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3" aria-hidden={collapsed}>{item.group}</div>}
+            <NavItem collapsed={collapsed} to={item.to} end={item.end} icon={item.icon} label={item.label} />
+          </Fragment>
+        ))}
       </nav>
       {/* Desktop only: collapse control sits at the bottom of the sidebar, not in the top bar */}
       {onToggle && (
@@ -99,14 +120,13 @@ export default function AppShell() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const toggleSidebar = () => setCollapsed((c) => {
     try { localStorage.setItem(SIDEBAR_KEY, c ? "open" : "collapsed"); } catch { /* private mode: just don't remember */ }
     return !c;
   });
   const [q, setQ] = useState("");
-  const term = useAsync(getCurrentTerm, []);
+  const term = useAsync(getCurrentTerm, [], "term");
 
   const title = location.pathname === "/"
     ? (user.role === "secretary" ? "Dashboard" : "Home")
@@ -122,16 +142,12 @@ export default function AppShell() {
       <div className="no-print sticky top-0 hidden h-screen lg:block">
         <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
       </div>
-      {menuOpen && (
-        <div className="no-print fixed inset-0 z-40 flex lg:hidden">
-          <div className="h-full shadow-xl"><Sidebar onNavigate={(e) => e.target.closest("a") && setMenuOpen(false)} /></div>
-          <button className="flex-1 bg-black/40" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
-        </div>
-      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print flex min-h-16 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3 sm:px-8">
-          <button className="icon-btn lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>          <div className="flex-1 font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
+        {/* Phones: the bar stays at the top while the page scrolls; the seal stands in for the sidebar brand. */}
+        <header className="no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:static lg:min-h-16 lg:py-3">
+          <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
+          <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
             <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
               <label htmlFor="global-search" className="sr-only">Search students</label>
@@ -143,7 +159,7 @@ export default function AppShell() {
           <UserMenu />
         </header>
 
-        <main className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
+        <main className="flex w-full flex-1 flex-col gap-4 px-4 pb-28 pt-4 sm:gap-6 sm:px-8 sm:pt-8 lg:pb-8">
           <ErrorBoundary key={location.pathname}>
             <Outlet context={{ term: term.data, termLoading: term.loading }} />
           </ErrorBoundary>
@@ -151,8 +167,10 @@ export default function AppShell() {
       </div>
     </div>
 
-      {/* Full-width footer, under the sidebar too */}
-      <footer className="no-print border-t border-line bg-surface px-6 py-7 sm:px-10">
+      <BottomTabs />
+
+      {/* Full-width footer, under the sidebar too (PC only: phones end at the tab bar) */}
+      <footer className="no-print hidden border-t border-line bg-surface px-6 py-7 sm:px-10 lg:block">
         <div className="flex flex-wrap items-center justify-between gap-x-12 gap-y-5">
           <div>
             <div className="font-display text-[16px] font-bold text-ink">CCS Subject Monitoring System</div>

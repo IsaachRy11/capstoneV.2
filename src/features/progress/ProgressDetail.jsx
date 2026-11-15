@@ -38,37 +38,40 @@ export default function ProgressDetail({ view, progress, retakeNext }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Subject</th><th>Curriculum</th><th className="!text-center">Units</th>
-                  <th className="!text-center">Midterm</th><th className="!text-center">Final</th><th>Status</th>
+                  <th>Subject</th><th className="hidden sm:table-cell">Curriculum</th><th className="hidden !text-center sm:table-cell">Units</th>
+                  <th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className="hidden sm:table-cell">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((s) => (
                   <tr key={s.id}>
-                    <td className="min-w-[200px]">
+                    <td className="sm:min-w-[200px]">
                       <span className="block font-mono text-[13px] text-accent">{s.code}</span>
                       <span className="block font-medium">{s.title}</span>
                       {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
+                      {/* Phones: the hidden columns are folded in here. */}
+                      <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearLabel(s.year_level)} · {semesterLabel(s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
+                      <span className="mt-1.5 block sm:hidden">
+                        <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
+                        {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
+                      </span>
                     </td>
-                    <td className="whitespace-nowrap text-[13px] text-ink-2">{yearLabel(s.year_level)} · {semesterLabel(s.semester)}</td>
-                    <td className="num">{Number(s.units)}</td>
+                    <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearLabel(s.year_level)} · {semesterLabel(s.semester)}</td>
+                    <td className="num hidden sm:table-cell">{Number(s.units)}</td>
                     <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
                     <td className="text-center text-[13px]"><FinalCell s={s} /></td>
-                    <td>
+                    <td className="hidden sm:table-cell">
                       <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
                       {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot>
-                <tr className="border-t border-line bg-surface-2 text-[13px] font-semibold">
-                  <td colSpan={2} className="px-4 py-3 text-ink-2">Total</td>
-                  <td className="num px-4 py-3">{sumUnits(rows)} units</td>
-                  <td colSpan={3} />
-                </tr>
-              </tfoot>
             </table>
+            <p className="flex items-center justify-between gap-3 border-t border-line bg-surface-2 px-5 py-3 text-[13px] font-semibold">
+              <span className="text-ink-2">Total</span>
+              <span className="font-mono">{rows.length} {rows.length === 1 ? "subject" : "subjects"} · {sumUnits(rows)} units</span>
+            </p>
           </div>
         )}
       </section>

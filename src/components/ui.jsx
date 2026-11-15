@@ -151,14 +151,17 @@ export function Modal({ title, onClose, children, footer, width = "max-w-md" }) 
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`card w-full ${width} max-h-[90vh] overflow-auto shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+    <div className="sheet-wrap fixed inset-0 z-50 bg-black/40" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      {/* Phones: a bottom sheet (thumb-reachable, full-width buttons). PC: a centered dialog. See .sheet in index.css. */}
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`card sheet w-full ${width === "max-w-lg" ? "sm:max-w-lg" : "sm:max-w-md"} flex flex-col overflow-hidden shadow-xl`}>
+        <span className="sheet-grip" aria-hidden="true" />
+        <div className="flex items-center justify-between border-b border-line px-5 py-3 sm:py-4">
           <h2 id="modal-title" className="text-[17px] font-bold">{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
-        <div className="px-5 py-5">{children}</div>
-        {footer && <div className="flex justify-end gap-2.5 border-t border-line px-5 py-4">{footer}</div>}
+        {/* Only the body scrolls, so the title and the action buttons stay in reach. */}
+        <div className="min-h-0 flex-1 overflow-auto px-5 py-5">{children}</div>
+        {footer && <div className="sheet-footer border-t border-line px-5 pt-4">{footer}</div>}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formatGrade, inferSubjectKind, initials, normKey, shortProgramName, sumUnits, termLabel } from "./format";
 import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
-import { isStudentId, loginEmail } from "./login";
+import { isStaffId, isStudentId, loginEmail } from "./login";
 import { toCsv } from "./csv";
 
 describe("grades and labels", () => {
@@ -76,14 +76,20 @@ describe("login", () => {
     expect(loginEmail(" 2025-0001 ")).toBe("2025-0001@students.ccs-monitor.test");
   });
 
-  it("leaves staff emails alone (lower-cased)", () => {
+  it("turns a staff ID into the secretary's login address", () => {
+    expect(loginEmail(" CCS-001 ")).toBe("ccs-001@staff.ccs-monitor.test");
+    expect(isStaffId("CCS-001")).toBe(true);
+    expect(isStaffId("2025-0001")).toBe(false);
+  });
+
+  it("leaves other emails alone (lower-cased)", () => {
     expect(loginEmail("Demo.Secretary@ccs-monitor.test")).toBe("demo.secretary@ccs-monitor.test");
   });
 
   it("only treats the ####-#### pattern as a student ID", () => {
     expect(isStudentId("2025-0001")).toBe(true);
     expect(isStudentId("2025-001")).toBe(false);
-    expect(isStudentId("SEC-001")).toBe(false);
+    expect(isStudentId("CCS-001")).toBe(false);
   });
 });
 

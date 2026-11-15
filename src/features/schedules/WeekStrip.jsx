@@ -12,7 +12,17 @@ export default function WeekStrip({ meetings = [], className = "" }) {
   }
 
   return (
-    <table className={`w-full table-fixed border-separate border-spacing-1.5 ${className}`}>
+    <div className={`min-w-0 ${className}`}>
+    {/* Phones: six day columns don't fit, so the meeting days are a short list. */}
+    <ul className="flex w-full flex-col gap-1.5 sm:hidden">
+      {days.filter((d) => byDay.get(d).length).map((d) => byDay.get(d).map((m) => (
+        <li key={d + m.starts_at} className="flex items-baseline justify-between gap-3 rounded-lg border px-3 py-2" style={{ background: "var(--tint)", borderColor: "var(--accent)" }}>
+          <span className="text-[13px] font-semibold text-ink">{DAY_SHORT[d]}</span>
+          <span className="text-right text-[13px] text-ink-2"><span className="font-mono font-semibold text-tint-ink">{timeRange(m.starts_at, m.ends_at)}</span> · {m.rooms?.name || "Room TBA"}</span>
+        </li>
+      )))}
+    </ul>
+    <table className="hidden w-full table-fixed border-separate border-spacing-1.5 sm:table">
       <caption className="sr-only">Weekly schedule</caption>
       <thead>
         <tr>
@@ -53,5 +63,6 @@ export default function WeekStrip({ meetings = [], className = "" }) {
         </tr>
       </tbody>
     </table>
+    </div>
   );
 }

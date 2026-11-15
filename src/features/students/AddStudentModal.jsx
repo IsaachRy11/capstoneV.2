@@ -2,9 +2,10 @@ import { useState } from "react";
 import { createStudent } from "../../services/students";
 import { FormError, Modal } from "../../components/ui";
 import { STUDENT_TYPE, yearLabel } from "../../lib/format";
+import { loginEmail } from "../../lib/login";
 
 export default function AddStudentModal({ programs, sections = [], term, onClose, onCreated }) {
-  const [form, setForm] = useState({ id: "", first_name: "", last_name: "", email: "", programId: programs[0]?.id ?? "", year_level: 1, admission_type: "new", sectionId: "" });
+  const [form, setForm] = useState({ id: "", first_name: "", last_name: "", programId: programs[0]?.id ?? "", year_level: 1, admission_type: "new", sectionId: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -19,8 +20,12 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
     setBusy(true);
     setError("");
     try {
-      const { sectionName, loginCreated } = await createStudent({ ...form, programId: Number(form.programId), year_level: Number(form.year_level), sectionId: form.sectionId ? Number(form.sectionId) : null }, term);
-      onCreated(`${form.first_name} ${form.last_name} was added${sectionName ? ` to ${sectionName} and enrolled in its classes` : ""}. ${loginCreated ? "They can sign in with their student ID." : "Their login could not be created; run npm run accounts:students."}`);
+      const { sectionName, loginCreated, tempPassword } = await createStudent({ ...form, email: loginEmail(form.id), programId: Number(form.programId), year_level: Number(form.year_level), sectionId: form.sectionId ? Number(form.sectionId) : null }, term);
+      const where = sectionName ? ` in ${sectionName} and enrolled in its classes` : "";
+      const login = tempPassword
+        ? ` Give them this one-time password: ${tempPassword}. They sign in with their student ID and choose their own password.`
+        : loginCreated ? " They can sign in with their student ID." : " Their login could not be created; open their record and use Reset password.";
+      onCreated(`${form.first_name} ${form.last_name} was created${where}.${login}`);
     } catch (err) {
       setError(err.code === "23505" ? "A student with this ID or email already exists." : err.message);
       setBusy(false);
@@ -28,15 +33,14 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
   };
 
   return (
-    <Modal title="Add student" onClose={onClose} width="max-w-lg"
+    <Modal title="Create student" onClose={onClose} width="max-w-lg"
       footer={<>
         <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" type="submit" form="add-student" disabled={busy}>{busy ? "Adding…" : "Add student"}</button>
+        <button className="btn btn-primary" type="submit" form="add-student" disabled={busy}>{busy ? "Creating…" : "Create student"}</button>
       </>}>
       <form id="add-student" onSubmit={submit} className="grid grid-cols-2 gap-4">
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="sid">Student ID</label><input id="sid" className="field font-mono" placeholder="2026-0001" value={form.id} onChange={set("id")} required /></div>
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="semail">Email</label><input id="semail" type="email" className="field" value={form.email} onChange={set("email")} required /></div>
-        <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="sfirst">First name</label><input id="sfirst" className="field" value={form.first_name} onChange={set("first_name")} required /></div>
+        <div className="col-span-2"><label className="label" htmlFor="sid">Student ID</label><input id="sid" className="field font-mono" placeholder="2026-0001" value={form.id} onChange={set("id")} required /></div>
+                <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="sfirst">First name</label><input id="sfirst" className="field" value={form.first_name} onChange={set("first_name")} required /></div>
         <div className="col-span-2 sm:col-span-1"><label className="label" htmlFor="slast">Last name</label><input id="slast" className="field" value={form.last_name} onChange={set("last_name")} required /></div>
         <div className="col-span-2 sm:col-span-1">
           <label className="label" htmlFor="sprog">Program</label>
@@ -65,7 +69,7 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
             {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-        <p className="col-span-2 text-[13px] text-ink-3">They're placed in their block section for this semester and enrolled in its classes. Their sign-in is created automatically: they use their student ID and the starting password from the CCS office.</p>
+        <p className="col-span-2 text-[13px] text-ink-3">They're placed in their block section for this semester and enrolled in its classes. Their sign-in is created automatically. You'll get a one-time password to give them; they choose their own at first sign-in.</p>
         <div className="col-span-2"><FormError error={error} /></div>
       </form>
     </Modal>

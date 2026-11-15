@@ -6,22 +6,24 @@ import { getDeficiencies, getStudent, getTermClasses } from "../../services/stud
 import { ErrorState, LoadingState, StandingBadge, SectionHeader } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
 import { scheduleLines } from "../../lib/schedule";
+import TodayCard from "./TodayCard";
 
 export default function StudentHome() {
   const { user } = useAuth();
   const { term, termLoading } = useOutletContext();
 
   const { data, error, loading, reload } = useAsync(async () => {
+    if (termLoading) return null; // wait for the semester instead of loading everything twice
     const student = await getStudent(user.studentId);
     const [classes, deficiencies] = await Promise.all([
       term ? getTermClasses(user.studentId, term.id) : [],
       getDeficiencies(user.studentId),
     ]);
     return { student, classes, deficiencies };
-  }, [user.studentId, term?.id]);
+  }, [user.studentId, term?.id, termLoading], "home");
 
-  if (loading || termLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (loading || !data) return <LoadingState />;
 
   const { student, classes, deficiencies } = data;
   const active = classes.filter((c) => c.status !== "dropped");
@@ -38,7 +40,7 @@ export default function StudentHome() {
           </div>
           <StandingBadge standing={student.standing} />
         </div>
-        <dl className="grid gap-4 border-t border-line-2 pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+        <dl className="stat-grid border-t border-line-2 pt-5">
           {[
             ["Year level", yearLabel(student.year_level)],
             ["Section", student.section_name || "Not registered"],
@@ -50,6 +52,9 @@ export default function StudentHome() {
         </dl>
       </section>
 
+      {/* Phones open on today's classes; the tab bar replaces the shortcut list further down. */}
+      <TodayCard classes={classes} className="lg:hidden" />
+
       <div className="flex flex-wrap items-start gap-5">
         <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
           <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
@@ -58,18 +63,24 @@ export default function StudentHome() {
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>Subject</th><th>Schedule</th><th className="!text-center">Units</th></tr></thead>
+                <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Schedule</th><th className="!text-center">Units</th></tr></thead>
                 <tbody>
                   {classes.map((c) => {
                     const s = c.class_offerings.curriculum_subjects;
                     const lines = scheduleLines(c.class_offerings.class_meetings);
                     return (
                       <tr key={c.id}>
-                        <td className="min-w-[200px]">
+                        <td className="sm:min-w-[200px]">
                           <span className="block font-mono text-[12px] text-accent">{s.code}</span>
                           <span className="block font-medium">{s.title}</span>
+                          {/* Phones: the schedule sits under the subject instead of in a clipped column. */}
+                          <span className="mt-1 block text-[13px] sm:hidden">
+                            {lines.length ? lines.map((l) => (
+                              <span key={l.days + l.time} className="block text-ink-2"><span className="font-medium text-ink">{l.days}</span> {l.time} <span className="text-ink-3">· {l.room}</span></span>
+                            )) : <span className="text-ink-3">To be arranged</span>}
+                          </span>
                         </td>
-                        <td className="text-[13px]">
+                        <td className="hidden text-[13px] sm:table-cell">
                           {lines.length ? lines.map((l) => (
                             <div key={l.days + l.time} className="whitespace-nowrap">
                               <span className="font-medium text-ink">{l.days}</span> <span className="text-ink-2">{l.time}</span>
@@ -111,7 +122,7 @@ export default function StudentHome() {
             </section>
           )}
 
-          <section className="card p-2">
+          <section className="card hidden p-2 lg:block">
             {[
               { to: "/schedule", icon: CalendarClock, title: "Class schedule", sub: "Your week at a glance, with rooms" },
               { to: "/progress", icon: ListChecks, title: "Subject tracker", sub: "What you've passed, what's left, what's next" },

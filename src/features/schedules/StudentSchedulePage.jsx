@@ -12,7 +12,7 @@ export default function Schedule() {
   const { term, termLoading } = useOutletContext();
   const { data: classes, error, loading, reload } = useAsync(
     () => (term ? getTermClasses(user.studentId, term.id) : Promise.resolve([])),
-    [user.studentId, term?.id]
+    [user.studentId, term?.id], "my-schedule"
   );
 
   if (loading || termLoading) return <LoadingState />;

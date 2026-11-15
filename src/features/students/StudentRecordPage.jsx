@@ -1,5 +1,5 @@
-import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, Printer } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { AlertTriangle, KeyRound, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
@@ -8,9 +8,14 @@ import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, S
 import { STUDENT_STATUS, STUDENT_TYPE, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
+import DeleteStudentModal from "./DeleteStudentModal";
+import ResetPasswordModal from "./ResetPasswordModal";
 
 export default function StudentRecord() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const params = useParams();
   const id = params.id || user.studentId;
   const isSecretary = user.role === "secretary";
@@ -22,7 +27,7 @@ export default function StudentRecord() {
       getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [],
     ]);
     return { student, history, deficiencies, changes };
-  }, [id, isSecretary]);
+  }, [id, isSecretary], "record");
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -71,9 +76,13 @@ export default function StudentRecord() {
               <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name} · {yearLabel(student.year_level)}</div>
             </div>
           </div>
-          <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print record</button>
+          <div className="no-print flex flex-wrap gap-2">
+            <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print record</button>
+            {isSecretary && <button className="btn btn-secondary" onClick={() => setResetting(true)}><KeyRound size={16} aria-hidden="true" />Reset password</button>}
+            {isSecretary && <button className="btn btn-secondary text-bad" onClick={() => setDeleting(true)}><Trash2 size={16} aria-hidden="true" />Delete student</button>}
+          </div>
         </div>
-        <dl className="grid gap-4 border-t border-line-2 pt-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+        <dl className="stat-grid border-t border-line-2 pt-5">
           {[
             ["Section", student.section_name || "Not registered"],
             ["Units this term", `${sumUnits(current)} units`],
@@ -87,7 +96,7 @@ export default function StudentRecord() {
             <dd className="mt-1 text-[15px] font-semibold text-ink">
               {isSecretary ? (
                 <>
-                  <select id="student-status" className="field no-print h-9 w-auto min-w-[150px] py-0 text-[14px]" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
+                  <select id="student-status" className="field no-print h-9 w-full max-w-[180px] py-0 text-[14px]" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
                     {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{STUDENT_STATUS[student.status]}</span>
@@ -118,11 +127,13 @@ export default function StudentRecord() {
 
       {terms.length > 0 && <GradeLegend className="card px-5 py-3.5" />}
       {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
-      {terms.map((t) => (
-        <TermTable key={t.school_term_id} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
+      {terms.map((t, i) => (
+        <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
       ))}
 
       {isSecretary && <GradeHistory changes={changes} />}
+      {resetting && <ResetPasswordModal student={student} onClose={() => setResetting(false)} />}
+      {deleting && <DeleteStudentModal student={student} onClose={() => setDeleting(false)} onDeleted={() => navigate("/students", { replace: true })} />}
     </>
   );
 }

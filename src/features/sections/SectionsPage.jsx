@@ -20,9 +20,9 @@ export default function Sections() {
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [actionError, setActionError] = useState("");
 
-  const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id]);
+  const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "section-offerings");
   const offering = offerings.data?.find((o) => o.id === offeringId) || offerings.data?.[0];
-  const roster = useAsync(() => (offering ? getRoster(offering.id) : Promise.resolve([])), [offering?.id]);
+  const roster = useAsync(() => (offering ? getRoster(offering.id) : Promise.resolve([])), [offering?.id], "roster");
 
   if (picker.loading) return <LoadingState />;
   if (picker.error) return <ErrorState error={picker.error} onRetry={picker.reload} />;
@@ -86,7 +86,7 @@ export default function Sections() {
                       : "No fixed schedule yet"}
                   </span>
                 </div>
-                <WeekStrip meetings={offering.class_meetings} className="min-w-[420px] flex-[2_1_480px]" />
+                <WeekStrip meetings={offering.class_meetings} className="sm:min-w-[420px] sm:flex-[2_1_480px]" />
               </div>
 
               <EnrollBox key={offering.id} section={section} offering={offering} rosterIds={new Set((roster.data || []).map((r) => r.student_id))} onEnrolled={refresh} />
@@ -94,17 +94,20 @@ export default function Sections() {
               {roster.loading ? <LoadingState /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">
                   <table className="data-table">
-                    <thead><tr><th>Student</th><th>Student ID</th><th>Standing</th><th><span className="sr-only">Remove</span></th></tr></thead>
+                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Standing</th><th><span className="sr-only">Remove</span></th></tr></thead>
                     <tbody>
                       {roster.data.map((r) => (
                         <tr key={r.id}>
-                          <td className="whitespace-nowrap">
+                          <td>
                             <div className="flex items-center gap-2.5">
                               <Avatar name={r.name} size={30} />
-                              <Link to={`/students/${r.student_id}`} className="inline-flex min-h-10 items-center font-semibold text-ink">{r.name}</Link>
+                              <div className="flex min-w-0 flex-col">
+                                <Link to={`/students/${r.student_id}`} className="inline-flex min-h-10 items-center font-semibold text-ink sm:whitespace-nowrap">{r.name}</Link>
+                                <span className="-mt-1.5 font-mono text-[12px] text-ink-3 sm:hidden">{r.student_id}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className="font-mono text-[13px] text-ink-2">{r.student_id}</td>
+                          <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 sm:table-cell">{r.student_id}</td>
                           <td><StandingBadge standing={r.standing} /></td>
                           <td className="text-right"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this class`}><Trash2 size={16} /></button></td>
                         </tr>

@@ -22,7 +22,7 @@ export default function Curriculum() {
       getPrograms(), getCurriculum(), isSecretary ? null : getStudent(user.studentId),
     ]);
     return { programs, rows, myProgram: me?.program_code };
-  }, [isSecretary, user.studentId]);
+  }, [isSecretary, user.studentId], "curriculum");
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -59,12 +59,12 @@ export default function Curriculum() {
                     <span className="font-mono text-[13px] text-ink-2">{sumUnits(rows)} units</span>
                   </div>
                   <table className="data-table">
-                    <thead><tr><th>Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th><span className="sr-only">Actions</span></th>}</tr></thead>
+                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th><span className="sr-only">Actions</span></th>}</tr></thead>
                     <tbody>
                       {rows.map((s) => (
                         <tr key={s.id}>
-                          <td className="whitespace-nowrap font-mono text-[13px] text-accent">{s.code}</td>
-                          <td className="font-medium">{s.title}</td>
+                          <td className="hidden whitespace-nowrap font-mono text-[13px] text-accent sm:table-cell">{s.code}</td>
+                          <td className="font-medium"><span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>{s.title}</td>
                           <td className="num">{Number(s.units)}</td>
                           {isSecretary && (
                             <td className="whitespace-nowrap px-2 text-right">

@@ -9,9 +9,9 @@ import { sectionLetter, shortProgramName, sumUnits, yearLabel } from "../../lib/
 
 function Kpi({ to, label, value, sub, children }) {
   return (
-    <Link to={to} className="card flex flex-col gap-2.5 p-5 text-ink hover:border-accent">
+    <Link to={to} className="card flex flex-col gap-2 p-4 text-ink hover:border-accent sm:gap-2.5 sm:p-5">
       <span className="text-[13px] font-semibold text-ink-2">{label}</span>
-      <span className="font-display text-[34px] font-bold tracking-tight text-ink">{value}</span>
+      <span className="font-display text-[28px] font-bold tracking-tight text-ink sm:text-[34px]">{value}</span>
       {sub && <span className="text-[13px] text-ink-3">{sub}</span>}
       {children}
     </Link>
@@ -19,15 +19,16 @@ function Kpi({ to, label, value, sub, children }) {
 }
 
 export default function Dashboard() {
-  const { term } = useOutletContext();
+  const { term, termLoading } = useOutletContext();
   const { data, error, loading, reload } = useAsync(async () => {
+    if (termLoading) return null; // wait for the semester instead of loading everything twice
     const [students, sections, curriculum, programs, offerings] = await Promise.all([
       listStudents(), listCurrentSections(), getCurriculum(), getPrograms(), term ? countOfferings(term.id) : 0,
     ]);
     return { students, sections, curriculum, programs, offerings };
-  }, [term?.id]);
+  }, [term?.id, termLoading], "dashboard");
 
-  if (loading) return <LoadingState />;
+  if (loading || !data) return error ? <ErrorState error={error} onRetry={reload} /> : <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   const { students, sections, curriculum, programs, offerings } = data;
@@ -42,12 +43,12 @@ export default function Dashboard() {
       <PageHeader
         title="Department overview"
         actions={<>
-          <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print summary</button>
-          <Link className="btn btn-primary no-print" to="/students?add=1"><Plus size={16} aria-hidden="true" />Add student</Link>
+          <button className="btn btn-secondary no-print hidden lg:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print summary</button>
+          <Link className="btn btn-primary no-print hidden lg:inline-flex" to="/students?add=1"><Plus size={16} aria-hidden="true" />Create student</Link>
         </>}
       />
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
         <Kpi to="/students" label="Students" value={students.length} sub={programs.map((p) => `${p.code} ${byProgram(p.code).length}`).join(" · ")} />
         <Kpi to="/sections" label="Sections" value={sections.length} sub="This semester" />
         <Kpi to="/sections" label="Seats filled" value={<>{filled}<span className="text-[18px] font-semibold text-ink-3"> / {seats}</span></>}>
@@ -67,7 +68,35 @@ export default function Dashboard() {
             </div>
             <Link to="/students" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Open registry</Link>
           </div>
-          <div className="overflow-x-auto">
+          {/* Phones: one short list per program instead of a wide table. */}
+          <div className="border-t border-line sm:hidden">
+            {programs.map((p) => (
+              <div key={p.code} className="border-b border-line-2 px-5 py-3 last:border-b-0">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="text-[14px] font-bold">{p.code}</h3>
+                  <span className="text-[12px] text-ink-3">{byProgram(p.code).length} students</span>
+                </div>
+                <ul className="mt-1">
+                  {Array.from({ length: p.duration_years }, (_, i) => {
+                    const y = i + 1;
+                    const n = students.filter((s) => s.program_code === p.code && s.year_level === y).length;
+                    const secs = sectionsFor(p.code, y);
+                    const seatsFilled = secs.reduce((t, x) => t + x.enrolled, 0);
+                    const seatsTotal = secs.reduce((t, x) => t + x.capacity, 0);
+                    return (
+                      <li key={y}>
+                        <Link to={`/students?year=${y}&program=${p.code}`} className="flex min-h-11 items-center justify-between gap-3 text-ink">
+                          <span className="text-[14px] font-medium">{yearLabel(y)}</span>
+                          <span className="text-right text-[13px] text-ink-2">{n} students<span className="text-ink-3"> · {secs.length ? `${secs.length === 1 ? "1 section" : `${secs.length} sections`} · ${seatsFilled}/${seatsTotal} seats` : "no section yet"}</span></span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
                 <tr className="border-y border-line bg-surface-2 text-[12px] font-semibold text-ink-3">
@@ -129,7 +158,7 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <p className="border-t border-line px-5 py-3 text-[12px] text-ink-3">Bar = seats filled across the year's block sections. Select a cell to see those students.</p>
+          <p className="hidden border-t border-line px-5 py-3 text-[12px] text-ink-3 sm:block">Bar = seats filled across the year's block sections. Select a cell to see those students.</p>
         </section>
 
         <section className="card flex-[1_1_300px] p-5">
@@ -152,17 +181,18 @@ export default function Dashboard() {
         </section>
       </div>
 
-      <section className="card overflow-hidden">
+      {/* Phones skip this long list: the year-level card above and the Sections page already cover it. */}
+      <section className="card hidden overflow-hidden sm:block">
         <SectionHeader title="Sections this semester" subtitle="Block sections and seats filled" action={<Link to="/sections" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Manage sections</Link>} />
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Section</th><th>Program</th><th>Year</th><th className="w-[40%]">Seats</th></tr></thead>
+            <thead><tr><th>Section</th><th className="hidden sm:table-cell">Program</th><th className="hidden sm:table-cell">Year</th><th className="w-[55%] sm:w-[40%]">Seats</th></tr></thead>
             <tbody>
               {sections.map((s) => (
                 <tr key={s.id}>
-                  <td className="font-semibold">{s.name}</td>
-                  <td className="text-ink-2">{s.program_code}</td>
-                  <td className="text-ink-2">{yearLabel(s.year_level)}</td>
+                  <td className="whitespace-nowrap font-semibold">{s.name}</td>
+                  <td className="hidden text-ink-2 sm:table-cell">{s.program_code}</td>
+                  <td className="hidden text-ink-2 sm:table-cell">{yearLabel(s.year_level)}</td>
                   <td>
                     <div className="flex items-center gap-3">
                       <div className="bar flex-1"><span style={{ width: `${(s.enrolled / s.capacity) * 100}%` }} /></div>

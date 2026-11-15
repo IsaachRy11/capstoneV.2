@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { FormError, SealLogo } from "../../components/ui";
 
 const DEMO_ACCOUNTS = [
-  { id: "demo.secretary@ccs-monitor.test", label: "Demo secretary", hint: "Fills in the email" },
+  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001" },
   { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001" },
 ];
 
@@ -28,7 +28,7 @@ export default function Login() {
     try {
       await signIn(identifier, password);
     } catch (err) {
-      setError(err.message === "Invalid login credentials" ? "Student ID, email or password is incorrect." : err.message);
+      setError(err.message === "Invalid login credentials" ? "ID or password is incorrect." : err.message);
     } finally {
       setBusy(false);
     }
@@ -87,7 +87,7 @@ export default function Login() {
         <div className="flex w-full max-w-[400px] flex-col gap-6 lg:gap-7">
           <div className="flex flex-col gap-1.5 lg:gap-2">
             <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
-            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Staff: use your email.</p>
+            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your staff ID.</p>
           </div>
 
           {status === "unlinked" && (
@@ -100,8 +100,8 @@ export default function Login() {
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-              <label className="label" htmlFor="email">Student ID or email</label>
-              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
+              <label className="label" htmlFor="email">Student ID or staff ID</label>
+              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001 or CCS-001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
                 onKeyDown={(e) => { if (e.key === "Enter" && !password) { e.preventDefault(); passwordRef.current?.focus(); } }} />
             </div>
             <div>

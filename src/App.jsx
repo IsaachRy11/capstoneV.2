@@ -5,6 +5,7 @@ import AppShell from "./components/AppShell";
 import { LoadingState } from "./components/ui";
 
 const Login = lazy(() => import("./features/account/LoginPage"));
+const FirstSignIn = lazy(() => import("./features/account/FirstSignInPage"));
 const Landing = lazy(() => import("./features/landing/LandingPage"));
 const Dashboard = lazy(() => import("./features/dashboard/DashboardPage"));
 const StudentHome = lazy(() => import("./features/home/StudentHomePage"));
@@ -27,9 +28,11 @@ function SecretaryOnly({ children }) {
 }
 
 export default function App() {
-  const { status, user } = useAuth();
+  const { status, user, mustChangePassword } = useAuth();
 
   if (status === "loading") return <LoadingState label="Signing in…" />;
+  // A reset or brand-new account must pick its own password before using the app.
+  if (mustChangePassword) return <Suspense fallback={<LoadingState />}><FirstSignIn /></Suspense>;
 
   return (
     <Suspense fallback={<LoadingState />}>

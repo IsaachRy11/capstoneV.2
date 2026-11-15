@@ -44,7 +44,7 @@ update public.rooms set is_shared = true where name = 'Gymnasium';
 
 -- ─── Demo login (link it by creating an Auth user with this email) ────────
 insert into public.secretaries (full_name, email) values
-  ('Demo Secretary', 'demo.secretary@ccs-monitor.test')
+  ('Demo Secretary', 'ccs-001@staff.ccs-monitor.test')
 on conflict do nothing;
 
 -- ─── Students, sections, registrations, offerings, schedules, grades ──────
@@ -125,8 +125,12 @@ begin
         for k in 1..(pc->>'per_section')::int loop
           counters[entry_year - 2022] := counters[entry_year - 2022] + 1;
           sid   := entry_year || '-' || lpad(counters[entry_year - 2022]::text, 4, '0');
-          fname := first_names[1 + floor(random() * array_length(first_names, 1))::int];
-          lname := last_names[1 + floor(random() * array_length(last_names, 1))::int];
+          -- Every demo student gets a full name nobody else has (40 first x 30 last names = 1,200 combinations).
+          loop
+            fname := first_names[1 + floor(random() * array_length(first_names, 1))::int];
+            lname := last_names[1 + floor(random() * array_length(last_names, 1))::int];
+            exit when not exists (select 1 from public.students x where lower(x.first_name) = lower(fname) and lower(x.last_name) = lower(lname));
+          end loop;
           bias  := random() * 2 - 1;   -- -1 strong … +1 struggling
           -- Examples of every kind of student in each section.
           adm := (case k when 1 then 'shiftee' when 2 then 'transferee' when 3 then 'returnee' else 'new' end)::public.admission_type;

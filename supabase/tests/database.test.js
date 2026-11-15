@@ -48,9 +48,9 @@ beforeAll(async () => {
   await db.exec(`grant select, insert, update, delete on all tables in schema public to anon, authenticated;
                  grant usage on all sequences in schema public to authenticated;`);
   await db.exec(readFileSync(join(root, "seed.sql"), "utf8"));
-  await db.exec(`insert into auth.users (email) values ('demo.secretary@ccs-monitor.test'), ('demo.student@ccs-monitor.test')`);
+  await db.exec(`insert into auth.users (email) values ('ccs-001@staff.ccs-monitor.test'), ('demo.student@ccs-monitor.test')`);
   const users = (await db.query(`select email, id from auth.users`)).rows;
-  SEC = users.find((u) => u.email.startsWith("demo.secretary")).id;
+  SEC = users.find((u) => u.email.startsWith("ccs-001")).id;
   STU = users.find((u) => u.email.startsWith("demo.student")).id;
 }, 120_000);
 
@@ -378,6 +378,26 @@ describe("state machine rules", () => {
     const r = await asSec(`delete from enrollments where id = ${added.rows[0].id} returning id`);
     expect(r.error).toBeUndefined();
     expect(r.rows).toHaveLength(1);
+  });
+
+  it("deletes a student added by mistake, with their classes", async () => {
+    await newStudent("2026-9093");
+    const off = await firstOffering("BSIT 4-S");
+    await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9093', ${off.id})`);
+    const r = await asSec(`delete from students where id = '2026-9093' returning id`);
+    expect(r.error).toBeUndefined();
+    expect(r.rows).toHaveLength(1);
+    expect((await one(`select count(*)::int n from enrollments where student_id = '2026-9093'`)).n).toBe(0);
+  });
+
+  it("won't delete a student who has grades", async () => {
+    const r = await asSec(`delete from students where id = (select student_id from enrollments where midterm_grade is not null limit 1)`);
+    expect(r.error).toMatch(/Left the college/);
+  });
+
+  it("gives every demo student a name nobody else has", async () => {
+    const d = await one(`select count(*)::int n, count(distinct lower(first_name || ' ' || last_name))::int names from students where id not like '2026-9%'`);
+    expect(d.names).toBe(d.n);
   });
 
   it("won't lower a section's capacity below the students already enrolled", async () => {

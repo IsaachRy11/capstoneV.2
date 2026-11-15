@@ -13,7 +13,7 @@ export function useSectionPicker() {
   const base = useAsync(async () => {
     const [programs, sections] = await Promise.all([getPrograms(), listCurrentSections()]);
     return { programs, sections };
-  }, []);
+  }, [], "section-picker");
 
   const programs = base.data?.programs || [];
   const program = programs.find((p) => p.code === programCode) || programs[0];

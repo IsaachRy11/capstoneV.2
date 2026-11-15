@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { saveGrades } from "../../services/students";
 import { Badge, FormError, StatusBadge } from "../../components/ui";
 import { GRADE_OPTIONS, formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 
-export default function TermTable({ term, rows, canEdit, onSaved }) {
+// Phones: each term is a section that opens and closes (the newest starts open), so a long record
+// is a short list of terms instead of one endless scroll. PC and print always show every term.
+export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({});
   const [busy, setBusy] = useState(false);
@@ -16,6 +19,7 @@ export default function TermTable({ term, rows, canEdit, onSaved }) {
       status: r.status === "incomplete" || r.status === "dropped" ? r.status : "auto",
     }])));
     setEditing(true);
+    setOpen(true);
     setError("");
   };
   const set = (id, k, v) => setDraft((d) => ({ ...d, [id]: { ...d[id], [k]: v } }));
@@ -60,9 +64,15 @@ export default function TermTable({ term, rows, canEdit, onSaved }) {
 
   return (
     <section className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-        <div>
-          <h2 className="text-[17px] font-bold">{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</h2>
+      <div className={`flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:border-b sm:border-line ${open ? "border-b border-line" : ""}`}>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[17px] font-bold">
+            <button type="button" className="flex w-full items-center justify-between gap-3 text-left sm:hidden" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+              <span>{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</span>
+              <ChevronDown size={20} className={`shrink-0 text-ink-3 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+            </button>
+            <span className="hidden sm:inline">{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</span>
+          </h2>
           <p className="mt-1 text-[13px] text-ink-3">SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units · {term.section_name}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -71,17 +81,22 @@ export default function TermTable({ term, rows, canEdit, onSaved }) {
           {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto sm:block print:block ${open ? "" : "hidden"}`}>
         <table className="data-table">
-          <thead><tr><th>Code</th><th>Subject</th><th className="!text-center">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th>{editing ? "Mark as" : "Status"}</th></tr></thead>
+          {/* Phones: code, units and status sit under the subject name so Midterm and Final always fit. */}
+          <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="hidden !text-center sm:table-cell">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className={editing ? "" : "hidden sm:table-cell"}>{editing ? "Mark as" : "Status"}</th></tr></thead>
           <tbody>
             {rows.map((r) => {
               const bad = r.status === "failed";
               return (
                 <tr key={r.enrollment_id} style={bad && !editing ? { background: "var(--bad-bg)" } : undefined}>
-                  <td className="whitespace-nowrap font-mono text-[13px] text-accent">{r.code}</td>
-                  <td className="font-medium">{r.title}</td>
-                  <td className="num">{Number(r.units)}</td>
+                  <td className="hidden whitespace-nowrap font-mono text-[13px] text-accent sm:table-cell">{r.code}</td>
+                  <td className="font-medium">
+                    <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{r.code} <span className="text-ink-3">· {Number(r.units)} {Number(r.units) === 1 ? "unit" : "units"}</span></span>
+                    {r.title}
+                    {!editing && <span className="mt-1.5 block sm:hidden"><StatusBadge status={r.status} /></span>}
+                  </td>
+                  <td className="num hidden sm:table-cell">{Number(r.units)}</td>
                   {editing ? (
                     <>
                       <td className="text-center">{gradeSelect(r.enrollment_id, "midterm", `Midterm grade for ${r.code}`)}</td>
@@ -96,7 +111,7 @@ export default function TermTable({ term, rows, canEdit, onSaved }) {
                     <>
                       <td className="num" style={r.midterm_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.midterm_grade)}</td>
                       <td className={`num font-semibold ${bad ? "text-bad" : ""}`} style={r.final_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.final_grade)}</td>
-                      <td><StatusBadge status={r.status} /></td>
+                      <td className="hidden sm:table-cell"><StatusBadge status={r.status} /></td>
                     </>
                   )}
                 </tr>

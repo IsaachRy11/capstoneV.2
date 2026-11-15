@@ -1,18 +1,22 @@
 import { supabase, unwrap } from "../lib/supabase";
+import { cached, forget } from "../lib/cache";
 
-export const getCurrentTerm = () =>
-  unwrap(supabase.from("school_terms").select("*").eq("is_current", true).maybeSingle());
+// Programs, curriculum, terms and prerequisites rarely change, so they are fetched once and reused
+// between pages for a few minutes (lib/cache.js). Curriculum edits clear the curriculum entries.
 
-export const getTerms = () =>
-  unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester"));
+export const getCurrentTerm = () => cached("term:current", () =>
+  unwrap(supabase.from("school_terms").select("*").eq("is_current", true).maybeSingle()));
+
+export const getTerms = () => cached("term:all", () =>
+  unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester")));
 
 // Degree programs first (longest duration), then by code descending: BSIT, BSCS, ACT.
-export const getPrograms = () =>
+export const getPrograms = () => cached("programs", () =>
   unwrap(supabase.from("programs").select("id, code, name, duration_years"))
-    .then((rows) => rows.sort((a, b) => b.duration_years - a.duration_years || b.code.localeCompare(a.code)));
+    .then((rows) => rows.sort((a, b) => b.duration_years - a.duration_years || b.code.localeCompare(a.code))));
 
 // All subjects of the active curricula (optionally one program), in checklist order.
-export const getCurriculum = (programCode) => {
+export const getCurriculum = (programCode) => cached(`curriculum:${programCode || "all"}`, () => {
   let q = supabase
     .from("curriculum_subjects")
     .select("id, year_level, semester, sort_order, code, title, units, kind, curricula!inner(id, is_active, programs!inner(id, code, name, duration_years))")
@@ -22,11 +26,11 @@ export const getCurriculum = (programCode) => {
     .order("sort_order");
   if (programCode) q = q.eq("curricula.programs.code", programCode);
   return unwrap(q);
-};
+});
 
 // Official prerequisites (empty until SJC's list is added). Rows: { subject_id, prerequisite_id }.
-export const getPrerequisites = () =>
-  unwrap(supabase.from("subject_prerequisites").select("subject_id, prerequisite_id"));
+export const getPrerequisites = () => cached("curriculum:prerequisites", () =>
+  unwrap(supabase.from("subject_prerequisites").select("subject_id, prerequisite_id")));
 
 export async function addCurriculumSubject({ programCode, year_level, semester, code, title, units, kind }) {
   const curriculum = await unwrap(
@@ -36,6 +40,7 @@ export async function addCurriculumSubject({ programCode, year_level, semester, 
     supabase.from("curriculum_subjects").select("sort_order").eq("curriculum_id", curriculum.id)
       .eq("year_level", year_level).eq("semester", semester).order("sort_order", { ascending: false }).limit(1)
   );
+  forget("curriculum");
   return unwrap(
     supabase.from("curriculum_subjects").insert({
       curriculum_id: curriculum.id, year_level, semester, code: code.trim(), title: title.trim(),
@@ -45,7 +50,7 @@ export async function addCurriculumSubject({ programCode, year_level, semester, 
 }
 
 export const updateCurriculumSubject = (id, { year_level, semester, code, title, units, kind }) =>
-  unwrap(
+  (forget("curriculum"), unwrap)(
     supabase.from("curriculum_subjects")
       .update({ year_level, semester, code: code.trim(), title: title.trim(), units, kind })
       .eq("id", id)
@@ -53,7 +58,7 @@ export const updateCurriculumSubject = (id, { year_level, semester, code, title,
 
 // Fails with code 23503 if the subject is scheduled or has grades (protects student records).
 export const deleteCurriculumSubject = (id) =>
-  unwrap(supabase.from("curriculum_subjects").delete().eq("id", id));
+  (forget("curriculum"), unwrap)(supabase.from("curriculum_subjects").delete().eq("id", id));
 
 // Number of class offerings in a term (sections × subjects)
 export const countOfferings = (termId) =>

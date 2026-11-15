@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronRight, Download, Plus, Search } from "lucide-react";
+import { Download, Plus, Search } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { getPrograms } from "../../services/catalog";
@@ -9,6 +9,7 @@ import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StandingBadge
 import { yearLabel, STUDENT_TYPE } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
 import AddStudentModal from "./AddStudentModal";
+import DeleteStudentModal from "./DeleteStudentModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 const SIZE_KEY = "ccs-students-per-page";
@@ -23,7 +24,7 @@ export default function Students() {
   const programFilter = params.get("program") || "all";
   const [q, setQ] = useState(params.get("q") || "");
   const [standing, setStanding] = useState("all");
-  const [studentType, setStudentType] = useState("all");
+  const [deleting, setDeleting] = useState(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(readPageSize);
   const changePageSize = (n) => {
@@ -37,7 +38,7 @@ export default function Students() {
   const { data, error, loading, reload } = useAsync(async () => {
     const [students, programs, sections] = await Promise.all([listStudents(), getPrograms(), listCurrentSections()]);
     return { students, programs, sections };
-  }, []);
+  }, [], "students");
 
   const setParam = (k, v) => {
     const next = new URLSearchParams(params);
@@ -52,10 +53,9 @@ export default function Students() {
     const needle = q.trim().toLowerCase();
     return data.students.filter((s) =>
       (programFilter === "all" || s.program_code === programFilter) &&
-      (standing === "all" || s.standing === standing) &&
-      (studentType === "all" || s.admission_type === studentType) &&
+      (standing === "all" || s.standing === standing || s.admission_type === standing) &&
       (!needle || `${s.full_name} ${s.id} ${s.section_name || ""}`.toLowerCase().includes(needle)));
-  }, [data, q, programFilter, standing, studentType]);
+  }, [data, q, programFilter, standing]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -80,9 +80,11 @@ export default function Students() {
         subtitle={searching ? `Search results from all years · ${rows.length} of ${data.students.length} students` : `${yearLabel(Number(year))} · ${rows.length} of ${data.students.length} students`}
         actions={<>
           <button className="btn btn-secondary" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
-          <button className="btn btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Add student</button>
+          <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Create student</button>
         </>}
       />
+      {/* Phones: the main action floats above the tab bar. */}
+      <button className="fab no-print lg:hidden" onClick={() => setAdding(true)}><Plus size={20} aria-hidden="true" />Create student</button>
       {notice && <p role="status" className="rounded-lg px-4 py-3 text-[14px] tone-ok">{notice}</p>}
 
       <section className="card overflow-hidden">
@@ -114,17 +116,13 @@ export default function Students() {
           <label htmlFor="stand" className="sr-only">Standing</label>
           <select id="stand" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={standing} onChange={(e) => { setStanding(e.target.value); setPage(0); }}>
             <option value="all">Standing</option><option value="regular">Regular</option><option value="irregular">Irregular</option>
-          </select>
-          <label htmlFor="stype" className="sr-only">Student type</label>
-          <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_190px]" value={studentType} onChange={(e) => { setStudentType(e.target.value); setPage(0); }}>
-            <option value="all">Student type</option>
-            {Object.entries(STUDENT_TYPE).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            <option value="transferee">Transferee</option><option value="shiftee">Shiftee</option>
           </select>
         </div>
 
         <div className="overflow-x-auto">
           <table className="data-table">
-            <thead><tr><th>Student</th><th className="hidden md:table-cell">Student ID</th><th className="hidden sm:table-cell">Program</th><th className="hidden md:table-cell">Year</th><th className="hidden md:table-cell">Section</th><th className="hidden lg:table-cell">Student type</th><th>Standing</th><th className="hidden sm:table-cell"><span className="sr-only">Open</span></th></tr></thead>
+            <thead><tr><th>Student</th><th className="hidden md:table-cell">Student ID</th><th className="hidden sm:table-cell">Program</th><th className="hidden md:table-cell">Year</th><th className="hidden md:table-cell">Section</th><th>Standing</th><th className="hidden text-right sm:table-cell">Actions</th></tr></thead>
             <tbody>
               {pageRows.map((s) => (
                 <tr key={s.id}>
@@ -136,11 +134,20 @@ export default function Students() {
                   </td>
                   <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 md:table-cell">{s.id}</td>
                   <td className="hidden sm:table-cell">{s.program_code}</td>
-                  <td className="hidden whitespace-nowrap md:table-cell">{yearLabel(s.year_level)}</td>
-                  <td className="hidden whitespace-nowrap md:table-cell">{s.section_name || "—"}</td>
-                  <td className="hidden whitespace-nowrap text-ink-2 lg:table-cell">{STUDENT_TYPE[s.admission_type]}</td>
-                  <td><StandingBadge standing={s.standing} /></td>
-                  <td className="hidden text-right sm:table-cell"><Link to={`/students/${s.id}`} aria-label={`Open ${s.full_name}'s record`} className="icon-btn h-11 w-11"><ChevronRight size={18} /></Link></td>
+                  <td className="hidden whitespace-nowrap md:table-cell">{s.year_level}</td>
+                  <td className="hidden whitespace-nowrap md:table-cell">{s.section_name ? s.section_name.replace(/^\S+\s+/, "") : "—"}</td>
+                  <td>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <StandingBadge standing={s.standing} />
+                      {(s.admission_type === "transferee" || s.admission_type === "shiftee") && <span className="badge tone-info">{STUDENT_TYPE[s.admission_type]}</span>}
+                    </div>
+                  </td>
+                  <td className="hidden text-right sm:table-cell">
+                    <div className="flex justify-end gap-2">
+                      <Link to={`/students/${s.id}`} aria-label={`View ${s.full_name}'s record`} className="btn btn-secondary btn-sm">View</Link>
+                      <button aria-label={`Delete ${s.full_name}`} className="btn btn-danger btn-sm" onClick={() => setDeleting(s)}>Delete</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -162,6 +169,11 @@ export default function Students() {
           </div>
         )}
       </section>
+
+      {deleting && (
+        <DeleteStudentModal student={deleting} onClose={() => setDeleting(null)}
+          onDeleted={() => { setNotice(`${deleting.full_name} was deleted.`); setDeleting(null); reload(); }} />
+      )}
 
       {adding && (
         <AddStudentModal programs={data.programs} sections={data.sections} term={term}

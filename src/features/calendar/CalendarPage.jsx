@@ -15,7 +15,7 @@ export default function CalendarPage() {
   const { term } = useOutletContext();
   const today = useMemo(() => new Date(), []);
   const [month, setMonth] = useState(() => startOfMonth(today));
-  const { data, error, loading, reload } = useAsync(getTerms, []);
+  const { data, error, loading, reload } = useAsync(getTerms, [], "calendar");
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronRight, GraduationCap, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronRight, GraduationCap, TriangleAlert } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getHistory, getStudent } from "../../services/students";
@@ -15,9 +15,9 @@ const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Enrolled
 
 function Stat({ to, label, value, sub, children }) {
   return (
-    <Link to={to} className="card group flex flex-col gap-2 p-5 text-ink transition-colors hover:border-accent focus-visible:border-accent">
+    <Link to={to} className="card group flex flex-col gap-2 p-4 text-ink sm:p-5 transition-colors hover:border-accent focus-visible:border-accent">
       <span className="text-[13px] font-semibold text-ink-2">{label}</span>
-      <span className="font-display text-[30px] font-bold tracking-tight text-ink">{value}</span>
+      <span className="font-display text-[26px] font-bold tracking-tight text-ink sm:text-[30px]">{value}</span>
       {sub && <span className="text-[13px] text-ink-3">{sub}</span>}
       {children}
       <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[13px] font-semibold text-accent">
@@ -31,6 +31,7 @@ export default function Progress() {
   const { user } = useAuth();
   const { term } = useOutletContext();
   const [filter, setFilter] = useState("all");
+  const [yearOpen, setYearOpen] = useState({}); // phones: which year sections were opened or closed by hand
   const [params] = useSearchParams();
   const view = VIEWS[params.get("view")] ? params.get("view") : null;
 
@@ -41,7 +42,7 @@ export default function Progress() {
     ]);
     const program = programs.find((p) => p.code === student.program_code);
     return { student, program, progress: buildProgress({ curriculum, history, prerequisites }) };
-  }, [user.studentId]);
+  }, [user.studentId], "progress");
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -53,6 +54,7 @@ export default function Progress() {
   const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
   const years = [...new Set(progress.subjects.map((s) => s.year_level))].sort();
   const visible = (s) => filter === "all" || s.state === filter;
+  const isOpen = (y) => yearOpen[y] ?? (filter !== "all" || y === student.year_level);
 
   if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
 
@@ -60,7 +62,7 @@ export default function Progress() {
     <>
       <PageHeader title="Subject tracker" subtitle={student.program_name} />
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <Stat to="/progress?view=units" label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
           <div className="bar" role="img" aria-label={`${pct} percent of units earned`}><span style={{ width: `${pct}%` }} /></div>
         </Stat>
@@ -110,7 +112,7 @@ export default function Progress() {
       </section>
 
       <div className="flex flex-col gap-3">
-        <div className="seg self-start overflow-x-auto" role="group" aria-label="Show subjects">
+        <div className="seg max-w-full self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
         <GradeLegend className="card px-5 py-3.5" />
@@ -121,8 +123,15 @@ export default function Progress() {
         if (!yearSubjects.length) return null;
         return (
           <section key={y} className="flex flex-col gap-3">
-            <h2 className="text-[19px] font-bold">{yearLabel(y)}</h2>
-            <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))]">
+            {/* Phones: years open and close; the student's current year (or any filtered result) starts open. */}
+            <h2 className="text-[19px] font-bold">
+              <button type="button" className="card press flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left sm:hidden" aria-expanded={isOpen(y)} onClick={() => setYearOpen((o) => ({ ...o, [y]: !isOpen(y) }))}>
+                <span>{yearLabel(y)}<span className="block text-[13px] font-medium text-ink-3">{yearSubjects.filter((s) => s.state === "passed").length} of {yearSubjects.length} subjects passed</span></span>
+                <ChevronDown size={20} className={`shrink-0 text-ink-3 transition-transform motion-reduce:transition-none ${isOpen(y) ? "rotate-180" : ""}`} aria-hidden="true" />
+              </button>
+              <span className="hidden sm:inline">{yearLabel(y)}</span>
+            </h2>
+            <div className={`gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))] sm:grid ${isOpen(y) ? "grid" : "hidden"}`}>
               {[1, 2, 3].map((sem) => {
                 const rows = yearSubjects.filter((s) => s.semester === sem);
                 if (!rows.length) return null;
@@ -133,7 +142,7 @@ export default function Progress() {
                       <span className="text-[13px] text-ink-3">{rows.filter((r) => r.state === "passed").length} of {rows.length} passed</span>
                     </div>
                     <table className="data-table">
-                      <thead><tr><th>Subject</th><th>Status</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th></tr></thead>
+                      <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Status</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th></tr></thead>
                       <tbody>
                         {rows.map((s) => (
                           <tr key={s.id}>
@@ -144,8 +153,9 @@ export default function Progress() {
                                 <span className="mt-0.5 block text-[12px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>
                               )}
                               {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
+                              <span className="mt-1.5 block sm:hidden"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></span>
                             </td>
-                            <td><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></td>
+                            <td className="hidden sm:table-cell"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></td>
                             <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
                             <td className="text-center text-[13px]"><FinalCell s={s} /></td>
                           </tr>

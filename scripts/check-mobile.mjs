@@ -27,7 +27,7 @@ const env = Object.fromEntries(readFileSync(envFile, "utf8").split(/\r?\n/)
 mkdirSync(outDir, { recursive: true });
 
 const roles = {
-  secretary: { id: "demo.secretary@ccs-monitor.test", pw: env.DEMO_SECRETARY_PASSWORD,
+  secretary: { id: "CCS-001", pw: env.DEMO_SECRETARY_PASSWORD,
     pages: ["/", "/students", "/students/2025-0002", "/sections", "/schedules", "/curriculum", "/profile", "/settings"] },
   student: { id: "2025-0001", pw: env.STUDENT_DEFAULT_PASSWORD || env.DEMO_STUDENT_PASSWORD,
     pages: ["/", "/schedule", "/progress", "/progress?view=units", "/progress?view=failed", "/record", "/curriculum", "/calendar", "/help", "/privacy"] },
@@ -85,9 +85,22 @@ for (const [role, cfg] of Object.entries(roles)) {
       for (const el of document.querySelectorAll("main *, header *")) {
         const b = el.getBoundingClientRect();
         if (b.width === 0 || b.right <= vw + 1) continue;
-        let q = el.parentElement, scrolled = false;
-        while (q) { const s = getComputedStyle(q); if (/(auto|scroll|hidden)/.test(s.overflowX)) { scrolled = true; break; } q = q.parentElement; }
-        if (!scrolled) offenders.push(`${el.tagName.toLowerCase()}.${String(el.className).split(" ").slice(0, 3).join(".")} (+${Math.round(b.right - vw)}px)`);
+        // Inside a sideways scroller it can be reached; inside overflow:hidden it is cut off for good.
+        let q = el.parentElement, scrolled = false, clipped = false;
+        while (q) {
+          const s = getComputedStyle(q);
+          if (/(auto|scroll)/.test(s.overflowX)) { scrolled = true; break; }
+          if (s.overflowX === "hidden" && q.getBoundingClientRect().right <= vw + 1) { clipped = true; break; }
+          q = q.parentElement;
+        }
+        const name = `${el.tagName.toLowerCase()}.${String(el.className).split(" ").slice(0, 3).join(".")}`;
+        if (clipped && !/sr-only|truncate/.test(String(el.className))) offenders.push(`${name} (cut off)`);
+        else if (!scrolled && !clipped) offenders.push(`${name} (+${Math.round(b.right - vw)}px)`);
+      }
+      // Tables that only fit by scrolling sideways are hard to read on a phone.
+      for (const t of document.querySelectorAll("main table")) {
+        const box = t.parentElement;
+        if (t.getBoundingClientRect().width > 0 && t.scrollWidth > box.clientWidth + 1) offenders.push(`table needs sideways scrolling (+${t.scrollWidth - box.clientWidth}px)`);
       }
       const small = [...document.querySelectorAll("main button, main a, header button")]
         .filter((el) => { const b = el.getBoundingClientRect(); return b.width > 0 && (b.width < 36 || b.height < 36); }).length;
