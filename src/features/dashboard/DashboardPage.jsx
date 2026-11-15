@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { Plus, Printer } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
@@ -20,6 +21,7 @@ function Kpi({ to, label, value, sub, children }) {
 
 export default function Dashboard() {
   const { term, termLoading } = useOutletContext();
+  const [allSections, setAllSections] = useState(false); // the list starts with the first 10
   const { data, error, loading, reload } = useAsync(async () => {
     if (termLoading) return null; // wait for the semester instead of loading everything twice
     const [students, sections, curriculum, programs, offerings] = await Promise.all([
@@ -188,7 +190,7 @@ export default function Dashboard() {
           <table className="data-table">
             <thead><tr><th>Section</th><th className="hidden sm:table-cell">Program</th><th className="hidden sm:table-cell">Year</th><th className="w-[55%] sm:w-[40%]">Seats</th></tr></thead>
             <tbody>
-              {sections.map((s) => (
+              {(allSections ? sections : sections.slice(0, 10)).map((s) => (
                 <tr key={s.id}>
                   <td className="whitespace-nowrap font-semibold">{s.name}</td>
                   <td className="hidden text-ink-2 sm:table-cell">{s.program_code}</td>
@@ -204,6 +206,12 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
+        {sections.length > 10 && (
+          <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
+            <span>Showing {allSections ? sections.length : 10} of {sections.length} sections</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setAllSections((v) => !v)} aria-expanded={allSections}>{allSections ? "Show fewer" : `Show all ${sections.length} sections`}</button>
+          </div>
+        )}
       </section>
     </>
   );

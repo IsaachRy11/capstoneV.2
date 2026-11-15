@@ -1,5 +1,5 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, ChevronRight, FileText, ListChecks } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getStudent, getTermClasses } from "../../services/students";
@@ -52,92 +52,74 @@ export default function StudentHome() {
         </dl>
       </section>
 
-      {/* Phones open on today's classes; the tab bar replaces the shortcut list further down. */}
+      {/* Failed-subject status first: it is what the student most needs to know. */}
+      {deficiencies.length === 0 ? (
+        <section className="card flex items-center gap-3.5 px-5 py-4" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
+          <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
+          <div>
+            <h2 className="text-[15px] font-bold text-ok">No failed subjects</h2>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-2">Every subject you've finished is passed.</p>
+          </div>
+        </section>
+      ) : (
+        <section className="card flex items-start gap-3.5 px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
+          <AlertTriangle size={22} className="shrink-0 text-bad" aria-hidden="true" />
+          <div>
+            <h2 className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`}</h2>
+            <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
+              {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
+            </ul>
+            <p className="mt-2 text-[13px] text-ink-3">
+              <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS office about retaking them.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Phones open on today's classes; PC shows the whole semester (the sidebar holds the page links). */}
       <TodayCard classes={classes} className="lg:hidden" />
 
-      <div className="flex flex-wrap items-start gap-5">
-        <section className="card min-w-0 flex-[999_1_560px] overflow-hidden">
-          <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
-          {classes.length === 0 ? (
-            <p className="px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any classes this semester.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Schedule</th><th className="!text-center">Units</th></tr></thead>
-                <tbody>
-                  {classes.map((c) => {
-                    const s = c.class_offerings.curriculum_subjects;
-                    const lines = scheduleLines(c.class_offerings.class_meetings);
-                    return (
-                      <tr key={c.id}>
-                        <td className="sm:min-w-[200px]">
-                          <span className="block font-mono text-[12px] text-accent">{s.code}</span>
-                          <span className="block font-medium">{s.title}</span>
-                          {/* Phones: the schedule sits under the subject instead of in a clipped column. */}
-                          <span className="mt-1 block text-[13px] sm:hidden">
-                            {lines.length ? lines.map((l) => (
-                              <span key={l.days + l.time} className="block text-ink-2"><span className="font-medium text-ink">{l.days}</span> {l.time} <span className="text-ink-3">· {l.room}</span></span>
-                            )) : <span className="text-ink-3">To be arranged</span>}
-                          </span>
-                        </td>
-                        <td className="hidden text-[13px] sm:table-cell">
+      <section className="card overflow-hidden">
+        <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
+        {classes.length === 0 ? (
+          <p className="px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any classes this semester.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Schedule</th><th className="!text-center">Units</th></tr></thead>
+              <tbody>
+                {classes.map((c) => {
+                  const s = c.class_offerings.curriculum_subjects;
+                  const lines = scheduleLines(c.class_offerings.class_meetings);
+                  return (
+                    <tr key={c.id}>
+                      <td className="sm:min-w-[200px]">
+                        <span className="block font-mono text-[12px] text-accent">{s.code}</span>
+                        <span className="block font-medium">{s.title}</span>
+                        {/* Phones: the schedule sits under the subject instead of in a clipped column. */}
+                        <span className="mt-1 block text-[13px] sm:hidden">
                           {lines.length ? lines.map((l) => (
-                            <div key={l.days + l.time} className="whitespace-nowrap">
-                              <span className="font-medium text-ink">{l.days}</span> <span className="text-ink-2">{l.time}</span>
-                              <span className="block text-[12px] text-ink-3">{l.room}</span>
-                            </div>
+                            <span key={l.days + l.time} className="block text-ink-2"><span className="font-medium text-ink">{l.days}</span> {l.time} <span className="text-ink-3">· {l.room}</span></span>
                           )) : <span className="text-ink-3">To be arranged</span>}
-                        </td>
-                        <td className="num">{Number(s.units)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <div className="flex flex-[1_1_300px] flex-col gap-5">
-          {deficiencies.length === 0 ? (
-            <section className="card flex items-start gap-3.5 p-5" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
-              <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
-              <div>
-                <h2 className="text-[15px] font-bold text-ok">No failed subjects</h2>
-                <p className="mt-1 text-[14px] leading-relaxed text-ink-2">Every subject you've finished is passed.</p>
-              </div>
-            </section>
-          ) : (
-            <section className="card flex items-start gap-3.5 p-5" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-              <AlertTriangle size={22} className="shrink-0 text-bad" aria-hidden="true" />
-              <div>
-                <h2 className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`}</h2>
-                <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
-                  {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
-                </ul>
-                <p className="mt-2 text-[13px] text-ink-3">
-                  <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS office about retaking them.
-                </p>
-              </div>
-            </section>
-          )}
-
-          <section className="card hidden p-2 lg:block">
-            {[
-              { to: "/schedule", icon: CalendarClock, title: "Class schedule", sub: "Your week at a glance, with rooms" },
-              { to: "/progress", icon: ListChecks, title: "Subject tracker", sub: "What you've passed, what's left, what's next" },
-              { to: "/record", icon: FileText, title: "View grades", sub: "Midterm and final, every term" },
-              { to: "/curriculum", icon: BookOpen, title: `${student.program_code} curriculum`, sub: "Every subject, year by year" },
-            ].map(({ to, icon: Icon, title, sub }) => (
-              <Link key={to} to={to} className="flex min-h-14 items-center gap-3.5 rounded-[10px] px-4 py-3.5 text-ink hover:bg-hover">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-tint text-accent"><Icon size={18} aria-hidden="true" /></span>
-                <span className="flex flex-1 flex-col"><span className="text-[14px] font-semibold">{title}</span><span className="text-[13px] text-ink-3">{sub}</span></span>
-                <ChevronRight size={18} className="text-ink-3" aria-hidden="true" />
-              </Link>
-            ))}
-          </section>
-        </div>
-      </div>
+                        </span>
+                      </td>
+                      <td className="hidden text-[13px] sm:table-cell">
+                        {lines.length ? lines.map((l) => (
+                          <div key={l.days + l.time} className="whitespace-nowrap">
+                            <span className="font-medium text-ink">{l.days}</span> <span className="text-ink-2">{l.time}</span>
+                            <span className="block text-[12px] text-ink-3">{l.room}</span>
+                          </div>
+                        )) : <span className="text-ink-3">To be arranged</span>}
+                      </td>
+                      <td className="num">{Number(s.units)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }

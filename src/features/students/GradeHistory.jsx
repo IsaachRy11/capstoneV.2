@@ -1,15 +1,21 @@
+import { useState } from "react";
 import { formatGrade } from "../../lib/format";
+
+const FIRST = 5;
 
 const gradeOrStatus = (grade, status) =>
   status === "incomplete" ? "INC" : status === "dropped" ? "Dropped" : formatGrade(grade);
 
 // Every grade edit, recorded by the database (grade_changes): who, when, from what to what.
+// Newest first; the latest few are shown and the rest open with "Show more".
 export default function GradeHistory({ changes }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? changes : changes.slice(0, FIRST);
   return (
     <section className="card no-print overflow-hidden">
       <div className="border-b border-line px-5 py-4">
         <h2 className="text-[17px] font-bold">Grade change history</h2>
-        <p className="mt-1 text-[13px] text-ink-3">Recorded automatically whenever a grade is saved. Entries can't be edited or deleted.</p>
+        <p className="mt-1 text-[13px] text-ink-3">Newest first. Recorded automatically whenever a grade is saved. Entries can't be edited or deleted.</p>
       </div>
       {changes.length === 0 ? (
         <p className="px-5 py-6 text-[14px] text-ink-3">No grade changes yet.</p>
@@ -18,7 +24,7 @@ export default function GradeHistory({ changes }) {
           <table className="data-table">
             <thead><tr><th>When</th><th>Subject</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th>Changed by</th></tr></thead>
             <tbody>
-              {changes.map((c) => (
+              {shown.map((c) => (
                 <tr key={c.id}>
                   <td className="whitespace-nowrap text-[13px] text-ink-2">
                     {new Date(c.changed_at).toLocaleString("en-PH", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
@@ -31,6 +37,12 @@ export default function GradeHistory({ changes }) {
               ))}
             </tbody>
           </table>
+          {changes.length > FIRST && (
+            <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
+              <span>Showing {shown.length} of {changes.length} changes</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => setAll((v) => !v)} aria-expanded={all}>{all ? "Show fewer" : `Show ${changes.length - FIRST} more`}</button>
+            </div>
+          )}
         </div>
       )}
     </section>

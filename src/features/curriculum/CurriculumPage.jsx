@@ -31,6 +31,7 @@ export default function Curriculum() {
   const program = data.programs.find((p) => p.code === code) || data.programs[0];
   const subjects = data.rows.filter((r) => r.curricula.programs.code === program.code);
   const years = [...new Set(subjects.map((s) => s.year_level))].sort();
+  const count = (list) => `${list.length} ${list.length === 1 ? "subject" : "subjects"}`;
 
   return (
     <>
@@ -48,7 +49,10 @@ export default function Curriculum() {
 
       {years.map((y) => (
         <section key={y} className="flex flex-col gap-3">
-          <h2 className="text-[19px] font-bold">{yearLabel(y)}</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 className="text-[19px] font-bold">{yearLabel(y)}</h2>
+            <span className="text-[13px] text-ink-3">Total: {count(subjects.filter((s) => s.year_level === y))} · {sumUnits(subjects.filter((s) => s.year_level === y))} units</span>
+          </div>
           <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr))]">
             {[...new Set(subjects.filter((s) => s.year_level === y).map((s) => s.semester))].sort().map((sem) => {
               const rows = subjects.filter((s) => s.year_level === y && s.semester === sem);
@@ -56,7 +60,7 @@ export default function Curriculum() {
                 <div key={sem} className="card overflow-hidden">
                   <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
                     <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
-                    <span className="font-mono text-[13px] text-ink-2">{sumUnits(rows)} units</span>
+                    <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
                   </div>
                   <table className="data-table">
                     <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th className="hidden lg:table-cell"><span className="sr-only">Actions</span></th>}</tr></thead>
