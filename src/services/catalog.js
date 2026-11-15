@@ -19,7 +19,7 @@ export const getPrograms = () => cached("programs", () =>
 export const getCurriculum = (programCode) => cached(`curriculum:${programCode || "all"}`, () => {
   let q = supabase
     .from("curriculum_subjects")
-    .select("id, year_level, semester, sort_order, code, title, units, kind, curricula!inner(id, is_active, programs!inner(id, code, name, duration_years))")
+    .select("id, year_level, semester, sort_order, code, title, units, kind, standing_required, curricula!inner(id, is_active, effective_school_year, programs!inner(id, code, name, duration_years))")
     .eq("curricula.is_active", true)
     .order("year_level")
     .order("semester")
@@ -28,7 +28,7 @@ export const getCurriculum = (programCode) => cached(`curriculum:${programCode |
   return unwrap(q);
 });
 
-// Official prerequisites (empty until SJC's list is added). Rows: { subject_id, prerequisite_id }.
+// Official prerequisites from the AY 2024-2025 checklists (migration 0012). Rows: { subject_id, prerequisite_id }.
 export const getPrerequisites = () => cached("curriculum:prerequisites", () =>
   unwrap(supabase.from("subject_prerequisites").select("subject_id, prerequisite_id")));
 

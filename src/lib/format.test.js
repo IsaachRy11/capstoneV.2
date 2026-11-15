@@ -36,6 +36,11 @@ describe("grades and labels", () => {
     expect(inferSubjectKind("IT Elective 1")).toBe("elective");
     expect(inferSubjectKind("IT 403", "IT Internship / On-the-Job Training")).toBe("internship");
     expect(inferSubjectKind("IT 101")).toBe("major");
+    expect(inferSubjectKind("IT EL 1", "IT Elective 1")).toBe("elective");
+    expect(inferSubjectKind("GE EL 2", "Gender and Society")).toBe("general_education");
+    expect(inferSubjectKind("THEO 1A", "Old Testament")).toBe("general_education");
+    expect(inferSubjectKind("PRAC", "Practicum/Analytics Internship")).toBe("internship");
+    expect(inferSubjectKind("CAPSTONE 1", "Capstone Project 1")).toBe("major");
   });
 
   it("adds up units", () => {

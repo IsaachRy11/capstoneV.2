@@ -34,9 +34,9 @@ export const normKey = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
 // Subject type is inferred from the code, the same way the curriculum migration does it.
 export function inferSubjectKind(code, title = "") {
-  if (/internship|practicum|on-the-job/i.test(title)) return "internship";
-  if (/elective/i.test(code)) return "elective";
-  if (/^GE\s/i.test(code)) return "general_education";
+  if (/internship|practicum|on-the-job/i.test(title) || /^PRAC$/i.test(code.trim())) return "internship";
+  if (/elective/i.test(code) || /^(IT|CS)\s*EL\s/i.test(code)) return "elective";
+  if (/^(GE|THEO)\s/i.test(code)) return "general_education"; // GE, GE electives (GE EL) and theology
   if (/^PATHFIT/i.test(code)) return "pathfit";
   if (/^NSTP/i.test(code)) return "nstp";
   return "major";

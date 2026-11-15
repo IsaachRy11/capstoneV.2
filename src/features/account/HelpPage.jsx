@@ -32,7 +32,7 @@ const COMMON = [
 const STUDENT = [
   {
     q: "Where do I see what I still need to take?",
-    a: <>The <Link to="/progress">Subject tracker</Link> lists every subject in your curriculum: passed, current and remaining.</>,
+    a: <>The <Link to="/progress">Subject tracker</Link> lists every subject in your curriculum: passed, current and remaining. Subjects you can't take yet say what they need first: a prerequisite subject or a year standing (for example, 4th year standing for the practicum), as on the official CCS curriculum checklist.</>,
   },
   {
     q: "I think my grade or record is wrong.",

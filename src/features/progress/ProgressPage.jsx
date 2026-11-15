@@ -7,7 +7,7 @@ import { getHistory, getStudent } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
-import { SUBJECT_STATE, buildProgress, nextTermFor } from "../../lib/progress";
+import { SUBJECT_STATE, buildProgress, nextTermFor, requirementText } from "../../lib/progress";
 import ProgressDetail, { FinalCell, MidtermCell } from "./ProgressDetail";
 import { VIEWS } from "./progressViews";
 
@@ -49,7 +49,7 @@ export default function Progress() {
 
   const { student, program, progress } = data;
   const pct = progress.totalUnits ? Math.round((progress.unitsEarned / progress.totalUnits) * 100) : 0;
-  const next = nextTermFor(term, student.year_level, program.duration_years);
+  const next = nextTermFor(term, student.year_level, program.duration_years, (y) => progress.subjects.some((s) => s.year_level === y && s.semester === 3));
   const nextRegular = next ? progress.subjects.filter((s) => s.year_level === next.year && s.semester === next.semester) : [];
   const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
   const years = [...new Set(progress.subjects.map((s) => s.year_level))].sort();
@@ -100,7 +100,7 @@ export default function Progress() {
                   <span className="min-w-0">
                     <span className="block font-mono text-[13px] text-accent">{s.code}</span>
                     <span className="block text-[14px] font-medium text-ink">{s.title}</span>
-                    {s.missingPrereqs.length > 0 && <span className="mt-1 block text-[12px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>}
+                    {requirementText(s, next.year) && <span className="mt-1 block text-[12px] text-warn">{requirementText(s, next.year)}</span>}
                   </span>
                   <span className="whitespace-nowrap text-[13px] text-ink-2">{Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                 </li>
@@ -149,8 +149,8 @@ export default function Progress() {
                             <td>
                               <span className="block font-mono text-[13px] text-accent">{s.code}</span>
                               <span className="block font-medium">{s.title}</span>
-                              {s.state === "not_taken" && s.missingPrereqs.length > 0 && (
-                                <span className="mt-0.5 block text-[12px] text-warn">Needs {s.missingPrereqs.map((p) => p.code).join(", ")} first</span>
+                              {s.state === "not_taken" && requirementText(s, student.year_level) && (
+                                <span className="mt-0.5 block text-[12px] text-warn">{requirementText(s, student.year_level)}</span>
                               )}
                               {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                               <span className="mt-1.5 block sm:hidden"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></span>

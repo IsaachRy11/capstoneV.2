@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, nextTermFor } from "./progress";
+import { buildProgress, nextTermFor, requirementText } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -60,8 +60,24 @@ describe("nextTermFor", () => {
     expect(nextTermFor({ semester: 2 }, 2, 4)).toEqual({ year: 3, semester: 1 });
   });
 
+  it("goes to summer when the curriculum has summer subjects after that year", () => {
+    const summerAfter3 = (y) => y === 3;
+    expect(nextTermFor({ semester: 2 }, 3, 4, summerAfter3)).toEqual({ year: 3, semester: 3 });
+    expect(nextTermFor({ semester: 3 }, 3, 4, summerAfter3)).toEqual({ year: 4, semester: 1 });
+    expect(nextTermFor({ semester: 2 }, 2, 4, summerAfter3)).toEqual({ year: 3, semester: 1 });
+  });
+
   it("returns null in the last semester of the program", () => {
     expect(nextTermFor({ semester: 2 }, 4, 4)).toBeNull();
     expect(nextTermFor({ semester: 2 }, 2, 2)).toBeNull();
+  });
+});
+
+describe("requirementText", () => {
+  it("lists unpassed prerequisites and a year standing the student doesn't have yet", () => {
+    const s = { missingPrereqs: [{ code: "IT 201" }, { code: "IT 202" }], standing_required: 4 };
+    expect(requirementText(s, 3)).toBe("Needs IT 201, IT 202 first and 4th year standing");
+    expect(requirementText({ missingPrereqs: [], standing_required: 3 }, 3)).toBe("");
+    expect(requirementText({ missingPrereqs: [], standing_required: 3 }, 2)).toBe("Needs 3rd year standing");
   });
 });

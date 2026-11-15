@@ -55,8 +55,46 @@ beforeAll(async () => {
 }, 120_000);
 
 describe("seed data", () => {
-  it("has the official curriculum", async () => {
-    expect(await one(`select count(*)::int n from curriculum_subjects`)).toEqual({ n: 91 });
+  it("has the official AY 2024-2025 curricula active (unit totals match the printed checklists)", async () => {
+    const terms = (await db.query(`
+      select p.code, s.year_level y, s.semester sem, count(*)::int n, sum(s.units)::int units
+      from curriculum_subjects s join curricula c on c.id = s.curriculum_id and c.is_active
+      join programs p on p.id = c.program_id
+      group by 1, 2, 3 order by 1, 2, 3`)).rows;
+    const units = Object.fromEntries(terms.map((t) => [`${t.code} ${t.y}-${t.sem}`, t.units]));
+    expect(units).toEqual({
+      "BSIT 1-1": 25, "BSIT 1-2": 28, "BSIT 2-1": 25, "BSIT 2-2": 25, "BSIT 3-1": 25, "BSIT 3-2": 22, "BSIT 3-3": 4, "BSIT 4-1": 19, "BSIT 4-2": 9,
+      "BSCS 1-1": 25, "BSCS 1-2": 28, "BSCS 2-1": 25, "BSCS 2-2": 25, "BSCS 3-1": 22, "BSCS 3-2": 25, "BSCS 3-3": 4, "BSCS 4-1": 19, "BSCS 4-2": 9,
+      "ACT 1-1": 22, "ACT 1-2": 25, "ACT 2-1": 22, "ACT 2-2": 13,
+    });
+    const count = (code) => terms.filter((t) => t.code === code).reduce((a, t) => a + t.n, 0);
+    expect([count("BSIT"), count("BSCS"), count("ACT")]).toEqual([65, 65, 29]);
+    // The old website curricula stay (inactive) so older records keep pointing at real subjects.
+    expect(await one(`select count(*)::int n from curricula where not is_active`)).toEqual({ n: 3 });
+  });
+
+  it("has the official prerequisites and year-standing rules", async () => {
+    const pre = async (program, code) => (await db.query(`
+      select string_agg(pre.code, ', ' order by pre.code) codes, max(s.standing_required) standing
+      from curriculum_subjects s join curricula c on c.id = s.curriculum_id and c.is_active
+      join programs p on p.id = c.program_id and p.code = '${program}'
+      left join subject_prerequisites sp on sp.subject_id = s.id
+      left join curriculum_subjects pre on pre.id = sp.prerequisite_id
+      where s.code = '${code}'`)).rows[0];
+    expect(await pre("BSIT", "IT 215")).toEqual({ codes: "IT 201, IT 202", standing: null });
+    expect(await pre("BSIT", "CAPSTONE 2")).toEqual({ codes: "CAPSTONE 1", standing: null });
+    expect(await pre("BSIT", "PRAC")).toEqual({ codes: null, standing: 4 });
+    expect(await pre("BSCS", "CS 311")).toEqual({ codes: "CS 306, CS 307", standing: null });
+    expect(await pre("ACT", "ACT 212")).toEqual({ codes: "ACT 204", standing: null });
+    expect(await pre("ACT", "PATHFIT 4")).toEqual({ codes: "PATHFIT 1, PATHFIT 2", standing: null });
+  });
+
+  it("gives 4th-year students the summer subjects (Capstone 1 / Thesis 1) before 4th year", async () => {
+    const r = await one(`
+      select count(distinct e.student_id)::int n from enrollments e
+      join class_offerings o on o.id = e.offering_id join curriculum_subjects s on s.id = o.curriculum_subject_id
+      where s.code in ('CAPSTONE 1', 'THESIS 1')`);
+    expect(r.n).toBe(40); // 2 sections x 10 students in each of BSIT and BSCS 4th year
   });
 
   it("has S, T, U, V sections in 1st year, S, T, U in 2nd, S, T in 3rd and 4th (ACT stops at 2nd year)", async () => {
@@ -146,7 +184,7 @@ describe("add_student (one transaction)", () => {
     const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student','test.student@x.test',${bsit},1::smallint,'new') sec`);
     expect(r.rows[0].sec).toBe("BSIT 1-S");
     const made = await one(`select (select count(*)::int from registrations where student_id='2026-9099') r, (select count(*)::int from enrollments where student_id='2026-9099') e`);
-    expect(made).toEqual({ r: 1, e: 7 });
+    expect(made).toEqual({ r: 1, e: 9 }); // BSIT 1st year, 1st semester: 9 subjects (AY 2024-2025 checklist)
   });
 
   it("leaves nothing behind when it fails", async () => {

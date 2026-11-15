@@ -65,9 +65,23 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
 }
 
 // The semester after `term` for a student in `yearLevel`, or null if they finish this term.
-export function nextTermFor(term, yearLevel, durationYears) {
+// hasSummer(year): whether the curriculum has summer subjects after that year (BSIT/BSCS: after 3rd year).
+export function nextTermFor(term, yearLevel, durationYears, hasSummer = () => false) {
   if (!term) return null;
-  const next = term.semester === 1 ? { year: yearLevel, semester: 2 } : { year: yearLevel + 1, semester: 1 };
+  const next =
+    term.semester === 1 ? { year: yearLevel, semester: 2 }
+    : term.semester === 2 && hasSummer(yearLevel) ? { year: yearLevel, semester: 3 }
+    : { year: yearLevel + 1, semester: 1 };
   return next.year > durationYears ? null : next;
 }
+
+// What a subject still needs before it can be taken: unpassed prerequisites and/or a year standing.
+// e.g. "Needs IT 201, IT 202 first" · "Needs 4th year standing"
+export function requirementText(subject, yearLevel) {
+  const parts = [];
+  if (subject.missingPrereqs?.length) parts.push(`${subject.missingPrereqs.map((p) => p.code).join(", ")} first`);
+  if (subject.standing_required && yearLevel < subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
+  return parts.length ? `Needs ${parts.join(" and ")}` : "";
+}
+const ordinal = (n) => ({ 1: "1st", 2: "2nd", 3: "3rd" })[n] || `${n}th`;
 

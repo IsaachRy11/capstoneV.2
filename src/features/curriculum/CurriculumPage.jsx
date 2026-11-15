@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getCurriculum, getPrograms } from "../../services/catalog";
+import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { getStudent } from "../../services/students";
 import { ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
@@ -18,10 +18,10 @@ export default function Curriculum() {
   const [deleting, setDeleting] = useState(null); // null | subject
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [programs, rows, me] = await Promise.all([
-      getPrograms(), getCurriculum(), isSecretary ? null : getStudent(user.studentId),
+    const [programs, rows, prerequisites, me] = await Promise.all([
+      getPrograms(), getCurriculum(), getPrerequisites(), isSecretary ? null : getStudent(user.studentId),
     ]);
-    return { programs, rows, myProgram: me?.program_code };
+    return { programs, rows, prerequisites, myProgram: me?.program_code };
   }, [isSecretary, user.studentId], "curriculum");
 
   if (loading) return <LoadingState />;
@@ -32,12 +32,20 @@ export default function Curriculum() {
   const subjects = data.rows.filter((r) => r.curricula.programs.code === program.code);
   const years = [...new Set(subjects.map((s) => s.year_level))].sort();
   const count = (list) => `${list.length} ${list.length === 1 ? "subject" : "subjects"}`;
+  // Prerequisites as on the official checklist: subject codes and/or a year standing ("4th year standing").
+  const codeById = new Map(data.rows.map((r) => [r.id, r.code]));
+  const prereqText = (s) => {
+    const codes = data.prerequisites.filter((p) => p.subject_id === s.id).map((p) => codeById.get(p.prerequisite_id)).filter(Boolean);
+    const standing = s.standing_required ? `${({ 2: "2nd", 3: "3rd" })[s.standing_required] || `${s.standing_required}th`} year standing` : null;
+    return [...codes, standing].filter(Boolean).join(", ");
+  };
+  const effective = subjects[0]?.curricula.effective_school_year;
 
   return (
     <>
       <PageHeader showTitle
         title={program.name}
-        subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years`}
+        subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years${effective ? ` · Effective AY ${effective.replace("-", "–")}` : ""}`}
         actions={isSecretary && <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
       />
 
@@ -63,13 +71,18 @@ export default function Curriculum() {
                     <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
                   </div>
                   <table className="data-table">
-                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th>{isSecretary && <th className="hidden lg:table-cell"><span className="sr-only">Actions</span></th>}</tr></thead>
+                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th>{isSecretary && <th className="hidden lg:table-cell"><span className="sr-only">Actions</span></th>}</tr></thead>
                     <tbody>
                       {rows.map((s) => (
                         <tr key={s.id}>
                           <td className="hidden whitespace-nowrap font-mono text-[13px] text-accent sm:table-cell">{s.code}</td>
-                          <td className="font-medium"><span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>{s.title}</td>
+                          <td className="font-medium">
+                            <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>{s.title}
+                            {/* Phones and narrow screens: the prerequisite sits under the title. */}
+                            {prereqText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prereqText(s)}</span>}
+                          </td>
                           <td className="num">{Number(s.units)}</td>
+                          <td className="hidden text-[13px] text-ink-2 md:table-cell">{prereqText(s) || <span className="text-ink-3">—</span>}</td>
                           {isSecretary && (
                             <td className="hidden whitespace-nowrap px-2 text-right lg:table-cell">
                               <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
