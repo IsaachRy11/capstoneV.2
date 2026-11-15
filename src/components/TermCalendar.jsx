@@ -78,7 +78,8 @@ export default function TermCalendar({ term }) {
             })}
           </div>
 
-          <div className="mt-3 flex items-center gap-4 border-t border-line-2 pt-3 text-[12px] text-ink-3">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line-2 pt-3 text-[12px] text-ink-3" aria-label="Legend">
+            <span className="font-semibold uppercase tracking-[0.08em]">Legend</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-tint" />Semester days</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: "var(--btn)" }} />Start / end</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full ring-2 ring-accent" />Today</span>

@@ -58,25 +58,36 @@ export default function StudentRecord() {
       {isSecretary && (
         <div className="no-print -mb-2 flex flex-wrap items-center gap-x-4">
         <BackButton fallback="/students" />
-        <nav aria-label="Breadcrumb" className="text-[14px] text-ink-3">
+        <nav aria-label="Breadcrumb" className="hidden text-[14px] text-ink-3 sm:block">
           <Link to="/students" className="inline-flex min-h-10 items-center text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
         </nav>
         </div>
       )}
 
-      <section className="card flex flex-col gap-6 p-6">
+      <section className="card flex flex-col gap-5 p-5 sm:gap-6 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <Avatar name={student.full_name} size={64} />
-            <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="sm:hidden"><Avatar name={student.full_name} size={52} /></span>
+            <span className="hidden sm:block"><Avatar name={student.full_name} size={64} /></span>
+            <div className="flex min-w-0 flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[26px] font-bold tracking-tight">{student.full_name}</h1>
+                <h1 className="text-[22px] font-bold leading-tight tracking-tight sm:text-[26px]">{student.full_name}</h1>
                 <StandingBadge standing={student.standing} />
               </div>
-              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name} · {yearLabel(student.year_level)}</div>
+              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
             </div>
           </div>
-          <div className="no-print flex flex-wrap gap-2">
+          {/* Phones: the secretary gets three equal action tiles (icon over label) instead of stacked buttons. */}
+          {isSecretary && (
+            <div className="no-print grid w-full grid-cols-3 gap-2 sm:hidden">
+              {[[Printer, "Print", () => window.print(), ""], [KeyRound, "Reset password", () => setResetting(true), ""], [Trash2, "Delete", () => setDeleting(true), "text-bad"]].map(([Icon, label, onClick, tone]) => (
+                <button key={label} onClick={onClick} className={`press flex flex-col items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-1 py-3 text-[12px] font-semibold ${tone || "text-ink"}`}>
+                  <Icon size={19} aria-hidden="true" />{label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className={`no-print flex-wrap gap-2 ${isSecretary ? "hidden sm:flex" : "flex"}`}>
             <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print record</button>
             {isSecretary && <button className="btn btn-secondary" onClick={() => setResetting(true)}><KeyRound size={16} aria-hidden="true" />Reset password</button>}
             {isSecretary && <button className="btn btn-secondary text-bad" onClick={() => setDeleting(true)}><Trash2 size={16} aria-hidden="true" />Delete student</button>}

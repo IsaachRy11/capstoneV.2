@@ -55,37 +55,32 @@ const LEGEND = {
 // Swatches use the brighter --mark-* colors (distinct at a glance); text keeps the darker readable tones.
 function LegendRow({ color, label, detail }) {
   return (
-    <li className="flex items-start gap-3">
-      <span className="mt-[7px] h-1.5 w-8 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
-      <span className="flex flex-col">
-        <span className="text-[13px] font-semibold text-ink">{label}</span>
+    <li className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3">
+      <span className="h-1.5 w-8 shrink-0 rounded-full sm:mt-[7px]" style={{ background: color }} aria-hidden="true" />
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[13px] font-semibold leading-tight text-ink">{label}</span>
         <span className="text-[12px] text-ink-3">{detail}</span>
       </span>
     </li>
   );
 }
 
-// `compact`: vertical list for side panels.
+// Every legend says it is a legend: a small "Legend" label, then what the colors stand for.
+// One legend for midterm and final grades alike: they use the same scale.
+// Phones: the three entries sit side by side (one short row); wider screens give each more room.
 export function GradeLegend({ className = "", compact = false }) {
-  if (compact) {
-    return (
-      <div className={className}>
-        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
-        <ul className="flex flex-col gap-2.5">
-          {[LEGEND.passed, LEGEND.failing, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
-        </ul>
-      </div>
-    );
-  }
-  // One legend for midterm and final grades alike: they use the same scale.
   return (
-    <div className={className} aria-label="What the grade colors mean">
-      <ul className="grid gap-x-8 gap-y-2.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+    <section className={className} aria-labelledby="grade-legend-title">
+      <h2 id="grade-legend-title" className="mb-2.5 flex items-baseline gap-2 text-[12px] font-semibold text-ink-3">
+        <span className="uppercase tracking-[0.08em]">Legend</span>
+        <span className="font-medium normal-case tracking-normal">· grade colors</span>
+      </h2>
+      <ul className={compact ? "flex flex-col gap-2.5" : "grid grid-cols-3 gap-x-3 gap-y-2.5 sm:gap-x-8 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]"}>
         <LegendRow {...LEGEND.passed} />
         <LegendRow {...LEGEND.failing} />
         <LegendRow {...LEGEND.other} />
       </ul>
-    </div>
+    </section>
   );
 }
 
@@ -96,7 +91,7 @@ export function PageHeader({ title, subtitle, actions, showTitle = false }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-col gap-1.5">
-        <h1 className={showTitle ? "text-[28px] font-bold tracking-tight" : "sr-only"}>{title}</h1>
+        <h1 className={showTitle ? "text-[22px] font-bold leading-tight tracking-tight sm:text-[28px]" : "sr-only"}>{title}</h1>
         {subtitle && <p className={showTitle ? "text-[15px] text-ink-2" : "text-[15px] font-medium text-ink-2"}>{subtitle}</p>}
       </div>
       {actions && <div className="ml-auto flex flex-wrap gap-2.5">{actions}</div>}

@@ -41,7 +41,7 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
 
   if (!open) {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-2 px-6 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-2 px-5 py-3.5 sm:px-6">
         <span className="text-[13px] text-ink-2">
           <span className="font-semibold text-ink">{offering.enrolled} {offering.enrolled === 1 ? "student" : "students"}</span> · {seatsText}
         </span>
@@ -53,7 +53,7 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-6 py-4">
+    <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-5 py-4 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <label htmlFor="enrol" className="text-[13px] font-semibold text-ink">Add a student to {offering.curriculum_subjects.code} · {section.name}</label>
         <button className="text-[13px] font-semibold text-accent" onClick={() => { setOpen(false); setQ(""); }}>Done</button>

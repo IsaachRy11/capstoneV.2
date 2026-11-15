@@ -158,7 +158,7 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <p className="hidden border-t border-line px-5 py-3 text-[12px] text-ink-3 sm:block">Bar = seats filled across the year's block sections. Select a cell to see those students.</p>
+          <p className="hidden border-t border-line px-5 py-3 text-[12px] text-ink-3 sm:block"><span className="font-semibold uppercase tracking-[0.08em]">Legend</span> · the bar shows seats filled across the year's block sections. Select a cell to see those students.</p>
         </section>
 
         <section className="card flex-[1_1_300px] p-5">

@@ -225,6 +225,25 @@
   }
   .fab:active { transform: scale(.97); }
 
+  /* Phones: segmented pickers stretch edge to edge with equal buttons, like an app's tab switcher. */
+  @media (max-width: 639px) {
+    .seg-fill { display: flex; width: 100%; }
+    .seg-fill > button { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+  }
+
+  /* A row of choices that scrolls sideways under the thumb (subjects of a section on phones). */
+  .chip-row {
+    display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity;
+    margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none;
+  }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start;
+    max-width: 180px; padding: 9px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); text-align: left;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); }
+
   /* Touch: buttons and rows answer the finger. */
   @media (pointer: coarse) {
     .btn:active:not(:disabled) { transform: scale(.98); }

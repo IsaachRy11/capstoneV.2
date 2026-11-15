@@ -48,8 +48,24 @@ export default function Sections() {
       {!section ? (
         <div className="card"><EmptyState>No {program.code} {yearLabel(year)} section this semester.</EmptyState></div>
       ) : (
-        <div className="flex flex-wrap items-start gap-5">
-          <section aria-label="Subjects" className="card flex flex-[1_1_320px] flex-col gap-0.5 p-2">
+        <div className="flex flex-wrap items-start gap-4 sm:gap-5">
+          {/* Phones: the section summary and its subjects as a sideways row of chips, so the chosen class sits right below. */}
+          <section aria-label="Subjects" className="flex w-full flex-col gap-2.5 sm:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-semibold text-ink-2">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
+              <button className="inline-flex min-h-10 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>{section.enrolled} / {section.capacity} seats</button>
+            </div>
+            {offerings.loading && <LoadingState />}
+            <div className="chip-row">
+              {offerings.data?.map((o) => (
+                <button key={o.id} className="chip" aria-pressed={o.id === offering?.id} onClick={() => setOfferingId(o.id)}>
+                  <span className="font-mono text-[12px] text-accent">{o.curriculum_subjects.code}</span>
+                  <span className="w-full truncate text-[13px] font-semibold text-ink">{o.curriculum_subjects.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+          <section aria-label="Subjects" className="card hidden flex-[1_1_320px] flex-col gap-0.5 p-2 sm:flex">
             <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-2.5">
               <span className="text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
               <button className="inline-flex min-h-10 items-center text-[13px] font-semibold text-accent" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
@@ -76,10 +92,10 @@ export default function Sections() {
 
           {offering && (
             <section className="card min-w-0 flex-[999_1_520px] overflow-hidden">
-              <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-line p-6">
-                <div className="flex min-w-[220px] flex-[1_1_240px] flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-line p-5 sm:p-6">
+                <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-2 sm:min-w-[220px]">
                   <span className="font-mono text-[13px] text-accent">{offering.curriculum_subjects.code} · {Number(offering.curriculum_subjects.units)} units</span>
-                  <h2 className="text-[22px] font-bold tracking-tight">{offering.curriculum_subjects.title}</h2>
+                  <h2 className="text-[20px] font-bold leading-tight tracking-tight sm:text-[22px]">{offering.curriculum_subjects.title}</h2>
                   <span className="text-[13px] text-ink-3">
                     {offering.class_meetings.length
                       ? `Meets ${offering.class_meetings.length} ${offering.class_meetings.length === 1 ? "day" : "days"} a week`

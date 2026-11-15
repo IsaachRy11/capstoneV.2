@@ -37,11 +37,12 @@ export default function Curriculum() {
       <PageHeader showTitle
         title={program.name}
         subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years`}
-        actions={isSecretary && <button className="btn btn-primary" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
+        actions={isSecretary && <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
       />
+      {isSecretary && <button className="fab no-print lg:hidden" onClick={() => setEditing("new")}><Plus size={20} aria-hidden="true" />Add subject</button>}
 
       {isSecretary && (
-        <div className="seg self-start" role="group" aria-label="Program">
+        <div className="seg seg-fill self-start" role="group" aria-label="Program">
           {data.programs.map((p) => <button key={p.code} aria-pressed={p.code === program.code} onClick={() => setParams({ program: p.code })}>{p.code}</button>)}
         </div>
       )}

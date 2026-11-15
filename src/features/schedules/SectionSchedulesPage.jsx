@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Printer } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { useSectionPicker } from "../../hooks/useSectionPicker";
@@ -11,6 +12,7 @@ import ClassTimes from "./ClassTimes";
 // Secretary: weekly timetable of each block section (current semester), with class-time editing.
 export default function SectionSchedules() {
   const picker = useSectionPicker();
+  const [tab, setTab] = useState("week"); // phones: "week" timetable or "times" editor, one at a time
   const { program, year, section } = picker;
   const rooms = useAsync(getRooms, [], "rooms");
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
@@ -31,7 +33,7 @@ export default function SectionSchedules() {
   return (
     <>
       <PageHeader title="Schedules"
-        actions={items.length > 0 && <button className="btn btn-secondary no-print" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
+        actions={items.length > 0 && <button className="btn btn-secondary no-print hidden lg:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
 
       <SectionPicker picker={picker} />
 
@@ -45,12 +47,21 @@ export default function SectionSchedules() {
         <>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h2 className="text-[19px] font-bold">{section.name}</h2>
-            <span className="text-[14px] text-ink-3">
+            <span className="text-[13px] text-ink-3 sm:text-[14px]">
               {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room || "Room TBA"} · {section.enrolled} of {section.capacity} seats filled
             </span>
           </div>
-          <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />
-          <ClassTimes offerings={offerings.data} rooms={rooms.data} onChanged={offerings.reload} />
+          {/* Phones: one view at a time instead of the timetable and the editor stacked into one long page. */}
+          <div className="seg seg-fill no-print sm:hidden" role="group" aria-label="View">
+            <button aria-pressed={tab === "week"} onClick={() => setTab("week")}>Week</button>
+            <button aria-pressed={tab === "times"} onClick={() => setTab("times")}>Class times</button>
+          </div>
+          <div className={`flex-col gap-4 sm:flex sm:gap-6 ${tab === "week" ? "flex" : "hidden"}`}>
+            <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />
+          </div>
+          <div className={`sm:block ${tab === "times" ? "block" : "hidden"}`}>
+            <ClassTimes offerings={offerings.data} rooms={rooms.data} onChanged={offerings.reload} />
+          </div>
         </>
       )}
     </>
