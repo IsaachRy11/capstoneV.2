@@ -131,12 +131,12 @@ export default function Progress() {
               </button>
               <span className="hidden sm:inline">{yearLabel(y)}</span>
             </h2>
-            <div className={`gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))] sm:grid ${isOpen(y) ? "grid" : "hidden"}`}>
+            <div className={`items-start gap-5 sm:grid-cols-2 sm:grid ${isOpen(y) ? "grid" : "hidden"}`}>
               {[1, 2, 3].map((sem) => {
                 const rows = yearSubjects.filter((s) => s.semester === sem);
                 if (!rows.length) return null;
                 return (
-                  <div key={sem} className="card overflow-hidden">
+                  <div key={sem} className={`card overflow-hidden ${sem === 3 ? "sm:col-span-2" : ""}`}>
                     <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
                       <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
                       <span className="text-[13px] text-ink-3">{rows.filter((r) => r.state === "passed").length} of {rows.length} passed</span>

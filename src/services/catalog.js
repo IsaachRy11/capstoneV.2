@@ -19,7 +19,7 @@ export const getPrograms = () => cached("programs", () =>
 export const getCurriculum = (programCode) => cached(`curriculum:${programCode || "all"}`, () => {
   let q = supabase
     .from("curriculum_subjects")
-    .select("id, year_level, semester, sort_order, code, title, units, kind, curricula!inner(id, is_active, effective_school_year, programs!inner(id, code, name, duration_years))")
+    .select("id, year_level, semester, sort_order, code, title, units, kind, standing_required, curricula!inner(id, is_active, effective_school_year, programs!inner(id, code, name, duration_years))")
     .eq("curricula.is_active", true)
     .order("year_level")
     .order("semester")

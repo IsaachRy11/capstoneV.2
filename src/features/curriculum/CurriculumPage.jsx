@@ -41,6 +41,43 @@ export default function Curriculum() {
   };
   const effective = subjects[0]?.curricula.effective_school_year;
 
+  const semesterCard = (sem, rows) => (
+    <div key={sem} className="card overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+        <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
+        <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
+      </div>
+      <table className="data-table [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-5 [&_th:first-child]:pl-5 [&_td:last-child]:pr-5 [&_th:last-child]:pr-5">
+        <thead>
+          <tr>
+            <th className="hidden min-w-[7.5rem] sm:table-cell">Code</th><th>Subject</th><th className="w-px !text-center">Units</th>
+            {isSecretary && <th className="hidden w-px lg:table-cell"><span className="sr-only">Actions</span></th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((s) => (
+            <tr key={s.id}>
+              <td className="hidden whitespace-nowrap align-top font-mono text-[13px] text-accent sm:table-cell">{s.code}</td>
+              <td className="min-w-0 align-top font-medium">
+                <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>
+                {s.title}
+                {/* The prerequisite sits under the title (as the PRERE column does on the sheet), so the title keeps its room. */}
+                {prereqText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3">Prerequisite: {prereqText(s)}</span>}
+              </td>
+              <td className="num align-top">{Number(s.units)}</td>
+              {isSecretary && (
+                <td className="hidden whitespace-nowrap text-right align-top lg:table-cell">
+                  <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
+                  <button className="icon-btn icon-btn-danger touch-40 h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <>
       <PageHeader showTitle
@@ -55,50 +92,25 @@ export default function Curriculum() {
         </div>
       )}
 
-      {years.map((y) => (
-        <section key={y} className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h2 className="text-[19px] font-bold">{yearLabel(y)}</h2>
-            <span className="text-[13px] text-ink-3">Total: {count(subjects.filter((s) => s.year_level === y))} · {sumUnits(subjects.filter((s) => s.year_level === y))} units</span>
-          </div>
-          <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(380px,100%),1fr))]">
-            {[...new Set(subjects.filter((s) => s.year_level === y).map((s) => s.semester))].sort().map((sem) => {
-              const rows = subjects.filter((s) => s.year_level === y && s.semester === sem);
-              return (
-                <div key={sem} className="card overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-                    <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
-                    <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
-                  </div>
-                  <table className="data-table">
-                    <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="!text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th>{isSecretary && <th className="hidden lg:table-cell"><span className="sr-only">Actions</span></th>}</tr></thead>
-                    <tbody>
-                      {rows.map((s) => (
-                        <tr key={s.id}>
-                          <td className="hidden whitespace-nowrap font-mono text-[13px] text-accent sm:table-cell">{s.code}</td>
-                          <td className="font-medium">
-                            <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>{s.title}
-                            {/* Phones and narrow screens: the prerequisite sits under the title. */}
-                            {prereqText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prereqText(s)}</span>}
-                          </td>
-                          <td className="num">{Number(s.units)}</td>
-                          <td className="hidden text-[13px] text-ink-2 md:table-cell">{prereqText(s) || <span className="text-ink-3">—</span>}</td>
-                          {isSecretary && (
-                            <td className="hidden whitespace-nowrap px-2 text-right lg:table-cell">
-                              <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
-                              <button className="icon-btn icon-btn-danger touch-40 h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+      {years.map((y) => {
+        const ofYear = subjects.filter((s) => s.year_level === y);
+        const inSem = (sem) => ofYear.filter((s) => s.semester === sem);
+        const summer = inSem(3);
+        return (
+          <section key={y} className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-[19px] font-bold">{yearLabel(y)}</h2>
+              <span className="text-[13px] text-ink-3">Total: {count(ofYear)} · {sumUnits(ofYear)} units</span>
+            </div>
+            {/* 1st and 2nd semester side by side (stacked on phones and tablets), as on the official checklist. */}
+            <div className="grid items-start gap-5 lg:grid-cols-2">
+              {[1, 2].filter((sem) => inSem(sem).length > 0).map((sem) => semesterCard(sem, inSem(sem)))}
+            </div>
+            {/* Summer is its own full-width strip underneath, like the "Summer" bar on the sheet. */}
+            {summer.length > 0 && semesterCard(3, summer)}
+          </section>
+        );
+      })}
 
       {editing && (
         <SubjectModal program={program} subject={editing === "new" ? null : editing}
