@@ -12,12 +12,16 @@ import AddStudentModal from "./AddStudentModal";
 import DeleteStudentModal from "./DeleteStudentModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
-// Year tabs list the students still enrolled; Graduated and Dropped students have a tab each, so they never mix into a year.
-const TABS = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"], ["graduated", "Graduated"], ["dropped", "Dropped"]];
-const inTab = (s, tab) =>
-  tab === "graduated" ? s.status === "graduated"
-  : tab === "dropped" ? s.status === "dropped"
-  : String(s.year_level) === tab && s.status !== "graduated" && s.status !== "dropped";
+// Enrolled students are listed by year; Graduated, Dropped and Shifted out each have their own list (sidebar: Students),
+// so they never mix into a year.
+const TABS = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
+const LISTS = {
+  graduated: { title: "Graduated", empty: "No graduates yet. A student appears here when the secretary marks them as Graduated on their record." },
+  dropped: { title: "Dropped", empty: "No dropped students. A student appears here when the secretary marks them as Dropped on their record." },
+  shifted_out: { title: "Shifted out", empty: "No one has shifted out. When a student moves to another program, mark the old record as Shifted out and add them again as a new student." },
+};
+const isEnrolled = (s) => s.status === "active" || s.status === "inactive";
+const inTab = (s, tab) => String(s.year_level) === tab && isEnrolled(s);
 const SIZE_KEY = "ccs-students-per-page";
 function readPageSize() {
   try { const n = Number(localStorage.getItem(SIZE_KEY)); return PAGE_SIZES.includes(n) ? n : 25; } catch { return 25; }
@@ -27,6 +31,8 @@ export default function Students() {
   const { term } = useOutletContext();
   const [params, setParams] = useSearchParams();
   const year = params.get("year") || "1";
+  const listKey = LISTS[params.get("list")] ? params.get("list") : "enrolled";
+  const other = LISTS[listKey]; // undefined while looking at enrolled students
   const programFilter = params.get("program") || "all";
   const [q, setQ] = useState(params.get("q") || "");
   const [status, setStatus] = useState("all");
@@ -60,19 +66,20 @@ export default function Students() {
     const needle = q.trim().toLowerCase();
     return data.students.filter((s) =>
       (programFilter === "all" || s.program_code === programFilter) &&
-      (status === "all" || studentStatusKey(s) === status) &&
+      (status === "all" || !!other || studentStatusKey(s) === status) &&
       (type === "all" || studentTypeKey(s) === type) &&
       (!needle || `${s.full_name} ${s.id} ${s.section_name || ""}`.toLowerCase().includes(needle)));
-  }, [data, q, programFilter, status, type]);
+  }, [data, q, programFilter, status, type, other]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   // Searching looks across all years; otherwise one year level at a time.
   const searching = q.trim().length > 0;
-  const rows = searching ? base : base.filter((s) => inTab(s, year));
+  const rows = other ? base.filter((s) => s.status === listKey) : searching ? base.filter(isEnrolled) : base.filter((s) => inTab(s, year));
   const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
-  const tabLabel = TABS.find(([k]) => k === year)?.[1] ?? yearLabel(Number(year));
+  const tabLabel = other ? other.title : TABS.find(([k]) => k === year)?.[1] ?? yearLabel(Number(year));
+  const total = other ? data.students.filter((s) => s.status === listKey).length : data.students.filter(isEnrolled).length;
 
   const exportCsv = () => downloadFile("ccs-students.csv", toCsv(rows, [
     { label: "Student ID", value: (s) => s.id }, { label: "Last name", value: (s) => s.last_name },
@@ -85,7 +92,7 @@ export default function Students() {
     <>
       <PageHeader
         title="Students"
-        subtitle={searching ? `Search results from all years · ${rows.length} of ${data.students.length} students` : `${tabLabel} · ${rows.length} of ${data.students.length} students`}
+        subtitle={searching && !other ? `Search results from all years · ${rows.length} of ${total} students` : `${tabLabel} · ${rows.length} of ${total} students`}
         actions={<>
           <button className="btn btn-secondary hidden lg:inline-flex" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
           <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Create student</button>
@@ -94,7 +101,13 @@ export default function Students() {
       {notice && <p role="status" className="rounded-lg px-4 py-3 text-[14px] tone-ok">{notice}</p>}
 
       <section className="card overflow-hidden">
-        <div role="tablist" aria-label="Year level and graduates" className="flex gap-1 overflow-x-auto border-b border-line px-2 sm:gap-6 sm:px-5">
+        {/* Phones have no sidebar dropdown: a switch between the lists instead. */}
+        <div className="seg seg-fill m-2 lg:hidden" role="group" aria-label="Student list">
+          {[["enrolled", "Enrolled"], ...Object.entries(LISTS).map(([k, v]) => [k, v.title])].map(([k, label]) => (
+            <button key={k} type="button" aria-pressed={listKey === k} onClick={() => { setQ(""); setParam("list", k === "enrolled" ? null : k); }}>{label}</button>
+          ))}
+        </div>
+        {!other && <div role="tablist" aria-label="Year level" className="flex gap-1 overflow-x-auto border-b border-line px-2 sm:gap-6 sm:px-5">
           {TABS.map(([k, label]) => {
             const n = base.filter((s) => inTab(s, k)).length;
             const on = !searching && year === k;
@@ -106,7 +119,7 @@ export default function Students() {
               </button>
             );
           })}
-        </div>
+        </div>}
 
         <div className="flex flex-wrap gap-2.5 border-b border-line bg-surface-2 px-4 py-3 sm:px-5 sm:py-4">
           <div className="relative flex-[1_1_260px]">
@@ -126,8 +139,8 @@ export default function Students() {
           </select>
           <label htmlFor="stat" className="sr-only">Status</label>
           <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-            <option value="all">Status</option><option value="regular">Regular</option><option value="irregular">Irregular</option>
-            <option value="graduated">Graduated</option><option value="dropped">Dropped</option>
+            <option value="all">Status</option>
+            {other ? <option value={listKey}>{other.title}</option> : <><option value="regular">Regular</option><option value="irregular">Irregular</option></>}
           </select>
         </div>
 
@@ -181,9 +194,7 @@ export default function Students() {
         </div>
         {rows.length === 0 && (
           <EmptyState>
-            {!searching && year === "graduated" ? "No graduates yet. A student moves here when the secretary marks them as Graduated on their record."
-              : !searching && year === "dropped" ? "No dropped students. A student moves here when the secretary marks them as Dropped on their record."
-              : "No students match these filters."}
+            {other && !searching ? other.empty : "No students match these filters."}
           </EmptyState>
         )}
 

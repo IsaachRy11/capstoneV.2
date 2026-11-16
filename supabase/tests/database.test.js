@@ -409,6 +409,13 @@ describe("state machine rules", () => {
     expect(r.error).toMatch(/marked as graduated/);
   });
 
+  it("does not enroll a shifted-out student", async () => {
+    await newStudent("2026-9089", "shifted_out");
+    const off = await firstOffering("BSIT 4-S");
+    const r = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9089', ${off.id})`);
+    expect(r.error).toMatch(/marked as shifted out/);
+  });
+
   it("keeps INC and Dropped classes free of final grades", async () => {
     const off = await firstOffering("BSIT 4-S");
     const [e] = await enrollmentIds(off.id);
@@ -452,7 +459,7 @@ describe("state machine rules", () => {
 
   it("won't delete a student who has grades", async () => {
     const r = await asSec(`delete from students where id = (select student_id from enrollments where midterm_grade is not null limit 1)`);
-    expect(r.error).toMatch(/Dropped or Graduated/);
+    expect(r.error).toMatch(/Shifted out/);
   });
 
   it("gives every demo student a name nobody else has", async () => {

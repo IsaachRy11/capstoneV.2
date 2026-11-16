@@ -11,6 +11,27 @@ export const getCurrentTerm = () => cached("term:current", () =>
 export const getCalendarEvents = () => cached("calendar:events", () =>
   unwrap(supabase.from("school_calendar_events").select("id, school_year, title, starts_on, ends_on, kind").order("starts_on").order("id")));
 
+// The school year follows the start date: June to December belongs to the year that starts then,
+// January to May to the one that began the year before.
+export const schoolYearOf = (isoDate) => {
+  const [y, m] = isoDate.split("-").map(Number);
+  return m >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+};
+
+// Calendar entries are written by the secretary (RLS enforces it).
+export async function saveCalendarEvent({ id, title, kind, starts_on, ends_on }) {
+  const row = { title: title.trim(), kind, starts_on, ends_on, school_year: schoolYearOf(starts_on) };
+  await unwrap(id
+    ? supabase.from("school_calendar_events").update(row).eq("id", id)
+    : supabase.from("school_calendar_events").insert(row));
+  forget("calendar:events");
+}
+
+export async function deleteCalendarEvent(id) {
+  await unwrap(supabase.from("school_calendar_events").delete().eq("id", id));
+  forget("calendar:events");
+}
+
 export const getTerms = () => cached("term:all", () =>
   unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester")));
 

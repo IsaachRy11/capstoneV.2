@@ -129,6 +129,7 @@ describe("student type and status", () => {
     expect(studentStatusLabel({ status: "active", standing: "irregular" })).toBe("Irregular");
     expect(studentStatusKey({ status: "graduated", standing: "irregular" })).toBe("graduated");
     expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Dropped");
+    expect(studentStatusLabel({ status: "shifted_out", standing: "regular" })).toBe("Shifted out");
     expect(studentStatusLabel({ standing: "irregular" })).toBe("Irregular");
   });
 });

@@ -112,7 +112,8 @@ export default function StudentRecord() {
         </dl>
       </section>
 
-      {deficiencies.length > 0 && (
+      {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary banner. */}
+      {!isSecretary && deficiencies.length > 0 && (
         <div role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
           <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
           <div className="flex flex-col gap-1">

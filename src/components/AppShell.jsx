@@ -55,7 +55,8 @@ function NavItem({ to, end, icon: Icon, label, collapsed }) {
 const NAV = {
   secretary: [
     { to: "/", end: true, icon: LayoutDashboard, label: "Dashboard", tab: "Home" },
-    { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records" },
+    { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records", byList: true,
+      children: [{ to: "/students", label: "Enrolled" }, { to: "/students?list=graduated", label: "Graduated" }, { to: "/students?list=dropped", label: "Dropped" }, { to: "/students?list=shifted_out", label: "Shifted out" }] },
     { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
     { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
@@ -87,7 +88,10 @@ function BottomTabs() {
 // inside it, and the arrow opens or closes it by hand. In the icon rail only the main icon shows.
 function NavGroup({ item, collapsed }) {
   const location = useLocation();
-  const inside = item.children.some((c) => location.pathname.startsWith(c.to));
+  const inside = item.children.some((c) => location.pathname.startsWith(c.to.split("?")[0]));
+  // Some children differ only by query (Students > Graduated is /students?list=graduated): active when the list matches.
+  const list = new URLSearchParams(location.search).get("list") || "enrolled";
+  const queryActive = (c) => location.pathname === "/students" && (new URLSearchParams(c.to.split("?")[1] || "").get("list") || "enrolled") === list;
   const [manual, setManual] = useState(null); // null = follow the page, true/false = the user chose
   const open = !collapsed && (manual ?? inside);
   const Icon = item.icon;
@@ -106,7 +110,7 @@ function NavGroup({ item, collapsed }) {
       {open && (
         <div className="ml-[22px] mt-1 flex flex-col gap-0.5 border-l border-line pl-3">
           {item.children.map((c) => (
-            <NavLink key={c.to} to={c.to} end={c.end} className={({ isActive }) => `nav-sub ${isActive ? "active" : ""}`}>{c.label}</NavLink>
+            <NavLink key={c.to} to={c.to} end={c.end} className={({ isActive }) => `nav-sub ${(item.byList ? queryActive(c) : isActive) ? "active" : ""}`}>{c.label}</NavLink>
           ))}
         </div>
       )}

@@ -31,9 +31,9 @@ export const ADMISSION_FOR_TYPE = { freshman: "new", continuing: "returnee", tra
 
 // Student STATUS. students.status is what the secretary sets (only "active" students can be enrolled in classes);
 // while active, the status shown is Regular or Irregular, which the database works out from the grades.
-export const STUDENT_STATUS = { active: "Active (regular or irregular)", graduated: "Graduated", dropped: "Dropped", inactive: "Inactive" };
-export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Dropped", inactive: "Inactive" };
-export const STUDENT_STATUS_TONE = { regular: "ok", irregular: "warn", graduated: "info", dropped: "neutral", inactive: "neutral" };
+export const STUDENT_STATUS = { active: "Active (regular or irregular)", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS_TONE = { regular: "ok", irregular: "warn", graduated: "info", dropped: "neutral", shifted_out: "neutral", inactive: "neutral" };
 export const studentStatusKey = (s) => (s.status && s.status !== "active" ? s.status : s.standing === "irregular" ? "irregular" : "regular");
 export const studentStatusLabel = (s) => STUDENT_STATUS_LABEL[studentStatusKey(s)];
 

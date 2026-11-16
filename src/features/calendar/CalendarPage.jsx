@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, Pencil, Plus } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useAsync } from "../../hooks/useAsync";
 import { getCalendarEvents, getTerms } from "../../services/catalog";
 import { semesterLabel, termLabel } from "../../lib/format";
-import { EVENT_KINDS, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
+import { useAuth } from "../../context/AuthContext";
+import CalendarEventModal from "./CalendarEventModal";
+import { EVENT_KINDS, classStatus, resumeText, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
 import { BackButton, EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 
 // Full-page academic calendar: the official school calendar (exams, holidays, breaks, activities) on top of the
@@ -22,6 +24,9 @@ function semesterStatus(range, today) {
 
 export default function CalendarPage() {
   const { term } = useOutletContext();
+  const { user } = useAuth();
+  const isSecretary = user.role === "secretary";
+  const [editing, setEditing] = useState(undefined); // undefined = closed, null = adding, an event = changing it
   const today = useMemo(() => new Date(), []);
   const [month, setMonth] = useState(() => startOfMonth(today));
   const { data, error, loading, reload } = useAsync(async () => {
@@ -45,6 +50,7 @@ export default function CalendarPage() {
     ...(sameDay(d, r.end) ? [`${semesterLabel(r.semester)} ends`] : []),
   ]);
   const inMonth = eventsInMonth(events, month);
+  const status = classStatus(today, data.terms, data.events);
   const next = upcoming(events, today, 5);
 
   return (
@@ -56,6 +62,7 @@ export default function CalendarPage() {
         <section className="card min-w-0 flex-[999_1_640px] overflow-hidden" aria-label="Month calendar">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 sm:px-5">
             <h2 className="mr-auto font-display text-[20px] font-bold text-ink">{fmt(month, { month: "long", year: "numeric" })}</h2>
+            {isSecretary && <button className="btn btn-primary btn-sm hidden lg:inline-flex" onClick={() => setEditing(null)}><Plus size={16} aria-hidden="true" />Add date</button>}
             {!isThisMonth && <button className="btn btn-secondary btn-sm" onClick={() => setMonth(startOfMonth(today))}>Today</button>}
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month"><ChevronLeft size={18} /></button>
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month"><ChevronRight size={18} /></button>
@@ -118,6 +125,7 @@ export default function CalendarPage() {
                     <span className="w-[88px] shrink-0 font-mono text-[12px] font-semibold text-ink-2">{dateSpan(e)}</span>
                     <span className="min-w-0 flex-1 font-medium text-ink">{e.title}</span>
                     <span className={`badge tone-${EVENT_KINDS[e.kind].tone} hidden sm:inline-flex`}>{EVENT_KINDS[e.kind].label}</span>
+                    {isSecretary && <button className="icon-btn hidden lg:inline-flex" onClick={() => setEditing(e)} aria-label={`Edit ${e.title}`}><Pencil size={15} /></button>}
                   </li>
                 ))}
               </ul>
@@ -132,6 +140,13 @@ export default function CalendarPage() {
               <p className="mt-1 font-display text-[18px] font-bold text-ink">{termLabel(current)}</p>
               <p className="mt-1 text-[14px] text-ink-2">{fmt(current.start, { month: "long", day: "numeric" })} – {fmt(current.end, { month: "long", day: "numeric", year: "numeric" })}</p>
               <p className="mt-3 text-[14px] font-semibold text-ink">{semesterStatus(current, today)}</p>
+              {/* What today is on the official calendar: a break, a holiday or an exam week. */}
+              {status.kind !== "classes" && (
+                <p className="mt-2 rounded-lg px-3 py-2 text-[13px] tone-info">
+                  <span className="font-semibold">{status.kind === "exam" ? `Exam week · ${status.title}` : `No classes · ${status.title}`}</span>
+                  {status.kind === "none" && resumeText(status) && <span className="block">{resumeText(status)}</span>}
+                </p>
+              )}
             </section>
           )}
           <section className="card overflow-hidden">
@@ -170,6 +185,7 @@ export default function CalendarPage() {
           </section>
         </aside>
       </div>
+      {editing !== undefined && <CalendarEventModal event={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); reload(); }} />}
     </>
   );
 }
