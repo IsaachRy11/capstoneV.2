@@ -8,22 +8,8 @@ const readTheme = () => {
   return current === "dark" ? "dark" : "light";
 };
 
-// Table style: "grid" (every cell boxed, like Excel) or "plain" (row lines only). index.html sets it before first paint.
-const readTables = () => (document.documentElement.dataset.tables === "plain" ? "plain" : "grid");
-
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(readTheme);
-  const [tables, setTables] = useState(readTables);
-
-  useEffect(() => {
-    document.documentElement.dataset.tables = tables;
-    try {
-      localStorage.setItem("ccs-tables", tables);
-    } catch {
-      /* storage blocked: the style still applies for this visit */
-    }
-  }, [tables]);
-
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
@@ -35,7 +21,7 @@ export function ThemeProvider({ children }) {
 
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme, tables, setTables }}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

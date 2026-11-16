@@ -49,18 +49,32 @@ function AheadTerm({ t, isNext, pos }) {
           </span>
           <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
-        <ul className="divide-y divide-line-2 border-t border-line">
-          {t.subjects.map((s) => (
-            <li key={s.id} className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5">
-              <span className="min-w-0">
-                <span className="block font-mono text-[12px] text-accent">{s.code}</span>
-                <span className="block text-[14px] font-medium">{s.title}</span>
-                {requirementText(s, t.year) && <span className="mt-0.5 block text-[12px] text-warn">{requirementText(s, t.year)}</span>}
-              </span>
-              <span className="whitespace-nowrap text-[13px] text-ink-2">{Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto border-t border-line">
+          <table className="data-table">
+            <thead>
+              <tr><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Needs</th></tr>
+            </thead>
+            <tbody>
+              {t.subjects.map((s) => {
+                const need = requirementText(s, t.year);
+                return (
+                  <tr key={s.id}>
+                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                    <td className="min-w-0 align-top font-medium">
+                      {s.title}
+                      {need && <span className="mt-0.5 block text-[12px] font-normal text-warn md:hidden">{need}</span>}
+                    </td>
+                    <td className="num align-top">{Number(s.units)}</td>
+                    <td className="hidden align-top text-[13px] md:table-cell">{need ? <span className="text-warn">{need}</span> : <span className="text-ink-3">—</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr><td colSpan={2}>Total · {count(t.subjects.length, "subject", "subjects")}</td><td className="num">{units}</td><td className="hidden md:table-cell" /></tr>
+            </tfoot>
+          </table>
+        </div>
       </details>
     </li>
   );
@@ -151,7 +165,7 @@ export default function Roadmap() {
               const inYear = progress.subjects.filter((s) => s.year_level === y);
               const done = passed.filter((s) => s.year_level === y);
               return (
-                <details key={y} className="card group overflow-hidden">
+                <details key={y} open={y === completedYears[completedYears.length - 1]} className="card group overflow-hidden">
                   <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 [&::-webkit-details-marker]:hidden">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full tone-ok" aria-hidden="true"><Check size={16} /></span>
                     <span className="min-w-0 flex-1">
@@ -160,14 +174,29 @@ export default function Roadmap() {
                     </span>
                     <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
                   </summary>
-                  <ul className="grid divide-y divide-line-2 border-t border-line sm:grid-cols-2 sm:divide-y-0">
-                    {done.map((s) => (
-                      <li key={s.id} className="flex items-start justify-between gap-3 px-4 py-2.5 sm:px-5">
-                        <span className="min-w-0"><span className="block font-mono text-[12px] text-accent">{s.code}</span><span className="block text-[14px] font-medium">{s.title}</span></span>
-                        <span className="whitespace-nowrap text-[13px] text-ink-3">{Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="overflow-x-auto border-t border-line">
+                    <table className="data-table">
+                      <thead>
+                        <tr><th className="hidden w-[132px] sm:table-cell">Semester</th><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th></tr>
+                      </thead>
+                      <tbody>
+                        {[...done].sort((x, z) => x.semester - z.semester || x.sort_order - z.sort_order).map((s) => (
+                          <tr key={s.id}>
+                            <td className="hidden whitespace-nowrap align-top text-[13px] text-ink-2 sm:table-cell">{semesterLabel(s.semester)}</td>
+                            <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                            <td className="min-w-0 align-top font-medium">
+                              {s.title}
+                              <span className="mt-0.5 block text-[12px] font-normal text-ink-3 sm:hidden">{semesterLabel(s.semester)}</span>
+                            </td>
+                            <td className="num align-top">{Number(s.units)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr><td className="hidden sm:table-cell" /><td colSpan={2}>Total · {done.length} {done.length === 1 ? "subject" : "subjects"}</td><td className="num">{sumUnits(done)}</td></tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </details>
               );
             })}

@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StandingBadge } from "../../components/ui";
-import { colorIndex, semesterLabel, sumUnits, termLabel, yearLabel } from "../../lib/format";
+import { semesterLabel, sumUnits, termLabel, yearLabel } from "../../lib/format";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
@@ -21,35 +21,6 @@ function Tile({ to, label, value, sub, tone }) {
   );
   const cls = "flex flex-col gap-1.5 rounded-xl border border-line-2 bg-surface-2 px-4 py-3.5";
   return to ? <Link to={to} className={`${cls} press hover:border-accent`}>{body}</Link> : <div className={cls}>{body}</div>;
-}
-
-function SubjectCard({ s }) {
-  const prefix = s.code.split(/\s+/)[0];
-  const opens = s.unlocks;
-  return (
-    <li className="card flex flex-col gap-3 p-4 sm:p-5">
-      <div className="flex items-start gap-3.5">
-        <span className={`av-${colorIndex(prefix)} flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-mono text-[11px] font-bold`} aria-hidden="true">{prefix.slice(0, 5)}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="font-mono text-[13px] text-accent">{s.code}</span>
-            <span className="whitespace-nowrap text-[12px] text-ink-3">{Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
-          </div>
-          <h3 className="mt-0.5 text-[15px] font-bold leading-snug text-ink">{s.title}</h3>
-        </div>
-      </div>
-      <div className="mt-auto border-t border-line-2 pt-3 text-[13px]">
-        {opens.length ? (
-          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-ink-2">
-            <span className="inline-flex items-center gap-1 font-semibold text-ink"><ArrowRight size={13} aria-hidden="true" />Passing opens</span>
-            {opens.map((o, i) => <span key={o.id} className="font-mono text-[12px] text-accent">{o.code}{i < opens.length - 1 ? "," : ""}</span>)}
-          </p>
-        ) : (
-          <p className="text-ink-3">No other subject depends on this one.</p>
-        )}
-      </div>
-    </li>
-  );
 }
 
 export default function Progress() {
@@ -122,9 +93,33 @@ export default function Progress() {
         {taking.length === 0 ? (
           <div className="card px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any subjects this semester.</div>
         ) : (
-          <ul className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))]">
-            {taking.map((s) => <SubjectCard key={s.id} s={s} />)}
-          </ul>
+          <div className="card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Passing opens</th></tr>
+                </thead>
+                <tbody>
+                  {taking.map((s) => (
+                    <tr key={s.id}>
+                      <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                      <td className="min-w-0 align-top font-medium">
+                        {s.title}
+                        <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">{s.unlocks.length ? `Passing opens ${s.unlocks.map((o) => o.code).join(", ")}` : "No other subject depends on this one."}</span>
+                      </td>
+                      <td className="num align-top">{Number(s.units)}</td>
+                      <td className="hidden align-top text-[13px] md:table-cell">
+                        {s.unlocks.length ? <span className="font-mono text-[12px] text-accent">{s.unlocks.map((o) => o.code).join(", ")}</span> : <span className="text-ink-3">None: no other subject depends on it</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr><td colSpan={2}>Total · {taking.length} {taking.length === 1 ? "subject" : "subjects"}</td><td className="num">{units}</td><td className="hidden md:table-cell" /></tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         )}
       </section>
 

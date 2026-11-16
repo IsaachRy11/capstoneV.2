@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatGrade } from "../../lib/format";
 
-const FIRST = 5;
+const FIRST = 1; // only the latest change is shown at first
 
 const gradeOrStatus = (grade, status) =>
   status === "incomplete" ? "INC" : status === "dropped" ? "Dropped" : formatGrade(grade);

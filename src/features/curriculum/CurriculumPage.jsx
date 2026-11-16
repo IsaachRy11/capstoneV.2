@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { getStudent } from "../../services/students";
-import { BackButton, ErrorState, LoadingState, PageHeader } from "../../components/ui";
+import { BackButton, ErrorState, LoadingState } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import SubjectModal from "./SubjectModal";
 import DeleteSubjectModal from "./DeleteSubjectModal";
@@ -39,7 +39,6 @@ export default function Curriculum() {
     const standing = s.standing_required ? `${({ 2: "2nd", 3: "3rd" })[s.standing_required] || `${s.standing_required}th`} year standing` : null;
     return [...codes, standing].filter(Boolean).join(", ");
   };
-  const effective = subjects[0]?.curricula.effective_school_year;
 
   // Like the printed checklist: Code | Description | Units | Prerequisite, each in its own column.
   // The columns are fixed-width so the description keeps the room; phones fold code and prerequisite under the title.
@@ -52,7 +51,7 @@ export default function Curriculum() {
       <table className="data-table w-full table-fixed [&_td]:px-2.5 [&_th]:px-2.5 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:last-child]:pr-4">
         <thead>
           <tr>
-            <th className="hidden w-[92px] sm:table-cell">Code</th>
+            <th className="hidden w-[128px] sm:table-cell">Code</th>
             <th>Description</th>
             <th className="w-[54px] !text-center">Units</th>
             <th className="hidden w-[112px] md:table-cell">Prerequisite</th>
@@ -86,11 +85,21 @@ export default function Curriculum() {
   return (
     <>
       {!isSecretary && <BackButton fallback="/progress/roadmap" label="Back to subject tracker" />}
-      <PageHeader showTitle
-        title={program.name}
-        subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years${effective ? ` · Effective AY ${effective.replace("-", "–")}` : ""}`}
-        actions={isSecretary && <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
-      />
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">Academic Degree Programs</span>
+          <h1 className="mt-1 text-[22px] font-bold leading-tight tracking-tight sm:text-[28px]">
+            Saint Joseph College <span className="text-ink-3">•</span> College of Computer Studies Curriculum
+          </h1>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[14px] text-ink-2">
+            <span className="rounded-md px-2 py-0.5 font-mono text-[12px] font-bold tone-info" title={program.name}>{program.code}</span>
+            <span>Complete {program.duration_years}-Year Academic Curriculum</span>
+            <span className="text-ink-3" aria-hidden="true">·</span>
+            <span>{subjects.length} subjects · {sumUnits(subjects)} units</span>
+          </p>
+        </div>
+        {isSecretary && <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setEditing("new")}><Plus size={16} aria-hidden="true" />Add subject</button>}
+      </header>
 
       {isSecretary && (
         <div className="seg seg-fill self-start" role="group" aria-label="Program">

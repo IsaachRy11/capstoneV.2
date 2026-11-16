@@ -43,7 +43,7 @@ function PasswordForm() {
 }
 
 export default function Settings() {
-  const { theme, toggleTheme, tables, setTables } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const options = [
     { value: "light", label: "Light", icon: Sun, swatch: ["#F7F6F3", "#FFFFFF", "#C2410C"] },
     { value: "dark", label: "Dark", icon: Moon, swatch: ["#0E1320", "#151B2B", "#4361D8"] },
@@ -71,31 +71,6 @@ export default function Settings() {
                 <span className="flex items-center gap-2 text-[14px] font-semibold text-ink">
                   <Icon size={16} aria-hidden="true" />{label}
                   {on && <Check size={16} className="ml-auto text-accent" aria-hidden="true" />}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="card overflow-hidden">
-        <SectionHeader title="Tables" subtitle="How lists of students, subjects and grades are drawn. Saved on this device." />
-        <div role="radiogroup" aria-label="Table style" className="flex flex-wrap gap-4 px-5 py-5">
-          {[["grid", "Gridlines", "Every cell is boxed, like a spreadsheet."], ["plain", "Plain", "Only a line between rows."]].map(([value, label, hint]) => {
-            const on = tables === value;
-            return (
-              <button key={value} role="radio" aria-checked={on} onClick={() => setTables(value)}
-                className={`flex w-[200px] flex-col gap-3 rounded-xl border-2 p-3 text-left ${on ? "border-accent" : "border-line hover:border-ink-3"}`}>
-                <div className="overflow-hidden rounded-lg border border-line bg-surface" aria-hidden="true">
-                  {[0, 1, 2].map((row) => (
-                    <div key={row} className={`flex ${row ? "border-t border-line-2" : "bg-surface-2"}`}>
-                      {[0, 1, 2].map((col) => <div key={col} className={`h-6 flex-1 ${value === "grid" && col ? "border-l border-line" : ""} ${value === "grid" && row ? "border-line" : ""}`} />)}
-                    </div>
-                  ))}
-                </div>
-                <span>
-                  <span className="flex items-center gap-2 text-[14px] font-semibold text-ink">{label}{on && <Check size={16} className="ml-auto text-accent" aria-hidden="true" />}</span>
-                  <span className="mt-0.5 block text-[12px] text-ink-3">{hint}</span>
                 </span>
               </button>
             );
