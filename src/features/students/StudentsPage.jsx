@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronRight, Download, Plus, Search, Users } from "lucide-react";
+import { ChevronRight, Download, Plus, Search } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { getPrograms } from "../../services/catalog";
@@ -9,7 +9,6 @@ import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StudentStatus
 import { STUDENT_TYPE, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, yearLabel } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
 import AddStudentModal from "./AddStudentModal";
-import BulkAddStudentsModal from "./BulkAddStudentsModal";
 import DeleteStudentModal from "./DeleteStudentModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -47,7 +46,6 @@ export default function Students() {
     try { localStorage.setItem(SIZE_KEY, String(n)); } catch { /* not remembered in private mode */ }
   };
   const [adding, setAdding] = useState(params.get("add") === "1");
-  const [addingMany, setAddingMany] = useState(false);
   const [notice, setNotice] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
@@ -97,7 +95,6 @@ export default function Students() {
         subtitle={searching && !other ? `Search results from all years · ${rows.length} of ${total} students` : `${tabLabel} · ${rows.length} of ${total} students`}
         actions={<>
           <button className="btn btn-secondary hidden lg:inline-flex" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
-          <button className="btn btn-secondary hidden lg:inline-flex" onClick={() => setAddingMany(true)}><Users size={16} aria-hidden="true" />Add several</button>
           <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Create student</button>
         </>}
       />
@@ -219,12 +216,6 @@ export default function Students() {
       {deleting && (
         <DeleteStudentModal student={deleting} onClose={() => setDeleting(null)}
           onDeleted={() => { setNotice(`${deleting.full_name} was deleted.`); setDeleting(null); reload(); }} />
-      )}
-
-      {addingMany && (
-        <BulkAddStudentsModal programs={data.programs} existingIds={new Set(data.students.map((x) => x.id))}
-          onClose={() => setAddingMany(false)}
-          onDone={() => { setAddingMany(false); setNotice("New students were added. Open Students to see them."); reload(); }} />
       )}
 
       {adding && (

@@ -1,36 +1,33 @@
 -- Starting a new semester, summer or school year from the app (School year page, secretary only).
 --
--- Steps, each a database function so it runs as one transaction:
---   prepare_term()        creates the term and copies the section structure of the latest term; each section gets the
---                         curriculum subjects of its year for that semester, and class times are copied from the same
---                         section and subject the last time that semester ran (rooms and times are a starting point).
---   discard_term()        removes a prepared term that hasn't started yet.
---   preview_term_start()  runs start_term's exact work and rolls it back, returning what would happen.
---   start_term()          the switch, all or nothing (see private.run_term_start for the rules).
---   undo_term_start()     puts the previous term back while the new one has no grades yet.
+-- What the app calls (each a database function, so each runs as one transaction):
+--   begin_term()           the School year page's Start: creates the term if needed (prepare_term copies the latest
+--                          semester's sections, gives each its curriculum subjects, copies old class times), adds its
+--                          first and last day to the calendar, then switches the site to it (private.run_term_start).
+--   undo_term_start()      puts the previous term back while the new one has no grades yet.
+--   section_enroll_plan()  the Enroll students page: who to enroll in a section and what each would get.
+--   enroll_in_section()    enrolls the chosen students in the section's subjects.
+--   prerequisite_gaps()    the warning in the enroll box ("Needs IT 306 passed first").
 --
 -- Every step takes the same transaction lock (pg_advisory_xact_lock(20261121)), so two term changes never run at the
 -- same time (two tabs, two people, or Undo pressed while a Start is still running): the second waits for the first to
 -- finish and then sees its result.
 --
--- Rules (user decisions, Nov 2026; the CCS office still has to confirm them, so they live here in one place):
---   * Graduation: a student whose every curriculum subject is passed is marked Graduated when any term starts
---     (so summer subjects count).
---   * A new school year moves every active student up one year level, failures or not, except in their program's
---     last year (4th, or 2nd for ACT): they stay there until everything is passed.
---   * Only students who were registered in some term of the current school year move on (others are on leave and
---     are placed by the secretary).
---   * A student is placed in the section with the same letter in their year (BSIT 1-S -> BSIT 2-S); if that letter
---     doesn't exist, the section of their program and year with the most free seats.
---   * They get the section's subjects they haven't passed, then their carried subjects (earlier years, same
---     semester, not passed) in whichever section has a free seat and fits their timetable.
---   * A subject whose prerequisite isn't passed, or whose year standing isn't reached, is not added: the student
---     takes the prerequisite first. A unit limit per student (passed in by the page) caps the load.
---   * Whatever couldn't be done is listed for the secretary, who can still change everything afterwards.
+-- Rules (user decisions, Nov 2026; demo settings, not confirmed by the CCS office):
+--   * Starting a term only creates it (sections, classes, class times) and switches the site to it. Nobody is
+--     enrolled and nobody is moved up automatically: the secretary enrolls students afterwards, a section at a time
+--     (section_enroll_plan + enroll_in_section, the "Enroll students" page) or one class at a time.
+--   * A student's year level follows what they are enrolled in this semester: the highest year among this term's
+--     subjects, but never lower than the highest year they have already passed (private.sync_year_level).
+--   * Graduation: a student whose every curriculum subject is passed is marked Graduated when any term starts.
+--   * A subject whose prerequisite isn't passed can't be enrolled, by anyone (no override). A unit limit per
+--     student (on their record) caps the load when enrolling a section.
+--   * A new school year starts with its 1st semester. Its calendar starts empty except the first and last day of
+--     classes, added when the term starts (and removed by Undo); nothing is copied from an earlier year.
 
 -- ─── Unit limit: each student has their own (shown and edited on their record) ─────────────
--- The default is a placeholder until the CCS office confirms the number. The start leaves out a subject that would
--- take a student past their limit, and lists it.
+-- The default is a demo setting. Enrolling a student in a section leaves out a subject that would take them past
+-- their limit, and says so.
 alter table public.students add column max_units smallint not null default 30 check (max_units between 1 and 60);
 
 -- ─── Helpers ───────────────────────────────────────────────────────────────
@@ -66,6 +63,7 @@ create table public.term_starts (
   started_at      timestamptz not null default now(),
   students_before jsonb not null default '[]'::jsonb,   -- [{id, year_level, status}] of every active student
   result          jsonb,
+  added_events    bigint[] not null default '{}',   -- calendar entries the start added (removed by Undo)
   undone_at       timestamptz
 );
 create index term_starts_from_idx on public.term_starts (from_term_id);
@@ -217,26 +215,6 @@ begin
     'copied_from', v_src.school_year || ' semester ' || v_src.semester);
 end $$;
 
--- ─── Discard a prepared term ───────────────────────────────────────────────────
-create function public.discard_term(p_term_id bigint) returns void
-language plpgsql security definer set search_path = ''
-as $$
-begin
-  if not (select private.is_secretary()) then
-    raise exception 'Only the secretary can discard a term.' using errcode = '42501';
-  end if;
-  perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
-  if exists (select 1 from public.school_terms where id = p_term_id and is_current) then
-    raise exception 'This term has already started. Use Undo instead.' using errcode = 'P0001';
-  end if;
-  if exists (select 1 from public.registrations where school_term_id = p_term_id)
-     or exists (select 1 from public.enrollments e join public.class_offerings o on o.id = e.offering_id
-                join public.sections s on s.id = o.section_id where s.school_term_id = p_term_id) then
-    raise exception 'Students are already in this term, so it can''t be discarded.' using errcode = 'P0001';
-  end if;
-  delete from public.sections where school_term_id = p_term_id;  -- classes and class times go with them
-end $$;
-
 -- ─── The start itself ────────────────────────────────────────────────────────
 create function private.run_term_start(p_term_id bigint) returns jsonb
 language plpgsql security definer set search_path = ''
@@ -246,24 +224,6 @@ declare
   v_cur public.school_terms%rowtype;
   v_new_year boolean;
   v_graduated int := 0;
-  v_moved int := 0;
-  v_stayed int := 0;
-  v_registered int := 0;
-  v_classes int := 0;
-  v_carried int := 0;
-  v_waiting jsonb := '[]'::jsonb;    -- subjects waiting for a prerequisite or year standing
-  v_unplaced jsonb := '[]'::jsonb;   -- carried subjects with no class that fits
-  v_over jsonb := '[]'::jsonb;       -- subjects left out by the unit limit
-  v_nosection jsonb := '[]'::jsonb;  -- students with no section of their year
-  v_to_place jsonb := '[]'::jsonb;   -- carried subjects the secretary still has to place
-  s record;
-  c record;
-  v_section bigint;
-  v_letter text;
-  v_units numeric;
-  v_missing text;
-  v_placed bigint;
-  v_reason text;
 begin
   perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
   select * into v_t from public.school_terms where id = p_term_id;
@@ -282,6 +242,7 @@ begin
   end if;
   v_new_year := v_cur.id is null or v_t.school_year <> v_cur.school_year;
 
+  -- Snapshot for Undo (year levels change later as the secretary enrolls students; Undo puts them back).
   insert into public.term_starts (from_term_id, to_term_id, started_by, students_before)
   select v_cur.id, p_term_id, (select auth.uid()),
          coalesce(jsonb_agg(jsonb_build_object('id', st.id, 'year_level', st.year_level, 'status', st.status)), '[]'::jsonb)
@@ -295,154 +256,16 @@ begin
                     where cs.curriculum_id = st.curriculum_id and not private.has_passed(st.id, cs.id));
   get diagnostics v_graduated = row_count;
 
-  -- Who carries on: active students registered in some term of the current school year.
-  create temporary table if not exists pg_temp.rollover_students (id text primary key) on commit drop;
-  truncate pg_temp.rollover_students;
-  insert into pg_temp.rollover_students (id)
-  select st.id from public.students st
-  where st.status = 'active'
-    and (v_cur.id is null or exists (
-      select 1 from public.registrations r join public.school_terms t on t.id = r.school_term_id
-      where r.student_id = st.id and t.school_year = v_cur.school_year));
-
-  if v_new_year then
-    select count(*) into v_stayed from public.students st join public.programs p on p.id = st.program_id
-    where st.id in (select id from pg_temp.rollover_students) and st.year_level >= p.duration_years;
-    update public.students st set year_level = st.year_level + 1
-    from public.programs p
-    where p.id = st.program_id and st.year_level < p.duration_years
-      and st.id in (select id from pg_temp.rollover_students);
-    get diagnostics v_moved = row_count;
-  end if;
-
-  for s in
-    select st.id, st.year_level, st.program_id, st.curriculum_id, st.max_units, p.code as program_code,
-           (select sec.name from public.registrations r
-            join public.sections sec on sec.id = r.section_id
-            join public.school_terms t on t.id = r.school_term_id
-            where r.student_id = st.id order by t.school_year desc, t.semester desc limit 1) as last_section
-    from public.students st
-    join public.programs p on p.id = st.program_id
-    where st.id in (select id from pg_temp.rollover_students)
-    order by st.id
-  loop
-    v_units := 0;
-    v_letter := nullif(split_part(coalesce(s.last_section, ''), '-', 2), '');
-    v_section := null;
-    select sec.id into v_section from public.sections sec
-    where sec.school_term_id = p_term_id
-      and sec.name_key = public.norm_key(s.program_code || ' ' || s.year_level || '-' || coalesce(v_letter, ''));
-    if v_section is null then
-      select sec.id into v_section from public.sections sec
-      where sec.school_term_id = p_term_id and sec.program_id = s.program_id and sec.year_level = s.year_level
-      order by sec.capacity - (select count(*) from public.registrations r where r.section_id = sec.id) desc, sec.name
-      limit 1;
-    end if;
-
-    if v_section is not null then
-      insert into public.registrations (student_id, school_term_id, section_id, year_level)
-      values (s.id, p_term_id, v_section, s.year_level);
-      v_registered := v_registered + 1;
-
-      -- Their section's subjects.
-      for c in
-        select o.id as offering_id, cs.id as subject_id, cs.code, cs.units, cs.standing_required
-        from public.class_offerings o join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
-        where o.section_id = v_section order by cs.sort_order
-      loop
-        continue when private.has_passed(s.id, c.subject_id);
-        v_missing := private.missing_prerequisite(s.id, c.subject_id);
-        if v_missing is not null or coalesce(c.standing_required, 0) > s.year_level then
-          v_waiting := v_waiting || jsonb_build_object('student_id', s.id, 'code', c.code,
-            'needs', coalesce(v_missing, c.standing_required || case c.standing_required when 2 then 'nd' when 3 then 'rd' else 'th' end || '-year standing'));
-          continue;
-        end if;
-        if v_units + c.units > s.max_units then
-          v_over := v_over || jsonb_build_object('student_id', s.id, 'code', c.code);
-          continue;
-        end if;
-        begin
-          insert into public.enrollments (student_id, offering_id) values (s.id, c.offering_id);
-          v_units := v_units + c.units;
-          v_classes := v_classes + 1;
-        exception when others then
-          v_unplaced := v_unplaced || jsonb_build_object('student_id', s.id, 'code', c.code, 'reason', sqlerrm);
-        end;
-      end loop;
-    end if;
-
-    -- Carried subjects (earlier years, this semester, not passed) are NOT enrolled here. Each one is a decision
-    -- for the secretary (Section allocations or bulk enroll), so they are listed with the student. Prerequisites
-    -- still come first: a subject that waits for one is listed as waiting.
-    for c in
-      select cs.id as subject_id, cs.code, cs.units
-      from public.curriculum_subjects cs
-      where cs.curriculum_id = s.curriculum_id and cs.semester = v_t.semester and cs.year_level < s.year_level
-        and not private.has_passed(s.id, cs.id)
-        and not exists (select 1 from public.enrollments e join public.class_offerings o on o.id = e.offering_id
-                        join public.sections sec on sec.id = o.section_id
-                        where e.student_id = s.id and o.curriculum_subject_id = cs.id and sec.school_term_id = p_term_id)
-      order by cs.year_level, cs.sort_order
-    loop
-      v_missing := private.missing_prerequisite(s.id, c.subject_id);
-      if v_missing is not null then
-        v_waiting := v_waiting || jsonb_build_object('student_id', s.id, 'code', c.code, 'needs', v_missing);
-      else
-        v_to_place := v_to_place || jsonb_build_object('student_id', s.id, 'code', c.code, 'units', c.units);
-      end if;
-    end loop;
-
-    if v_t.semester in (1, 2)
-       and not exists (select 1 from public.registrations r where r.student_id = s.id and r.school_term_id = p_term_id) then
-      v_nosection := v_nosection || jsonb_build_object('student_id', s.id, 'year_level', s.year_level, 'program', s.program_code);
-    end if;
-  end loop;
-
   update public.school_terms set is_current = false where is_current;
   update public.school_terms set is_current = true where id = p_term_id;
 
   return jsonb_build_object(
-    'term_id', p_term_id, 'new_school_year', v_new_year,
-    'graduated', v_graduated, 'moved_up', v_moved, 'stayed_in_last_year', v_stayed,
-    'registered', v_registered, 'classes_added', v_classes, 'to_place', v_to_place,
-    'waiting', v_waiting, 'unplaced', v_unplaced, 'over_limit', v_over, 'no_section', v_nosection);
+    'term_id', p_term_id, 'new_school_year', v_new_year, 'graduated', v_graduated,
+    'sections', (select count(*) from public.sections where school_term_id = p_term_id),
+    'classes', (select count(*) from public.class_offerings o join public.sections sec on sec.id = o.section_id
+                where sec.school_term_id = p_term_id));
 end $$;
 revoke all on function private.run_term_start(bigint) from public, anon;
-
--- Same work, rolled back: the preview can never drift from the real thing.
-create function public.preview_term_start(p_term_id bigint) returns jsonb
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  v_result jsonb;
-begin
-  if not (select private.is_secretary()) then
-    raise exception 'Only the secretary can start a term.' using errcode = '42501';
-  end if;
-  begin
-    v_result := private.run_term_start(p_term_id);
-    raise exception 'preview only' using errcode = 'PV001';
-  exception
-    when sqlstate 'PV001' then null;  -- undo everything, keep the summary
-    when others then v_result := jsonb_build_object('error', sqlerrm);
-  end;
-  return v_result;
-end $$;
-
-create function public.start_term(p_term_id bigint) returns jsonb
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  v_result jsonb;
-begin
-  if not (select private.is_secretary()) then
-    raise exception 'Only the secretary can start a term.' using errcode = '42501';
-  end if;
-  v_result := private.run_term_start(p_term_id);
-  update public.term_starts set result = v_result
-  where id = (select max(id) from public.term_starts where to_term_id = p_term_id);
-  return v_result;
-end $$;
 
 -- ─── One step: what the School year page uses ─────────────────────────────────────
 -- Prepares the term if it isn't prepared yet (or updates its dates if it is), then starts it, in one transaction.
@@ -452,6 +275,9 @@ as $$
 declare
   v_term bigint;
   v_result jsonb;
+  v_y1 int;
+  v_label text;
+  v_events bigint[];
 begin
   if not (select private.is_secretary()) then
     raise exception 'Only the secretary can start a term.' using errcode = '42501';
@@ -459,6 +285,18 @@ begin
   perform pg_advisory_xact_lock(20261121);  -- one term change at a time
   if p_starts is null or p_ends is null or p_ends <= p_starts then
     raise exception 'Enter the first and last day of classes (the last day after the first).' using errcode = 'P0001';
+  end if;
+  if p_school_year !~ '^[0-9]{4}-[0-9]{4}$' then
+    raise exception 'The school year must look like 2027-2028.' using errcode = 'P0001';
+  end if;
+  v_y1 := split_part(p_school_year, '-', 1)::int;
+  if p_starts < make_date(v_y1, 6, 1) or p_ends > make_date(v_y1 + 1, 6, 30) then
+    raise exception 'The dates must fall within school year % (June % to June %).', p_school_year, v_y1, v_y1 + 1
+      using errcode = 'P0001';
+  end if;
+  if exists (select 1 from public.school_terms t where t.school_year = p_school_year and t.semester < p_semester
+             and t.ends_on is not null and t.ends_on >= p_starts) then
+    raise exception 'This term has to start after the previous semester ends.' using errcode = 'P0001';
   end if;
   select id into v_term from public.school_terms where school_year = p_school_year and semester = p_semester;
   if v_term is null or not exists (select 1 from public.sections where school_term_id = v_term) then
@@ -468,7 +306,21 @@ begin
     update public.school_terms set starts_on = p_starts, ends_on = p_ends where id = v_term;
   end if;
   v_result := private.run_term_start(v_term);
-  update public.term_starts set result = v_result
+
+  -- The calendar gets the first and last day of classes (unless that school year already has a "classes" entry on
+  -- that day, like the official 2026-2027 calendar). Nothing else is added or copied.
+  v_label := case p_semester when 1 then '1st Semester' when 2 then '2nd Semester' else 'Summer' end;
+  with added as (
+    insert into public.school_calendar_events (school_year, title, starts_on, ends_on, kind)
+    select p_school_year, x.title, x.d, x.d, 'classes'
+    from (values ('Start of Classes (' || v_label || ')', p_starts), ('End of Classes (' || v_label || ')', p_ends)) as x(title, d)
+    where not exists (select 1 from public.school_calendar_events e
+                      where e.school_year = p_school_year and e.kind = 'classes' and e.starts_on = x.d)
+    on conflict do nothing
+    returning id)
+  select coalesce(array_agg(id), '{}') into v_events from added;
+
+  update public.term_starts set result = v_result, added_events = v_events
   where id = (select max(id) from public.term_starts where to_term_id = v_term);
   return v_result;
 end $$;
@@ -516,17 +368,227 @@ begin
   if v_start.from_term_id is not null then
     update public.school_terms set is_current = true where id = v_start.from_term_id;
   end if;
+  delete from public.school_calendar_events where id = any(v_start.added_events);
   update public.term_starts set undone_at = now() where id = v_start.id;
   return jsonb_build_object('restored_students', v_restored, 'term_id', v_start.from_term_id);
 end $$;
 
-revoke all on function public.prepare_term(text, smallint, date, date), public.discard_term(bigint),
-  public.preview_term_start(bigint), public.start_term(bigint), public.undo_term_start() from public, anon;
-grant execute on function public.prepare_term(text, smallint, date, date), public.discard_term(bigint),
-  public.preview_term_start(bigint), public.start_term(bigint), public.undo_term_start() to authenticated;
+revoke all on function public.prepare_term(text, smallint, date, date), public.undo_term_start() from public, anon;
+grant execute on function public.prepare_term(text, smallint, date, date), public.undo_term_start() to authenticated;
 
 revoke all on function public.prerequisite_gaps(bigint, text[]) from public, anon;
 grant execute on function public.prerequisite_gaps(bigint, text[]) to authenticated;
 
 revoke all on function public.begin_term(text, smallint, date, date) from public, anon;
 grant execute on function public.begin_term(text, smallint, date, date) to authenticated;
+
+-- ─── Year level follows this semester's subjects ────────────────────────────────────
+-- The highest year among the student's subjects this term (Dropped classes don't count), but never lower than the
+-- highest year they have already passed. Nothing enrolled this term: the year level stays as it is.
+create function private.sync_year_level() returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_student text := coalesce(new.student_id, old.student_id);
+  v_now smallint;
+  v_passed smallint;
+begin
+  select max(cs.year_level) into v_now
+  from public.enrollments e
+  join public.class_offerings o on o.id = e.offering_id
+  join public.sections sec on sec.id = o.section_id
+  join public.school_terms t on t.id = sec.school_term_id and t.is_current
+  join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+  where e.student_id = v_student and e.status <> 'dropped';
+  if v_now is null then
+    return null;
+  end if;
+  select max(cs.year_level) into v_passed
+  from public.enrollments e
+  join public.class_offerings o on o.id = e.offering_id
+  join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+  where e.student_id = v_student and e.status = 'passed';
+  update public.students set year_level = greatest(v_now, coalesce(v_passed, 0))
+  where id = v_student and status = 'active' and year_level <> greatest(v_now, coalesce(v_passed, 0));
+  return null;
+end $$;
+create trigger enrollments_sync_year_level
+  after insert or delete or update of status, offering_id on public.enrollments
+  for each row execute function private.sync_year_level();
+revoke all on function private.sync_year_level() from public, anon;
+
+-- ─── The Enroll students page ─────────────────────────────────────────────────
+-- Who to enroll in a section and what each would get. With no list given, the candidates are the students who were
+-- in this section's block last term (same program and section letter; one year lower when this section belongs to a
+-- new school year) plus anyone already registered here. For each student: every subject of the section and whether
+-- it would be added, or why not (already enrolled, passed, prerequisite not passed, unit limit), and the subjects of
+-- earlier years they failed, dropped or left INC that run this semester (to retake, class by class).
+create function public.section_enroll_plan(p_section bigint, p_students text[] default null) returns jsonb
+language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  v_sec record;
+  v_prev bigint;
+  v_prev_sy text;
+  v_from_year int;
+  v_letter text;
+  s record;
+  c record;
+  v_rows jsonb := '[]'::jsonb;
+  v_subjects jsonb;
+  v_retake jsonb;
+  v_units numeric;
+  v_add int;
+  v_missing text;
+  v_state text;
+begin
+  if not (select private.is_secretary()) then
+    raise exception 'Only the secretary can enroll students.' using errcode = '42501';
+  end if;
+  select sec.id, sec.name, sec.program_id, sec.year_level, sec.school_term_id, t.school_year, t.semester into v_sec
+  from public.sections sec join public.school_terms t on t.id = sec.school_term_id where sec.id = p_section;
+  if not found then
+    raise exception 'That section doesn''t exist.' using errcode = 'P0001';
+  end if;
+  v_letter := split_part(v_sec.name, '-', 2);
+  select t.id, t.school_year into v_prev, v_prev_sy from public.school_terms t
+  where (t.school_year, t.semester) < (v_sec.school_year, v_sec.semester)
+    and exists (select 1 from public.registrations r where r.school_term_id = t.id)
+  order by t.school_year desc, t.semester desc
+  limit 1;
+  v_from_year := case when v_prev_sy is distinct from v_sec.school_year then v_sec.year_level - 1 else v_sec.year_level end;
+
+  for s in
+    select st.id, st.first_name || ' ' || st.last_name as full_name, st.status, st.year_level, st.max_units, st.curriculum_id,
+           (select count(*) from public.v_student_deficiencies d where d.student_id = st.id) as failed,
+           (select sec2.name from public.registrations r join public.sections sec2 on sec2.id = r.section_id
+            where r.student_id = st.id and r.school_term_id = v_prev) as last_section,
+           exists (select 1 from public.registrations r where r.student_id = st.id and r.section_id = p_section) as in_section
+    from public.students st
+    where (p_students is not null and st.id = any(p_students))
+       or (p_students is null and st.status = 'active' and (
+             exists (select 1 from public.registrations r where r.student_id = st.id and r.section_id = p_section)
+             or exists (select 1 from public.registrations r join public.sections sec2 on sec2.id = r.section_id
+                        where r.student_id = st.id and r.school_term_id = v_prev and sec2.program_id = v_sec.program_id
+                          and sec2.year_level = v_from_year and split_part(sec2.name, '-', 2) = v_letter)))
+    order by st.last_name, st.first_name
+  loop
+    select coalesce(sum(cs.units), 0) into v_units
+    from public.enrollments e join public.class_offerings o on o.id = e.offering_id
+    join public.sections sec2 on sec2.id = o.section_id join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+    where e.student_id = s.id and sec2.school_term_id = v_sec.school_term_id and e.status <> 'dropped';
+    v_subjects := '[]'::jsonb;
+    v_add := 0;
+    for c in
+      select o.id, cs.id as subject_id, cs.code, cs.units
+      from public.class_offerings o join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where o.section_id = p_section order by cs.sort_order
+    loop
+      v_missing := null;
+      if exists (select 1 from public.enrollments e join public.class_offerings o2 on o2.id = e.offering_id
+                 join public.sections sec2 on sec2.id = o2.section_id
+                 where e.student_id = s.id and o2.curriculum_subject_id = c.subject_id and sec2.school_term_id = v_sec.school_term_id) then
+        v_state := 'enrolled';
+      elsif private.has_passed(s.id, c.subject_id) then
+        v_state := 'passed';
+      else
+        v_missing := private.missing_prerequisite(s.id, c.subject_id);
+        if v_missing is not null then
+          v_state := 'needs';
+        elsif v_units + c.units > s.max_units then
+          v_state := 'over_limit';
+        else
+          v_state := 'add';
+          v_units := v_units + c.units;
+          v_add := v_add + 1;
+        end if;
+      end if;
+      v_subjects := v_subjects || jsonb_build_object('code', c.code, 'units', c.units, 'state', v_state, 'needs', v_missing);
+    end loop;
+
+    select coalesce(jsonb_agg(cs.code order by cs.year_level, cs.sort_order), '[]'::jsonb) into v_retake
+    from public.curriculum_subjects cs
+    where cs.curriculum_id = s.curriculum_id and cs.semester = v_sec.semester and cs.year_level < v_sec.year_level
+      and not private.has_passed(s.id, cs.id)
+      and exists (select 1 from public.enrollments e join public.class_offerings o on o.id = e.offering_id
+                  where e.student_id = s.id and o.curriculum_subject_id = cs.id);
+
+    v_rows := v_rows || jsonb_build_object('student_id', s.id, 'full_name', s.full_name, 'status', s.status,
+      'year_level', s.year_level, 'failed', s.failed, 'last_section', s.last_section, 'in_section', s.in_section,
+      'to_add', v_add, 'subjects', v_subjects, 'retake', v_retake);
+  end loop;
+  return jsonb_build_object('section', v_sec.name, 'from_year', v_from_year, 'students', v_rows);
+end $$;
+
+-- Enroll these students in a section: they are registered there (unless already in a section this term) and get
+-- every subject of the section they can take, exactly as the plan said. Returns what each student got and why
+-- anything was skipped. The usual rules still apply (seats, timetable clashes, active students only).
+create function public.enroll_in_section(p_section bigint, p_students text[]) returns jsonb
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_sec record;
+  s record;
+  c record;
+  v_units numeric;
+  v_out jsonb := '[]'::jsonb;
+  v_added int;
+  v_skipped jsonb;
+  v_missing text;
+begin
+  if not (select private.is_secretary()) then
+    raise exception 'Only the secretary can enroll students.' using errcode = '42501';
+  end if;
+  select sec.id, sec.school_term_id, sec.year_level into v_sec from public.sections sec where sec.id = p_section;
+  if not found then
+    raise exception 'That section doesn''t exist.' using errcode = 'P0001';
+  end if;
+  for s in select st.id, st.max_units, st.status from public.students st where st.id = any(p_students) order by st.id loop
+    v_added := 0;
+    v_skipped := '[]'::jsonb;
+    if s.status <> 'active' then
+      v_out := v_out || jsonb_build_object('student_id', s.id, 'added', 0,
+        'skipped', jsonb_build_array(jsonb_build_object('code', null, 'why', 'not an active student')));
+      continue;
+    end if;
+    insert into public.registrations (student_id, school_term_id, section_id, year_level)
+    values (s.id, v_sec.school_term_id, p_section, v_sec.year_level)
+    on conflict (student_id, school_term_id) do nothing;
+    select coalesce(sum(cs.units), 0) into v_units
+    from public.enrollments e join public.class_offerings o on o.id = e.offering_id
+    join public.sections sec2 on sec2.id = o.section_id join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+    where e.student_id = s.id and sec2.school_term_id = v_sec.school_term_id and e.status <> 'dropped';
+    for c in
+      select o.id, cs.id as subject_id, cs.code, cs.units
+      from public.class_offerings o join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where o.section_id = p_section order by cs.sort_order
+    loop
+      continue when exists (select 1 from public.enrollments e join public.class_offerings o2 on o2.id = e.offering_id
+                            join public.sections sec2 on sec2.id = o2.section_id
+                            where e.student_id = s.id and o2.curriculum_subject_id = c.subject_id
+                              and sec2.school_term_id = v_sec.school_term_id);
+      continue when private.has_passed(s.id, c.subject_id);
+      v_missing := private.missing_prerequisite(s.id, c.subject_id);
+      if v_missing is not null then
+        v_skipped := v_skipped || jsonb_build_object('code', c.code, 'why', 'needs ' || v_missing || ' passed first');
+        continue;
+      end if;
+      if v_units + c.units > s.max_units then
+        v_skipped := v_skipped || jsonb_build_object('code', c.code, 'why', 'over their unit limit');
+        continue;
+      end if;
+      begin
+        insert into public.enrollments (student_id, offering_id) values (s.id, c.id);
+        v_units := v_units + c.units;
+        v_added := v_added + 1;
+      exception when others then
+        v_skipped := v_skipped || jsonb_build_object('code', c.code, 'why', sqlerrm);
+      end;
+    end loop;
+    v_out := v_out || jsonb_build_object('student_id', s.id, 'added', v_added, 'skipped', v_skipped);
+  end loop;
+  return v_out;
+end $$;
+
+revoke all on function public.section_enroll_plan(bigint, text[]), public.enroll_in_section(bigint, text[]) from public, anon;
+grant execute on function public.section_enroll_plan(bigint, text[]), public.enroll_in_section(bigint, text[]) to authenticated;

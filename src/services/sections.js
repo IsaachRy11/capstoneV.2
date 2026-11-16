@@ -46,10 +46,13 @@ export const getPrerequisiteGaps = (offeringId, studentIds) =>
   studentIds.length === 0 ? Promise.resolve({})
     : unwrap(supabase.rpc("prerequisite_gaps", { p_offering: offeringId, p_students: studentIds })).then((r) => r || {}).catch(() => ({}));
 
-// Students by their exact IDs (the pasted list in the enroll box).
-export const getStudentsByIds = (ids) =>
-  ids.length === 0 ? Promise.resolve([])
-    : unwrap(supabase.from("v_student_overview").select("id, full_name, program_code, year_level, section_name, status").in("id", ids));
+// Enroll students page: who to enroll in a section and what each would get (all of last term's block when no IDs).
+export const getEnrollPlan = (sectionId, studentIds = null) =>
+  unwrap(supabase.rpc("section_enroll_plan", { p_section: sectionId, p_students: studentIds }));
+
+// Enroll these students in every subject of the section they can take. Returns what each got and what was skipped.
+export const enrollInSection = (sectionId, studentIds) =>
+  unwrap(supabase.rpc("enroll_in_section", { p_section: sectionId, p_students: studentIds }));
 
 export const enrollStudent = (studentId, offeringId) =>
   unwrap(supabase.from("enrollments").insert({ student_id: studentId, offering_id: offeringId }));

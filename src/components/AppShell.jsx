@@ -13,6 +13,7 @@ const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
   [/^\/students\/[^/]+/, "Student record"],
   [/^\/students/, "Students"],
+  [/^\/sections\/enroll/, "Enroll students"],
   [/^\/sections/, "Section allocations"],
   [/^\/curriculum/, "Curriculum"],
   [/^\/school-year/, "School year"],

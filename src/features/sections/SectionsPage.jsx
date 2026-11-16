@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { useSectionPicker } from "../../hooks/useSectionPicker";
 import SectionPicker from "../../components/SectionPicker";
@@ -43,7 +43,8 @@ export default function Sections() {
 
   return (
     <>
-      <PageHeader title="Section allocations" />
+      <PageHeader title="Section allocations"
+        actions={section && <Link to={`/sections/enroll?section=${section.id}`} className="btn btn-primary hidden lg:inline-flex"><UserPlus size={16} aria-hidden="true" />Enroll students in {section.name}</Link>} />
 
       <SectionPicker picker={picker} onChange={() => setOfferingId(null)} />
 

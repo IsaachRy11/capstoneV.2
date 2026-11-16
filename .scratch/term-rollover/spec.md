@@ -1,6 +1,10 @@
 # Starting a new semester, summer or school year
 
-Status: built (migration 0017 + School year page), not applied to the live database yet.
+Status: built and rehearsed on the CCS TEST copy; not applied to the live database yet.
+
+**Current model (Nov 17 2026, user decision): starting a term enrolls nobody and moves nobody up.** The secretary
+enrolls each section afterwards (Section allocations > Enroll students). Year level follows the enrolled subjects.
+The rest of this file describes the earlier automatic version and is kept for the holes it lists.
 
 ## What the secretary does
 

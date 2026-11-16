@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { ListPlus, Plus, Search, X } from "lucide-react";
-import { enrollStudent, getPrerequisiteGaps, getStudentsByIds, searchStudents } from "../../services/sections";
+import { enrollStudent, getPrerequisiteGaps, searchStudents } from "../../services/sections";
 import { FormError } from "../../components/ui";
 import { yearLabel } from "../../lib/format";
 
-// Secretary: add students to one class. One at a time (Enroll), or several at once: build a list from searches or a
-// pasted list of student IDs, then enroll them all. The database refuses a student whose prerequisite isn't passed,
+// Secretary: add students to one class (irregular students, retakes). One at a time (Enroll), or several at once:
+// build a list from searches, then enroll them all. Whole sections are enrolled on the Enroll students page. The database refuses a student whose prerequisite isn't passed,
 // a full class and a timetable clash; a warning shows the prerequisite problem before anyone tries.
 export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) {
   const [q, setQ] = useState("");
@@ -15,8 +15,6 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
   const [open, setOpen] = useState(false);
   const [list, setList] = useState([]);       // students waiting to be enrolled together
   const [gaps, setGaps] = useState({});       // studentId -> missing prerequisite code
-  const [pasting, setPasting] = useState(false);
-  const [pasted, setPasted] = useState("");
   const [outcome, setOutcome] = useState(null); // [{ student, ok, why }] after enrolling the list
   const [running, setRunning] = useState(false);
 
@@ -56,25 +54,6 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
   };
 
   const addToList = (s) => { setOutcome(null); setList((l) => (inList(s.id) ? l : [...l, s])); };
-  const addPasted = async () => {
-    setError("");
-    const ids = [...new Set(pasted.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean))];
-    if (ids.length === 0) return;
-    try {
-      const found = await getStudentsByIds(ids);
-      const missing = ids.filter((id) => !found.some((f) => f.id === id));
-      const fresh = found.filter((f) => !rosterIds.has(f.id) && f.status === "active");
-      setOutcome(null);
-      setList((l) => [...l, ...fresh.filter((f) => !l.some((x) => x.id === f.id))]);
-      const skipped = found.length - fresh.length;
-      setPasted("");
-      setPasting(false);
-      if (missing.length || skipped) setError([missing.length && `Not found: ${missing.join(", ")}.`, skipped && `${skipped} already in this class or not active, left out.`].filter(Boolean).join(" "));
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const enrollList = async () => {
     setRunning(true);
     setError("");
@@ -123,14 +102,6 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
         <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
         <input id="enrol" className="field pl-9" placeholder="Search by name or student ID" value={q} onChange={(e) => setQ(e.target.value)} disabled={seatsLeft <= 0} autoComplete="off" autoFocus />
       </div>
-      <button type="button" className="w-fit text-[13px] font-semibold text-accent" onClick={() => setPasting((p) => !p)}>{pasting ? "Hide the pasted list" : "Paste a list of student IDs"}</button>
-      {pasting && (
-        <div className="flex flex-col gap-2">
-          <textarea className="field min-h-[88px] font-mono text-[13px]" aria-label="Student IDs" placeholder="2025-0003, 2025-0007, 2024-0012" value={pasted} onChange={(e) => setPasted(e.target.value)} />
-          <button type="button" className="btn btn-secondary btn-sm w-fit" onClick={addPasted} disabled={!pasted.trim()}>Add to the list</button>
-        </div>
-      )}
-
       {q.trim().length >= 2 && (
         <ul className="overflow-hidden rounded-lg border border-line bg-surface">
           {options.length === 0 && <li className="px-4 py-3 text-[13px] text-ink-3">No matching students who aren't already in this class.</li>}

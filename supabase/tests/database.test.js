@@ -525,7 +525,7 @@ describe("demo grades script", () => {
 });
 
 // Runs last: it moves the current term forward. Undo is tested on the way.
-describe("starting a new term and a new school year", () => {
+describe("starting a term and enrolling sections", () => {
   const asSec = (sql) => as("authenticated", SEC, sql);
   const term = (sy, sem) => one(`select id, is_current from school_terms where school_year = '${sy}' and semester = ${sem}`);
   const rpc = async (sql) => {
@@ -533,10 +533,14 @@ describe("starting a new term and a new school year", () => {
     if (r.error) throw new Error(r.error);
     return r.rows[0].r;
   };
+  const list = (ids) => `array[${ids.map((i) => `'${i}'`).join(",")}]::text[]`;
+  const yearOf = async (id) => (await one(`select year_level from students where id = '${id}'`)).year_level;
+  let carried = [];      // students enrolled in BSIT 2-S in the 2nd semester
+  let yearsAtStart = {}; // their year levels when the new school year started
 
-  it("lets only the secretary prepare a term", async () => {
-    const r = await as("authenticated", STU, `select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
-    expect(r.error).toMatch(/Only the secretary/);
+  it("lets only the secretary prepare or start a term", async () => {
+    expect((await as("authenticated", STU, `select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`)).error).toMatch(/Only the secretary/);
+    expect((await as("authenticated", STU, `select public.begin_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`)).error).toMatch(/Only the secretary/);
   });
 
   it("won't enroll a student in a subject whose prerequisite isn't passed, even by hand", async () => {
@@ -554,152 +558,123 @@ describe("starting a new term and a new school year", () => {
       limit 1`);
     const r = await asSec(`insert into enrollments (student_id, offering_id) values ('${pair.student_id}', ${pair.offering_id})`);
     expect(r.error).toMatch(/needs .* passed first/);
-    // The warning shown before adding names the same prerequisite.
     const gaps = await asSec(`select public.prerequisite_gaps(${pair.offering_id}, array['${pair.student_id}']) as g`);
     expect(Object.keys(gaps.rows[0].g)).toEqual([pair.student_id]);
     expect(await as("authenticated", STU, `select public.prerequisite_gaps(${pair.offering_id}, array['${pair.student_id}']) as g`).then((x) => x.rows[0].g)).toEqual({});
   });
 
-  it("prepares the 2nd semester from the curriculum, copying sections and class times", async () => {
-    const r = await rpc(`public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
-    expect(r.sections).toBeGreaterThan(0);
-    // Every class is a 2nd-semester subject of its section's year in the active curriculum.
-    const wrong = await one(`
-      select count(*)::int n from class_offerings o
-      join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
-      where s.school_term_id = ${r.term_id} and (cs.semester <> 2 or cs.year_level <> s.year_level)`);
-    expect(wrong.n).toBe(0);
-    expect(r.classes).toBeGreaterThan(r.sections);
-    const again = await asSec(`select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
-    expect(again.error).toMatch(/already prepared/);
-  }, 60_000);
-
-  it("previews a start without changing anything", async () => {
-    const t = await term("2026-2027", 2);
-    const before = await one(`select (select count(*)::int from registrations) r, (select count(*)::int from enrollments) e,
-                                     (select sum(year_level)::int from students) y`);
-    const p = await rpc(`public.preview_term_start(${t.id})`);
-    expect(p.error).toBeUndefined();
-    expect(p.registered).toBeGreaterThan(0);
-    expect(p.classes_added).toBeGreaterThan(0);
-    expect(p.new_school_year).toBe(false);
-    expect(p.moved_up).toBe(0);
-    const after = await one(`select (select count(*)::int from registrations) r, (select count(*)::int from enrollments) e,
-                                    (select sum(year_level)::int from students) y`);
-    expect(after).toEqual(before);
+  it("refuses dates outside the school year or before the previous semester ends", async () => {
+    expect((await asSec(`select public.begin_term('2027-2028', 1::smallint, '2026-11-17', '2027-01-27')`)).error).toMatch(/within school year 2027-2028/);
+    expect((await asSec(`select public.begin_term('2026-2027', 2::smallint, '2026-11-01', '2027-04-23')`)).error).toMatch(/after the previous semester ends/);
+    expect((await asSec(`select public.begin_term('2026-2027', 2::smallint, '2027-04-23', '2026-11-23')`)).error).toMatch(/last day after the first/);
     expect((await term("2026-2027", 2)).is_current).toBe(false);
+  });
+
+  it("starts the 2nd semester without enrolling or moving anyone", async () => {
+    const snapshot = `select (select sum(year_level)::int from students) y, (select count(*)::int from enrollments) e,
+                             (select count(*)::int from school_calendar_events where kind = 'classes' and starts_on = '2026-11-23') c`;
+    const before = await one(snapshot);
+    const r = await rpc(`public.begin_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
+    expect(r.new_school_year).toBe(false);
+    expect(r.sections).toBeGreaterThan(0);
+    expect(r.classes).toBeGreaterThan(r.sections);
+    const t2 = await term("2026-2027", 2);
+    expect(t2.is_current).toBe(true);
+    expect(await one(snapshot)).toEqual(before); // nobody moved, nothing enrolled, no duplicate "start of classes"
+    expect((await one(`select count(*)::int n from registrations where school_term_id = ${t2.id}`)).n).toBe(0);
+    // Every class is a 2nd-semester subject of its section's year.
+    expect((await one(`select count(*)::int n from class_offerings o join sections s on s.id = o.section_id
+      join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where s.school_term_id = ${t2.id} and (cs.semester <> 2 or cs.year_level <> s.year_level)`)).n).toBe(0);
   }, 120_000);
 
-  it("leaves out subjects past a student's own unit limit", async () => {
-    const term2 = await term("2026-2027", 2);
-    const who = await one(`select r.student_id from registrations r where r.school_term_id = (select id from school_terms where is_current) limit 1`);
-    await db.exec(`update students set max_units = 3 where id = '${who.student_id}'`);
-    const p = await rpc(`public.preview_term_start(${term2.id})`);
-    await db.exec(`update students set max_units = 30 where id = '${who.student_id}'`);
-    expect(p.over_limit.some((x) => x.student_id === who.student_id)).toBe(true);
-    expect((await asSec(`update students set max_units = 0 where id = '${who.student_id}'`)).error).toMatch(/max_units/);
-  }, 120_000);
-
-  it("starts the 2nd semester: same year levels, no class whose prerequisite isn't passed, then undoes it", async () => {
-    const t = await term("2026-2027", 2);
-    const years = await one(`select sum(year_level)::int y from students`);
-    const r = await rpc(`public.start_term(${t.id})`);
-    expect((await term("2026-2027", 2)).is_current).toBe(true);
-    expect((await one(`select sum(year_level)::int y from students`)).y).toBe(years.y);
+  it("plans and enrolls a section: last term's block, prerequisites and passed subjects skipped", async () => {
+    const t2 = await term("2026-2027", 2);
+    const sec = await one(`select id from sections where school_term_id = ${t2.id} and name = 'BSIT 2-S'`);
+    const plan = await rpc(`public.section_enroll_plan(${sec.id})`);
+    expect(plan.from_year).toBe(2);
+    expect(plan.students.length).toBeGreaterThan(0);
+    expect(plan.students.every((s) => s.last_section === "BSIT 2-S")).toBe(true);
+    expect(plan.students.some((s) => s.to_add > 0)).toBe(true);
+    carried = plan.students.map((s) => s.student_id);
+    const res = await rpc(`public.enroll_in_section(${sec.id}, ${list(carried)})`);
+    for (const p of plan.students) expect(res.find((x) => x.student_id === p.student_id).added).toBe(p.to_add);
+    expect((await one(`select count(*)::int n from registrations where section_id = ${sec.id}`)).n).toBe(carried.length);
     const blocked = await one(`
       select count(*)::int n from enrollments e
       join class_offerings o on o.id = e.offering_id join sections s on s.id = o.section_id
       join subject_prerequisites sp on sp.subject_id = o.curriculum_subject_id
-      where s.school_term_id = ${t.id}
+      where s.school_term_id = ${t2.id}
         and not exists (select 1 from enrollments e2 join class_offerings o2 on o2.id = e2.offering_id
                         where e2.student_id = e.student_id and o2.curriculum_subject_id = sp.prerequisite_id and e2.status = 'passed')`);
     expect(blocked.n).toBe(0);
-    expect(r.registered).toBeGreaterThan(0);
-
-    const u = await rpc(`public.undo_term_start()`);
-    expect(u.restored_students).toBeGreaterThan(0);
-    expect((await term("2026-2027", 1)).is_current).toBe(true);
-    expect((await one(`select count(*)::int n from registrations where school_term_id = ${t.id}`)).n).toBe(0);
+    // Enrolling again adds nothing.
+    const again = await rpc(`public.enroll_in_section(${sec.id}, ${list(carried)})`);
+    expect(again.every((x) => x.added === 0)).toBe(true);
   }, 120_000);
 
-  it("starts a new school year: everyone moves up except the last year, carried subjects are placed", async () => {
-    // A 1st-year student who failed a 1st-semester subject (the seed has some).
-    const failed = await one(`
-      select e.student_id, o.curriculum_subject_id subject from enrollments e
-      join class_offerings o on o.id = e.offering_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
-      join students st on st.id = e.student_id
-      where e.status = 'failed' and cs.year_level = 1 and cs.semester = 1 and st.year_level = 1 and st.status = 'active'
-        and not exists (select 1 from subject_prerequisites sp where sp.subject_id = cs.id)
-      limit 1`);
-    const sem2 = await term("2026-2027", 2);
-    await rpc(`public.start_term(${sem2.id})`);
+  it("year level follows the enrolled subjects, never below the highest passed year", async () => {
+    const t2 = await term("2026-2027", 2);
+    const who = carried[0];
+    const base = await yearOf(who);
+    const third = await one(`select o.id from class_offerings o join sections s on s.id = o.section_id
+      where s.school_term_id = ${t2.id} and s.name = 'BSIT 3-S' limit 1`);
+    await asDb(`insert into enrollments (student_id, offering_id) values ('${who}', ${third.id})`); // owner: skips the prerequisite rule
+    expect(await yearOf(who)).toBe(3);
+    await db.exec(`delete from enrollments where student_id = '${who}' and offering_id = ${third.id}`);
+    expect(await yearOf(who)).toBe(base);
+  });
 
-    const lastYear = await one(`select count(*)::int n from students st join programs p on p.id = st.program_id
-                                where st.status = 'active' and st.year_level = p.duration_years`);
-    await rpc(`public.prepare_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
-    const next = await term("2027-2028", 1);
-    const yearsBefore = (await one(`select sum(year_level)::int y from students`)).y;
-    const r = await rpc(`public.start_term(${next.id})`);
+  it("a new school year: nobody moves up until enrolled; the next year's block raises the year", async () => {
+    for (const id of carried) yearsAtStart[id] = await yearOf(id);
+    const r = await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
     expect(r.new_school_year).toBe(true);
-    expect(r.moved_up).toBeGreaterThan(0);
-    // Last-year students who didn't graduate stay in their last year.
-    expect(r.stayed_in_last_year).toBe(lastYear.n - r.graduated);
-    expect((await one(`select count(*)::int n from students st join programs p on p.id = st.program_id
-                       where st.year_level > p.duration_years`)).n).toBe(0);
+    for (const id of carried) expect(await yearOf(id)).toBe(yearsAtStart[id]); // nothing moved yet
+    // The new school year's calendar has only its first and last day of classes.
+    const ev = (await db.query(`select title from school_calendar_events where school_year = '2027-2028' order by starts_on`)).rows.map((x) => x.title);
+    expect(ev).toEqual(["Start of Classes (1st Semester)", "End of Classes (1st Semester)"]);
 
-    if (failed) {
-      const st = await one(`select year_level from students where id = '${failed.student_id}'`);
-      expect(st.year_level).toBe(2);
-      // The failed 1st-year subject was carried into a 1st-year class of the new term (or reported as unplaced).
-      const carried = await one(`
-        select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id
-        join sections s on s.id = o.section_id
-        where e.student_id = '${failed.student_id}' and o.curriculum_subject_id = ${failed.subject} and s.school_term_id = ${next.id}`);
-      const reported = r.to_place.concat(r.waiting, r.over_limit).some((x) => x.student_id === failed.student_id);
-      expect(carried.n).toBe(0);
-      expect(reported).toBe(true);
+    const t = await term("2027-2028", 1);
+    const sec = await one(`select id from sections where school_term_id = ${t.id} and name = 'BSIT 3-S'`);
+    const plan = await rpc(`public.section_enroll_plan(${sec.id})`);
+    expect(plan.from_year).toBe(2); // last term's BSIT 2-S
+    expect(plan.students.map((s) => s.student_id).sort()).toEqual([...carried].sort());
+    const res = await rpc(`public.enroll_in_section(${sec.id}, ${list(carried)})`);
+    expect(res.some((x) => x.added > 0)).toBe(true);
+    for (const x of res) {
+      if (x.added > 0) expect(await yearOf(x.student_id)).toBe(3);
+      else expect(await yearOf(x.student_id)).toBe(yearsAtStart[x.student_id]);
     }
-    expect(r.to_place.length).toBeGreaterThan(0);
+  }, 240_000);
 
-    // Undo is refused once a grade is entered in the new term. Clearing the grade doesn't help: the change stays in
-    // the grade history, and a class with history is never deleted.
-    const someEnrollment = await one(`select e.id from enrollments e join class_offerings o on o.id = e.offering_id
-                                       join sections sec on sec.id = o.section_id where sec.school_term_id = ${next.id} limit 1`);
-    await db.exec(`update enrollments set midterm_grade = 2.00 where id = ${someEnrollment.id}`);
-    const refused = await asSec(`select public.undo_term_start()`);
-    expect(refused.error).toMatch(/Grades or statuses were already entered/);
-    await db.exec(`update enrollments set midterm_grade = null where id = ${someEnrollment.id}`);
-    expect((await asSec(`select public.undo_term_start()`)).error).toMatch(/Grades or statuses were already entered/);
-    // Test only: wipe that history (as if no grade had ever been typed) to check the undo itself.
-    await db.exec(`delete from grade_changes where enrollment_id = ${someEnrollment.id}`);
-
-    // Going back: the previous semester is current again, the new term's classes and registrations are gone,
-    // and every student has their old year level and status. The prepared term itself is kept.
+  it("undo puts the previous term back, removes the new term's classes and calendar dates, restores year levels", async () => {
+    const t = await term("2027-2028", 1);
+    const some = await one(`select e.id from enrollments e join class_offerings o on o.id = e.offering_id
+      join sections s on s.id = o.section_id where s.school_term_id = ${t.id} limit 1`);
+    if (some) {
+      await db.exec(`update enrollments set midterm_grade = 2.00 where id = ${some.id}`);
+      expect((await asSec(`select public.undo_term_start()`)).error).toMatch(/Grades or statuses were already entered/);
+      await db.exec(`update enrollments set midterm_grade = null where id = ${some.id}`);
+      await db.exec(`delete from grade_changes where enrollment_id = ${some.id}`); // test only: as if no grade had been typed
+    }
     const u = await rpc(`public.undo_term_start()`);
     expect(u.restored_students).toBeGreaterThan(0);
     expect((await term("2026-2027", 2)).is_current).toBe(true);
-    expect((await term("2027-2028", 1)).is_current).toBe(false);
-    expect((await one(`select count(*)::int n from registrations where school_term_id = ${next.id}`)).n).toBe(0);
-    expect((await one(`select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id
-                       join sections sec on sec.id = o.section_id where sec.school_term_id = ${next.id}`)).n).toBe(0);
-    expect((await one(`select sum(year_level)::int y from students`)).y).toBe(yearsBefore);
-    expect((await one(`select count(*)::int n from sections where school_term_id = ${next.id}`)).n).toBeGreaterThan(0);
-  }, 240_000);
+    expect((await one(`select count(*)::int n from registrations where school_term_id = ${t.id}`)).n).toBe(0);
+    expect((await one(`select count(*)::int n from school_calendar_events where school_year = '2027-2028'`)).n).toBe(0);
+    for (const id of carried) expect(await yearOf(id)).toBe(yearsAtStart[id]);
+  }, 120_000);
 
-  it("starts a term in one step: prepares it if needed, then starts it", async () => {
-    // 2027-2028 is already prepared (from the test above): it is reused.
-    const r = await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
-    expect(r.new_school_year).toBe(true);
-    expect((await term("2027-2028", 1)).is_current).toBe(true);
-    await rpc(`public.undo_term_start()`);
-    expect((await term("2026-2027", 2)).is_current).toBe(true);
-    // Summer was never prepared: one call prepares and starts it. Only years with summer subjects get a section.
-    const s = await rpc(`public.begin_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
-    expect((await term("2026-2027", 3)).is_current).toBe(true);
-    expect(s.registered).toBeGreaterThan(0);
-    expect((await one(`select count(distinct s.year_level)::int n from sections s join school_terms t on t.id = s.school_term_id
-                       where t.school_year = '2026-2027' and t.semester = 3 and s.id in (select section_id from registrations)`)).n).toBe(1);
-    const bad = await asSec(`select public.begin_term('2027-2028', 2::smallint, '2027-12-01', '2027-11-01')`);
-    expect(bad.error).toMatch(/last day after the first/);
-  }, 240_000);
+  it("uses each student's own unit limit when enrolling a section", async () => {
+    const t2 = await term("2026-2027", 2);
+    const sec = await one(`select id from sections where school_term_id = ${t2.id} and name = 'BSIT 1-S'`);
+    const plan = await rpc(`public.section_enroll_plan(${sec.id})`);
+    const who = plan.students.find((s) => s.to_add >= 2);
+    await db.exec(`update students set max_units = 3 where id = '${who.student_id}'`);
+    const limited = await rpc(`public.section_enroll_plan(${sec.id}, ${list([who.student_id])})`);
+    await db.exec(`update students set max_units = 30 where id = '${who.student_id}'`);
+    expect(limited.students[0].to_add).toBe(1);
+    expect(limited.students[0].subjects.some((x) => x.state === "over_limit")).toBe(true);
+    expect((await asSec(`update students set max_units = 0 where id = '${who.student_id}'`)).error).toMatch(/max_units/);
+  });
 });
