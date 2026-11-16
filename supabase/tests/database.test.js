@@ -685,4 +685,21 @@ describe("starting a new term and a new school year", () => {
     expect((await one(`select sum(year_level)::int y from students`)).y).toBe(yearsBefore);
     expect((await one(`select count(*)::int n from sections where school_term_id = ${next.id}`)).n).toBeGreaterThan(0);
   }, 240_000);
+
+  it("starts a term in one step: prepares it if needed, then starts it", async () => {
+    // 2027-2028 is already prepared (from the test above): it is reused.
+    const r = await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    expect(r.new_school_year).toBe(true);
+    expect((await term("2027-2028", 1)).is_current).toBe(true);
+    await rpc(`public.undo_term_start()`);
+    expect((await term("2026-2027", 2)).is_current).toBe(true);
+    // Summer was never prepared: one call prepares and starts it. Only years with summer subjects get a section.
+    const s = await rpc(`public.begin_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
+    expect((await term("2026-2027", 3)).is_current).toBe(true);
+    expect(s.registered).toBeGreaterThan(0);
+    expect((await one(`select count(distinct s.year_level)::int n from sections s join school_terms t on t.id = s.school_term_id
+                       where t.school_year = '2026-2027' and t.semester = 3 and s.id in (select section_id from registrations)`)).n).toBe(1);
+    const bad = await asSec(`select public.begin_term('2027-2028', 2::smallint, '2027-12-01', '2027-11-01')`);
+    expect(bad.error).toMatch(/last day after the first/);
+  }, 240_000);
 });

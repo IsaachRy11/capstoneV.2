@@ -444,6 +444,35 @@ begin
   return v_result;
 end $$;
 
+-- ─── One step: what the School year page uses ─────────────────────────────────────
+-- Prepares the term if it isn't prepared yet (or updates its dates if it is), then starts it, in one transaction.
+create function public.begin_term(p_school_year text, p_semester smallint, p_starts date, p_ends date) returns jsonb
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_term bigint;
+  v_result jsonb;
+begin
+  if not (select private.is_secretary()) then
+    raise exception 'Only the secretary can start a term.' using errcode = '42501';
+  end if;
+  perform pg_advisory_xact_lock(20261121);  -- one term change at a time
+  if p_starts is null or p_ends is null or p_ends <= p_starts then
+    raise exception 'Enter the first and last day of classes (the last day after the first).' using errcode = 'P0001';
+  end if;
+  select id into v_term from public.school_terms where school_year = p_school_year and semester = p_semester;
+  if v_term is null or not exists (select 1 from public.sections where school_term_id = v_term) then
+    perform public.prepare_term(p_school_year, p_semester, p_starts, p_ends);
+    select id into v_term from public.school_terms where school_year = p_school_year and semester = p_semester;
+  else
+    update public.school_terms set starts_on = p_starts, ends_on = p_ends where id = v_term;
+  end if;
+  v_result := private.run_term_start(v_term);
+  update public.term_starts set result = v_result
+  where id = (select max(id) from public.term_starts where to_term_id = v_term);
+  return v_result;
+end $$;
+
 -- ─── Undo ──────────────────────────────────────────────────────────────────
 create function public.undo_term_start() returns jsonb
 language plpgsql security definer set search_path = ''
@@ -498,3 +527,6 @@ grant execute on function public.prepare_term(text, smallint, date, date), publi
 
 revoke all on function public.prerequisite_gaps(bigint, text[]) from public, anon;
 grant execute on function public.prerequisite_gaps(bigint, text[]) to authenticated;
+
+revoke all on function public.begin_term(text, smallint, date, date) from public, anon;
+grant execute on function public.begin_term(text, smallint, date, date) to authenticated;

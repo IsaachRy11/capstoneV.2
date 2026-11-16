@@ -53,7 +53,7 @@ export default function StartSummary({ result }) {
       </div>
       <List title="Waiting for a prerequisite" rows={result.waiting} columns={[["code", "Subject"], ["needs", "Needs first"]]}
         hint="Not added: the student takes the prerequisite first. Add it by hand on Section allocations if the office allows it." />
-      <List title="Carried subjects to place" rows={result.to_place} columns={[["code", "Subject"]]} unit="subject"
+      <List title="Subjects from earlier years to enroll" rows={result.to_place} columns={[["code", "Subject"]]} unit="subject"
         hint="Not enrolled yet. The secretary enrolls each one on Section allocations (or with bulk enroll): a class with a free seat that fits the timetable." />
       <List title="Couldn't be placed" rows={result.unplaced} columns={[["code", "Subject"], ["reason", "Why"]]}
         hint="No class of this subject has a free seat that fits the student's timetable. Add seats or a class time, then add them by hand." />

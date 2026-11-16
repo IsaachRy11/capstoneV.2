@@ -10,10 +10,17 @@ export const getTermsOverview = () =>
     .order("school_year").order("semester"))
     .then((rows) => rows.map((t) => ({ ...t, sections: t.sections?.[0]?.count ?? 0 })));
 
-// The most recent start, for its summary and for Undo. Optional: null when there is none (or the table is missing).
+// The most recent start that hasn't been undone: its summary and Undo. Null when there is none (or the table is missing).
 export const getLastStart = () =>
   unwrap(supabase.from("term_starts").select("id, from_term_id, to_term_id, started_at, undone_at, result")
-    .order("id", { ascending: false }).limit(1).maybeSingle()).catch(() => null);
+    .is("undone_at", null).order("id", { ascending: false }).limit(1).maybeSingle()).catch(() => null);
+
+// The School year page's one step: prepares the term if needed and starts it (all or nothing).
+export async function beginTerm(schoolYear, semester, starts, ends) {
+  const result = await unwrap(supabase.rpc("begin_term", { p_school_year: schoolYear, p_semester: semester, p_starts: starts, p_ends: ends }));
+  clearCaches();
+  return result;
+}
 
 export const prepareTerm = (schoolYear, semester, starts, ends) =>
   unwrap(supabase.rpc("prepare_term", { p_school_year: schoolYear, p_semester: semester, p_starts: starts, p_ends: ends }));

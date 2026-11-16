@@ -4,7 +4,7 @@ Status: built (migration 0017 + School year page), not applied to the live datab
 
 ## What the secretary does
 
-Sidebar > **School year** (computer only; phones show a note).
+Sidebar > **School year** (computer only; phones show a note). **Update (Nov 17 2026): the page is now one step** (pick what comes next, set the dates, Start = `begin_term`, which prepares and starts at once); the preview step was removed at the user's request. The steps below still exist as database functions.
 
 1. **Prepare** the next term: pick it (2nd semester, summer, or the new school year), enter its first and last day,
    press *Prepare term*. The system copies the section structure of the latest semester (names, seats, rooms), gives
