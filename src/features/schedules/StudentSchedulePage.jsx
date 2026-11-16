@@ -5,7 +5,7 @@ import { useAsync } from "../../hooks/useAsync";
 import { getTermClasses } from "../../services/students";
 import { ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import CalendarNotice from "../../components/CalendarNotice";
-import { useClassStatus, useTermEdge } from "../../hooks/useCalendar";
+import { useClassStatus } from "../../hooks/useCalendar";
 import WeekTimetable from "./WeekTimetable";
 
 // Student's own weekly timetable for the current semester.
@@ -18,7 +18,6 @@ export default function Schedule() {
   );
 
   const status = useClassStatus();
-  const edge = useTermEdge();
 
   if (loading || termLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -36,7 +35,7 @@ export default function Schedule() {
     <>
       <PageHeader title="Class schedule"
         actions={items.some((i) => i.meetings.length) && <button className="btn btn-secondary no-print hidden sm:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
-      <CalendarNotice status={status} edge={edge} />
+      <CalendarNotice status={status} />
       <WeekTimetable items={items} todaySummary={status?.kind !== "none"} />
       {items.some((i) => !i.meetings.length) && <p className="text-[13px] text-ink-3">Ask the CCS office about classes without a fixed schedule.</p>}
     </>

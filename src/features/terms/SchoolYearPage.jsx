@@ -133,7 +133,7 @@ export default function SchoolYearPage() {
           <div className="flex flex-col gap-3">
             <h2 className="text-[19px] font-bold">2. When are classes{isNewYear ? " in the 1st semester" : ""}?</h2>
             <p className="-mt-1 text-[14px] text-ink-2">Click the first day of classes, then the last day.</p>
-            <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} />
+            <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} termName={next.label} />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">

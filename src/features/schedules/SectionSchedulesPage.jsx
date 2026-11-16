@@ -7,7 +7,7 @@ import SectionPicker from "../../components/SectionPicker";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
 import CalendarNotice from "../../components/CalendarNotice";
-import { useClassStatus, useTermEdge } from "../../hooks/useCalendar";
+import { useClassStatus } from "../../hooks/useCalendar";
 import WeekTimetable from "./WeekTimetable";
 
 // Secretary: weekly timetable of each block section (current semester). Changing class times is on its own page
@@ -16,7 +16,6 @@ export default function SectionSchedules() {
   const picker = useSectionPicker();
   const { program, year, section } = picker;
   const status = useClassStatus();
-  const edge = useTermEdge();
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
   if (picker.loading) return <LoadingState />;
@@ -38,7 +37,7 @@ export default function SectionSchedules() {
           <Link to="/schedules/edit" className="btn btn-secondary no-print hidden lg:inline-flex"><Pencil size={16} aria-hidden="true" />Edit class times</Link>
         </>} />
 
-      <CalendarNotice status={status} edge={edge} />
+      <CalendarNotice status={status} />
 
       <SectionPicker picker={picker} />
 
