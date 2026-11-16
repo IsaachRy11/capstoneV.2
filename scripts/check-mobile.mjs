@@ -28,7 +28,7 @@ mkdirSync(outDir, { recursive: true });
 
 const roles = {
   secretary: { id: "CCS-001", pw: env.DEMO_SECRETARY_PASSWORD,
-    pages: ["/", "/students", "/students/2025-0002", "/sections", "/sections/enroll?section=1", "/sections/enroll?offering=1", "/schedules", "/schedules/edit", "/school-year", "/curriculum", "/profile", "/settings"] },
+    pages: ["/", "/students", "/students/2025-0002", "/sections", "/sections/enroll?offering=1", "/schedules", "/schedules/edit", "/school-year", "/curriculum", "/profile", "/settings"] },
   student: { id: "2025-0001", pw: env.STUDENT_DEFAULT_PASSWORD || env.DEMO_STUDENT_PASSWORD,
     pages: ["/", "/schedule", "/progress", "/progress/roadmap", "/progress/roadmap?view=units", "/progress?view=failed", "/curriculum", "/record", "/calendar", "/help", "/privacy"] },
 };

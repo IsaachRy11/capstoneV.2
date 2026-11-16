@@ -619,6 +619,7 @@ describe("starting a term and enrolling sections", () => {
       where s.school_term_id = ${t2.id} and s.name = 'BSIT 2-S' order by o.id limit 1`);
     const plan = await rpc(`public.subject_enroll_plan(${off.id})`);
     expect(plan.section).toBe("BSIT 2-S");
+    expect(plan.students.some((s) => s.in_block)).toBe(true); // the section's own students are listed (and pre-ticked on the page)
     expect(typeof plan.seats_left).toBe("number");
     // "Retake" means an earlier term, never the class they are in now.
     for (const s of plan.students.filter((x) => x.state === "enrolled" && x.retake)) {
@@ -671,6 +672,10 @@ describe("starting a term and enrolling sections", () => {
     const plan = await rpc(`public.section_enroll_plan(${sec.id})`);
     expect(plan.from_year).toBe(2); // last term's BSIT 2-S
     expect(plan.students.map((s) => s.student_id).sort()).toEqual([...carried].sort());
+    // The subject page lists last term's block too, before anyone is registered in the new section.
+    const off3 = await one(`select id from class_offerings where section_id = ${sec.id} order by id limit 1`);
+    const sp = await rpc(`public.subject_enroll_plan(${off3.id})`);
+    expect(sp.students.filter((s) => s.in_block).map((s) => s.student_id).sort()).toEqual([...carried].sort());
     const res = await rpc(`public.enroll_in_section(${sec.id}, ${list(carried)})`);
     expect(res.some((x) => x.added > 0)).toBe(true);
     for (const x of res) {

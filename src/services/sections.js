@@ -47,13 +47,6 @@ export const getSubjectPlan = (offeringId, studentIds = null) =>
 export const enrollInSubject = (offeringId, studentIds) =>
   unwrap(supabase.rpc("enroll_in_subject", { p_offering: offeringId, p_students: studentIds }));
 
-// Enroll students page: who to enroll in a section and what each would get (all of last term's block when no IDs).
-export const getEnrollPlan = (sectionId, studentIds = null) =>
-  unwrap(supabase.rpc("section_enroll_plan", { p_section: sectionId, p_students: studentIds }));
-
-// Enroll these students in every subject of the section they can take. Returns what each got and what was skipped.
-export const enrollInSection = (sectionId, studentIds) =>
-  unwrap(supabase.rpc("enroll_in_section", { p_section: sectionId, p_students: studentIds }));
 
 export const enrollStudent = (studentId, offeringId) =>
   unwrap(supabase.from("enrollments").insert({ student_id: studentId, offering_id: offeringId }));

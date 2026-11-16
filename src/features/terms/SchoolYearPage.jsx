@@ -97,7 +97,7 @@ export default function SchoolYearPage() {
         </div>
         {lastIsCurrent && (
           <div className="hidden flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3 lg:flex">
-            <span className="text-[14px] text-ink-2">Started {new Date(last.started_at).toLocaleDateString("en-PH", { month: "long", day: "numeric" })}. Next step: enroll students, a section at a time.</span>
+            <span className="text-[14px] text-ink-2">Started {new Date(last.started_at).toLocaleDateString("en-PH", { month: "long", day: "numeric" })}. Next step: add students to each subject on Section allocations.</span>
             <Link to="/sections" className="btn btn-primary btn-sm"><UserPlus size={15} aria-hidden="true" />Go to Section allocations</Link>
           </div>
         )}
@@ -155,7 +155,7 @@ export default function SchoolYearPage() {
           {confirm === "start" ? (
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[14px] text-ink-2">
               <li>The whole site switches to {short(next.school_year)} {next.label}: {fmt(starts)} to {fmt(ends)}.</li>
-              <li>Sections and classes are made from the curriculum. Nobody is enrolled yet: you add them on Section allocations with Add students.</li>
+              <li>Sections and classes are made from the curriculum. Nobody is enrolled yet: you add them subject by subject on Section allocations (Add students).</li>
               <li>A student&apos;s year level follows the subjects you enroll them in.</li>
               {isNewYear && <li>The calendar for the new school year starts with just these two days. Add holidays and exams on the Calendar page.</li>}
               <li>You can undo it until a grade is entered.</li>
