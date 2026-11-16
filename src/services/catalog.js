@@ -7,6 +7,10 @@ import { cached, forget } from "../lib/cache";
 export const getCurrentTerm = () => cached("term:current", () =>
   unwrap(supabase.from("school_terms").select("*").eq("is_current", true).maybeSingle()));
 
+// Official academic calendar entries (exam weeks, holidays, breaks, school activities), oldest first.
+export const getCalendarEvents = () => cached("calendar:events", () =>
+  unwrap(supabase.from("school_calendar_events").select("id, school_year, title, starts_on, ends_on, kind").order("starts_on").order("id")));
+
 export const getTerms = () => cached("term:all", () =>
   unwrap(supabase.from("school_terms").select("*").order("school_year").order("semester")));
 

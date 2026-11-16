@@ -22,7 +22,7 @@ export default function WeekStrip({ meetings = [], className = "" }) {
         </li>
       )))}
     </ul>
-    <table className="hidden w-full table-fixed border-separate border-spacing-1.5 sm:table">
+    <table className="no-grid hidden w-full table-fixed border-separate border-spacing-1.5 sm:table">
       <caption className="sr-only">Weekly schedule</caption>
       <thead>
         <tr>

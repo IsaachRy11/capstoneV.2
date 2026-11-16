@@ -13,6 +13,8 @@
         if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = t;
       } catch (e) { document.documentElement.dataset.theme = 'light'; }
+      // Table style: boxed cells like a spreadsheet unless the user chose plain.
+      try { document.documentElement.dataset.tables = localStorage.getItem('ccs-tables') === 'plain' ? 'plain' : 'grid'; } catch (e) { document.documentElement.dataset.tables = 'grid'; }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

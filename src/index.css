@@ -13,6 +13,7 @@
   --surface-2: #fafaf9;
   --line: #e7e5e0;
   --line-2: #f0eeea;
+  --grid-line: #d3d0c9;
   --ink: #1a1714;
   --ink-2: #57534e;
   --ink-3: #6b6560;
@@ -46,6 +47,7 @@
   --surface-2: #1a2133;
   --line: #263049;
   --line-2: #1f2740;
+  --grid-line: #34415f;
   --ink: #e6eaf2;
   --ink-2: #b4bccd;
   --ink-3: #97a1b6;
@@ -292,4 +294,20 @@
   .no-print { display: none !important; }
   body { background: #fff; }
   .card { border-color: #ddd; }
+}
+
+/* Excel-style tables (Settings → Tables). Every cell is boxed. The card already draws the outer frame, so a table
+   keeps only its inner lines. Unlayered on purpose: it must win over the row-only lines in .data-table.
+   A table that is really a picture (the weekly strip) opts out with the "no-grid" class. */
+[data-tables="grid"] main table:not(.no-grid) { border-collapse: collapse; }
+[data-tables="grid"] main table:not(.no-grid) :is(th, td) { border: 1px solid var(--grid-line); }
+[data-tables="grid"] main table:not(.no-grid) thead th { background: var(--surface-2); color: var(--ink-2); font-weight: 700; }
+[data-tables="grid"] main table:not(.no-grid) :is(th, td):first-child { border-left: 0; }
+[data-tables="grid"] main table:not(.no-grid) :is(th, td):last-child { border-right: 0; }
+[data-tables="grid"] main table:not(.no-grid) thead tr:first-child th { border-top: 0; }
+[data-tables="grid"] main table:not(.no-grid) tbody tr:last-child td { border-bottom: 0; }
+/* Printed copies always get the boxed look, like the paper forms. */
+@media print {
+  main table:not(.no-grid) { border-collapse: collapse; }
+  main table:not(.no-grid) :is(th, td) { border: 1px solid #999; }
 }
