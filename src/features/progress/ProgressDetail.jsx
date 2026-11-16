@@ -1,22 +1,10 @@
-import { BackButton, Badge, EmptyState, GradeLegend, PageHeader } from "../../components/ui";
-import { formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { BackButton, Badge, EmptyState, PageHeader } from "../../components/ui";
+import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import { SUBJECT_STATE } from "../../lib/progress";
 import { VIEWS } from "./progressViews";
 
 // The list behind each summary card on the subject tracker (opened with ?view=units|passed|enrolled|failed).
-const dash = <span className="text-ink-3">—</span>;
-
-export function MidtermCell({ s }) {
-  if (s.midterm === null) return dash;
-  return <span className={`font-mono font-semibold ${Number(s.midterm) > 3 ? "text-bad" : ""}`}>{formatGrade(s.midterm)}</span>;
-}
-
-export function FinalCell({ s }) {
-  if (s.state === "back" && s.backReason !== "Failed") return <span className="font-semibold text-ink-2">{s.backReason}</span>;
-  if (s.final === null) return dash;
-  return <span className={`font-mono font-semibold ${Number(s.final) > 3 ? "text-bad" : ""}`}>{formatGrade(s.final)}</span>;
-}
-
+// Grades live on the Academic record, so these lists show the subject, where it sits in the curriculum, and its status.
 export default function ProgressDetail({ view, progress, retakeNext }) {
   const cfg = VIEWS[view];
   const rows = cfg.pick(progress);
@@ -38,8 +26,7 @@ export default function ProgressDetail({ view, progress, retakeNext }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Subject</th><th className="hidden sm:table-cell">Curriculum</th><th className="hidden !text-center sm:table-cell">Units</th>
-                  <th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className="hidden sm:table-cell">Status</th>
+                  <th>Subject</th><th className="hidden sm:table-cell">Curriculum</th><th className="hidden !text-center sm:table-cell">Units</th><th className="hidden sm:table-cell">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,8 +45,6 @@ export default function ProgressDetail({ view, progress, retakeNext }) {
                     </td>
                     <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearLabel(s.year_level)} · {semesterLabel(s.semester)}</td>
                     <td className="num hidden sm:table-cell">{Number(s.units)}</td>
-                    <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
-                    <td className="text-center text-[13px]"><FinalCell s={s} /></td>
                     <td className="hidden sm:table-cell">
                       <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
                       {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
@@ -75,7 +60,6 @@ export default function ProgressDetail({ view, progress, retakeNext }) {
           </div>
         )}
       </section>
-      <GradeLegend className="card px-5 py-3.5" />
     </>
   );
 }

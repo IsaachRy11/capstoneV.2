@@ -56,7 +56,8 @@ export default function App() {
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
             <Route path="schedule" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Schedule />} />
-            <Route path="curriculum" element={<Curriculum />} />
+            {/* Students see their curriculum inside the Subject tracker; the full curriculum page is the secretary's. */}
+            <Route path="curriculum" element={user.role === "secretary" ? <Curriculum /> : <Navigate to="/progress" replace />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="help" element={<Help />} />

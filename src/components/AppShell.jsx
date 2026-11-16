@@ -64,7 +64,6 @@ const NAV = {
     { to: "/schedule", icon: CalendarClock, label: "Schedule", tab: "Schedule" },
     { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker" },
     { to: "/record", icon: FileText, label: "Academic record", tab: "Grades" },
-    { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
   ],
 };
 

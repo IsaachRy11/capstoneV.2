@@ -5,10 +5,10 @@ import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getHistory, getStudent } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
-import { Badge, ErrorState, GradeLegend, LoadingState, PageHeader } from "../../components/ui";
+import { Badge, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import { SUBJECT_STATE, buildProgress, nextTermFor, requirementText } from "../../lib/progress";
-import ProgressDetail, { FinalCell, MidtermCell } from "./ProgressDetail";
+import ProgressDetail from "./ProgressDetail";
 import { VIEWS } from "./progressViews";
 
 const FILTERS = [["all", "All"], ["passed", "Passed"], ["in_progress", "Enrolled"], ["back", "Failed subjects"], ["not_taken", "Not yet enrolled"]];
@@ -60,7 +60,7 @@ export default function Progress() {
 
   return (
     <>
-      <PageHeader title="Subject tracker" subtitle={student.program_name} />
+      <PageHeader title="Subject tracker" subtitle={`${student.program_name} · ${progress.total} subjects · ${progress.totalUnits} units${progress.subjects[0]?.curricula?.effective_school_year ? ` · Curriculum effective AY ${progress.subjects[0].curricula.effective_school_year.replace("-", "–")}` : ""}`} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <Stat to="/progress?view=units" label="Units earned" value={<>{progress.unitsEarned}<span className="text-[17px] font-semibold text-ink-3"> / {progress.totalUnits}</span></>} sub={`${pct}% of your program`}>
@@ -115,7 +115,6 @@ export default function Progress() {
         <div className="seg max-w-full self-start overflow-x-auto" role="group" aria-label="Show subjects">
           {FILTERS.map(([k, label]) => <button key={k} aria-pressed={filter === k} onClick={() => setFilter(k)}>{label}</button>)}
         </div>
-        <GradeLegend className="card px-5 py-3.5" />
       </div>
 
       {years.map((y) => {
@@ -142,22 +141,21 @@ export default function Progress() {
                       <span className="text-[13px] text-ink-3">{rows.filter((r) => r.state === "passed").length} of {rows.length} passed</span>
                     </div>
                     <table className="data-table">
-                      <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Status</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th></tr></thead>
+                      <thead><tr><th>Subject</th><th className="hidden w-px sm:table-cell">Status</th></tr></thead>
                       <tbody>
                         {rows.map((s) => (
                           <tr key={s.id}>
                             <td>
-                              <span className="block font-mono text-[13px] text-accent">{s.code}</span>
+                              <span className="block font-mono text-[13px] text-accent">{s.code} <span className="text-ink-3">· {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span></span>
                               <span className="block font-medium">{s.title}</span>
                               {s.state === "not_taken" && requirementText(s, student.year_level) && (
                                 <span className="mt-0.5 block text-[12px] text-warn">{requirementText(s, student.year_level)}</span>
                               )}
                               {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
+                              {s.state === "back" && retakeNext.some((x) => x.id === s.id) && <span className="mt-0.5 block text-[12px] text-ink-3">Offered again next semester</span>}
                               <span className="mt-1.5 block sm:hidden"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></span>
                             </td>
-                            <td className="hidden sm:table-cell"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></td>
-                            <td className="text-center text-[13px]"><MidtermCell s={s} /></td>
-                            <td className="text-center text-[13px]"><FinalCell s={s} /></td>
+                            <td className="hidden whitespace-nowrap sm:table-cell"><Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge></td>
                           </tr>
                         ))}
                       </tbody>

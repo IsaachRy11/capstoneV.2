@@ -2,11 +2,13 @@ import { Link, useOutletContext } from "react-router-dom";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getStudent, getTermClasses } from "../../services/students";
-import { ErrorState, LoadingState, StandingBadge, SectionHeader } from "../../components/ui";
+import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
+import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
+import { ErrorState, LoadingState, StandingBadge } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
-import { scheduleLines } from "../../lib/schedule";
+import { buildProgress, nextTermFor } from "../../lib/progress";
 import TodayCard from "./TodayCard";
+import ProgressCard from "./ProgressCard";
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -15,17 +17,23 @@ export default function StudentHome() {
   const { data, error, loading, reload } = useAsync(async () => {
     if (termLoading) return null; // wait for the semester instead of loading everything twice
     const student = await getStudent(user.studentId);
-    const [classes, deficiencies] = await Promise.all([
+    const [classes, deficiencies, curriculum, history, prerequisites, programs] = await Promise.all([
       term ? getTermClasses(user.studentId, term.id) : [],
       getDeficiencies(user.studentId),
+      getCurriculum(student.program_code), getHistory(user.studentId), getPrerequisites(), getPrograms(),
     ]);
-    return { student, classes, deficiencies };
+    const program = programs.find((p) => p.code === student.program_code);
+    const progress = buildProgress({ curriculum, history, prerequisites });
+    const next = program
+      ? nextTermFor(term, student.year_level, program.duration_years, (y) => progress.subjects.some((x) => x.year_level === y && x.semester === 3))
+      : null;
+    return { student, classes, deficiencies, progress, next };
   }, [user.studentId, term?.id, termLoading], "home");
 
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <LoadingState />;
 
-  const { student, classes, deficiencies } = data;
+  const { student, classes, deficiencies, progress, next } = data;
   const active = classes.filter((c) => c.status !== "dropped");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
 
@@ -76,50 +84,12 @@ export default function StudentHome() {
         </section>
       )}
 
-      {/* Phones open on today's classes; PC shows the whole semester (the sidebar holds the page links). */}
-      <TodayCard classes={classes} className="lg:hidden" />
-
-      <section className="card overflow-hidden">
-        <SectionHeader title="Classes this semester" subtitle={`${active.length} subjects · ${units} units`} action={<Link to="/record" className="inline-flex min-h-10 items-center whitespace-nowrap text-[14px] font-semibold">Full record</Link>} />
-        {classes.length === 0 ? (
-          <p className="px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any classes this semester.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead><tr><th>Subject</th><th className="hidden sm:table-cell">Schedule</th><th className="!text-center">Units</th></tr></thead>
-              <tbody>
-                {classes.map((c) => {
-                  const s = c.class_offerings.curriculum_subjects;
-                  const lines = scheduleLines(c.class_offerings.class_meetings);
-                  return (
-                    <tr key={c.id}>
-                      <td className="sm:min-w-[200px]">
-                        <span className="block font-mono text-[12px] text-accent">{s.code}</span>
-                        <span className="block font-medium">{s.title}</span>
-                        {/* Phones: the schedule sits under the subject instead of in a clipped column. */}
-                        <span className="mt-1 block text-[13px] sm:hidden">
-                          {lines.length ? lines.map((l) => (
-                            <span key={l.days + l.time} className="block text-ink-2"><span className="font-medium text-ink">{l.days}</span> {l.time} <span className="text-ink-3">· {l.room}</span></span>
-                          )) : <span className="text-ink-3">To be arranged</span>}
-                        </span>
-                      </td>
-                      <td className="hidden text-[13px] sm:table-cell">
-                        {lines.length ? lines.map((l) => (
-                          <div key={l.days + l.time} className="whitespace-nowrap">
-                            <span className="font-medium text-ink">{l.days}</span> <span className="text-ink-2">{l.time}</span>
-                            <span className="block text-[12px] text-ink-3">{l.room}</span>
-                          </div>
-                        )) : <span className="text-ink-3">To be arranged</span>}
-                      </td>
-                      <td className="num">{Number(s.units)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Today's classes and where the student stands in the program. The full week is on Schedule and
+          the grades are on Academic record, so neither is repeated here. */}
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
+        <TodayCard classes={classes} />
+        <ProgressCard progress={progress} next={next} />
+      </div>
     </>
   );
 }

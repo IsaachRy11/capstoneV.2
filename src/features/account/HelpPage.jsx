@@ -32,7 +32,7 @@ const COMMON = [
 const STUDENT = [
   {
     q: "Where do I see what I still need to take?",
-    a: <>The <Link to="/progress">Subject tracker</Link> lists every subject in your curriculum: passed, current and remaining. Subjects you can't take yet say what they need first: a prerequisite subject or a year standing (for example, 4th year standing for the practicum), as on the official CCS curriculum checklist.</>,
+    a: <>The <Link to="/progress">Subject tracker</Link> is your whole program in one place: every subject in your curriculum with its status (passed, enrolled, failed or not yet enrolled), what each one still needs, and what comes next semester. Your Midterm and Final grades are on the <Link to="/record">Academic record</Link>. Subjects you can't take yet say what they need first: a prerequisite subject or a year standing (for example, 4th year standing for the practicum), as on the official CCS curriculum checklist.</>,
   },
   {
     q: "I think my grade or record is wrong.",
