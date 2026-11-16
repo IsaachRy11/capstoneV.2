@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:rehearsal": "vite --mode rehearsal --port 5175",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

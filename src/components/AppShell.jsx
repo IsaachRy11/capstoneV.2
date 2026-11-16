@@ -200,6 +200,12 @@ export default function AppShell() {
         </header>
 
         <main className="flex w-full flex-1 flex-col gap-4 px-4 pb-28 pt-4 sm:gap-6 sm:px-8 sm:pt-8 lg:pb-8">
+          {/* `npm run dev:rehearsal` points the app at the rehearsal copy of the database: say so on every page. */}
+          {import.meta.env.MODE === "rehearsal" && (
+            <p role="status" className="no-print -mb-1 rounded-lg px-3 py-2 text-[13px] font-semibold tone-warn">
+              Rehearsal copy. This is a test database, not the live site: changes here don&apos;t reach real students.
+            </p>
+          )}
           {/* Secretary on phones and tablets: view only (editing is desktop work). */}
           {user.role === "secretary" && (
             <p className="no-print -mb-1 flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] text-ink-2 lg:hidden">
