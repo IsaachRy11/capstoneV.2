@@ -47,13 +47,14 @@ export default function StartSummary({ result }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Count label="Students placed" value={result.registered} unit="students" />
         <Count label="Classes added" value={result.classes_added} unit="classes" />
-        <Count label="Carried subjects placed" value={result.carried_added} unit="subjects" />
         {result.new_school_year && <Count label="Move up a year" value={result.moved_up} unit="students" />}
         {result.new_school_year && <Count label="Stay in their last year" value={result.stayed_in_last_year} unit="students" />}
         <Count label="Graduate" value={result.graduated} unit="students" />
       </div>
       <List title="Waiting for a prerequisite" rows={result.waiting} columns={[["code", "Subject"], ["needs", "Needs first"]]}
         hint="Not added: the student takes the prerequisite first. Add it by hand on Section allocations if the office allows it." />
+      <List title="Carried subjects to place" rows={result.to_place} columns={[["code", "Subject"]]} unit="subject"
+        hint="Not enrolled yet. The secretary enrolls each one on Section allocations (or with bulk enroll): a class with a free seat that fits the timetable." />
       <List title="Couldn't be placed" rows={result.unplaced} columns={[["code", "Subject"], ["reason", "Why"]]}
         hint="No class of this subject has a free seat that fits the student's timetable. Add seats or a class time, then add them by hand." />
       <List title="Over the unit limit" rows={result.over_limit} columns={[["code", "Subject"]]} hint="Left out to keep the student within the unit limit." />

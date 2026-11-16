@@ -31,11 +31,13 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
   placed by hand.
 - **Section**: same letter in the new year (BSIT 1-S -> BSIT 2-S); if that letter doesn't exist, the section of
   their program and year with the most free seats.
-- **Subjects**: their section's subjects they haven't passed, then their **carried subjects** (earlier years, same
-  semester, not passed) in whichever class has a free seat and fits their timetable, emptiest first. The secretary
-  can still change any of it afterwards on Section allocations.
+- **Subjects**: their section's subjects they haven't passed are added. **Carried subjects** (earlier years, same
+  semester, not passed) are NOT enrolled automatically (user decision): the check and the start list them as
+  "Carried subjects to place", and the secretary enrolls each one (Section allocations; bulk enroll is planned).
 - **Prerequisites**: a subject whose prerequisite isn't passed is not added; the student takes the prerequisite
-  first. Same for year standing ("3rd-year standing").
+  first. Same for year standing ("3rd-year standing"). Enforced for the secretary by the database, with no override
+  (`enrollments_prerequisite_check`): enrolling by hand is refused with "This subject needs IT 306 passed first".
+  Writes with no signed-in secretary (the seed) are not checked.
 - **No grade entered**: a class with no final grade is treated like any subject that isn't passed (carried over,
   and subjects that need it wait for it). Nothing special is done for it.
 - **Unit limit**: subjects past the limit are left out and listed.
@@ -44,8 +46,8 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
 
 | Hole | Handled |
 | --- | --- |
-| Carried subject clashes with the new year's classes | Tries every class of that subject; the enrollment rules reject full classes and clashes; listed if none fits |
-| Carried subjects need seats in other sections | Same; emptiest class first |
+| Carried subject clashes with the new year's classes | Not placed automatically: listed for the secretary, and the clash rule still blocks a bad pick |
+| Carried subjects need seats in other sections | Same: the secretary picks the class |
 | Graduation isn't just "finished 4th year" (summer capstone/thesis) | Graduation = all curriculum subjects passed |
 | Backlogs grow over the years | Carried subjects come from every earlier year, not only last year |
 | Prerequisites | Not added until passed; listed with what they need |
@@ -66,7 +68,10 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
   remove this.
 - The unit limit and the moving-up rule need the CCS office's confirmation (both are one place in the code).
 - A new curriculum issued by the school: students keep their curriculum; moving a batch to a new one isn't built.
-- Bulk import of the new 1st-year intake (one at a time with Create student today).
+- Bulk add students (CSV) and bulk enroll (several students into one class): requested, not built yet. One at a
+  time (Create student, Enroll) still works.
+- A warning on the enroll box before adding a student whose prerequisite isn't passed (the database already refuses;
+  the message appears after the attempt).
 - Credited subjects for transferees and shiftees.
 - The live 1st semester (SY 2026-2027) has no final grades in the demo data, so starting the 2nd semester live would
   hold back most prerequisite-dependent subjects until grades are encoded.

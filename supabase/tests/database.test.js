@@ -37,6 +37,13 @@ async function as(role, uid, sql) {
   }
 }
 const one = async (sql) => (await db.query(sql)).rows[0];
+// Runs SQL as the database owner: no signed-in secretary, so the secretary-only prerequisite rule is skipped while
+// seats, status and clash rules still fire. For setup rows in tests about those other rules.
+const asDb = async (sql) => {
+  // as() leaves the last signed-in user set on the connection; clear it so nobody counts as the secretary.
+  await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+  try { return { rows: (await db.query(sql)).rows }; } catch (e) { return { error: e.message }; }
+};
 const bsit = "(select id from programs where code = 'BSIT')";
 
 beforeAll(async () => {
@@ -346,7 +353,7 @@ describe("enrollment rules", () => {
   it("blocks enrolling into a full class", async () => {
     const off = await one(`select o.id, (select count(*)::int from enrollments where offering_id = o.id) n from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current where s.name = 'BSIT 2-S' order by o.id limit 1`);
     await db.exec(`update class_offerings set capacity = ${off.n} where id = ${off.id}`);
-    const r = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('2026-0001', ${off.id})`);
+    const r = await asDb(`insert into enrollments (student_id, offering_id) values ('2026-0001', ${off.id})`);
     expect(r.error).toMatch(/^This class is full/);
   });
 
@@ -358,7 +365,7 @@ describe("enrollment rules", () => {
       join class_meetings m2 on m2.weekday = m1.weekday and m2.starts_at < m1.ends_at and m1.starts_at < m2.ends_at
       join class_offerings o2 on o2.id = m2.offering_id join sections s2 on s2.id = o2.section_id and s2.name <> 'BSIT 1-S' and s2.school_term_id = t.id
       limit 1`);
-    const r = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('2026-0001', ${pair.id})`);
+    const r = await asDb(`insert into enrollments (student_id, offering_id) values ('2026-0001', ${pair.id})`);
     expect(r.error).toMatch(/^Schedule clash with/);
   });
 });
@@ -388,7 +395,7 @@ describe("state machine rules", () => {
     expect((await save(rows[1].id, { midterm: 2.0, final: null, status: "auto" })).error).toBeUndefined();
     expect((await save(rows[0].id, { midterm: null, final: null, status: "dropped" })).error).toBeUndefined();
     await newStudent("2026-9090");
-    expect((await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9090', ${off.id})`)).error).toBeUndefined();
+    expect((await asDb(`insert into enrollments (student_id, offering_id) values ('2026-9090', ${off.id})`)).error).toBeUndefined();
     const back = await save(rows[0].id, { midterm: null, final: null, status: "auto" });
     expect(back.error).toMatch(/^This class is full/);
     expect((await one(`select status from enrollments where id = ${rows[0].id}`)).status).toBe("dropped");
@@ -405,14 +412,14 @@ describe("state machine rules", () => {
   it("only enrolls students whose status is active", async () => {
     await newStudent("2026-9091", "graduated");
     const off = await firstOffering("BSIT 4-S");
-    const r = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9091', ${off.id})`);
+    const r = await asDb(`insert into enrollments (student_id, offering_id) values ('2026-9091', ${off.id})`);
     expect(r.error).toMatch(/marked as graduated/);
   });
 
   it("does not enroll a shifted-out student", async () => {
     await newStudent("2026-9089", "shifted_out");
     const off = await firstOffering("BSIT 4-S");
-    const r = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9089', ${off.id})`);
+    const r = await asDb(`insert into enrollments (student_id, offering_id) values ('2026-9089', ${off.id})`);
     expect(r.error).toMatch(/marked as shifted out/);
   });
 
@@ -440,7 +447,7 @@ describe("state machine rules", () => {
     // A brand-new enrollment has no grades and no history (demo students already have midterm grades).
     await newStudent("2026-9092");
     const off = await firstOffering("BSIT 4-S");
-    const added = await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9092', ${off.id}) returning id`);
+    const added = await asDb(`insert into enrollments (student_id, offering_id) values ('2026-9092', ${off.id}) returning id`);
     expect(added.error).toBeUndefined();
     const r = await asSec(`delete from enrollments where id = ${added.rows[0].id} returning id`);
     expect(r.error).toBeUndefined();
@@ -450,7 +457,7 @@ describe("state machine rules", () => {
   it("deletes a student added by mistake, with their classes", async () => {
     await newStudent("2026-9093");
     const off = await firstOffering("BSIT 4-S");
-    await asSec(`insert into enrollments (student_id, offering_id) values ('2026-9093', ${off.id})`);
+    await asDb(`insert into enrollments (student_id, offering_id) values ('2026-9093', ${off.id})`);
     const r = await asSec(`delete from students where id = '2026-9093' returning id`);
     expect(r.error).toBeUndefined();
     expect(r.rows).toHaveLength(1);
@@ -502,6 +509,23 @@ describe("starting a new term and a new school year", () => {
   it("lets only the secretary prepare a term", async () => {
     const r = await as("authenticated", STU, `select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
     expect(r.error).toMatch(/Only the secretary/);
+  });
+
+  it("won't enroll a student in a subject whose prerequisite isn't passed, even by hand", async () => {
+    const pair = await one(`
+      select sp.subject_id, o.id as offering_id, st.id as student_id
+      from subject_prerequisites sp
+      join class_offerings o on o.curriculum_subject_id = sp.subject_id
+      join sections sec on sec.id = o.section_id and sec.school_term_id = (select id from school_terms where is_current)
+      join curriculum_subjects cs on cs.id = sp.subject_id
+      join students st on st.status = 'active' and st.curriculum_id = cs.curriculum_id
+      where not exists (select 1 from enrollments e join class_offerings oo on oo.id = e.offering_id
+                        where e.student_id = st.id and oo.curriculum_subject_id = sp.subject_id)
+        and not exists (select 1 from enrollments e join class_offerings oo on oo.id = e.offering_id
+                        where e.student_id = st.id and oo.curriculum_subject_id = sp.prerequisite_id and e.status = 'passed')
+      limit 1`);
+    const r = await asSec(`insert into enrollments (student_id, offering_id) values ('${pair.student_id}', ${pair.offering_id})`);
+    expect(r.error).toMatch(/needs .* passed first/);
   });
 
   it("prepares the 2nd semester from the curriculum, copying sections and class times", async () => {
@@ -589,10 +613,11 @@ describe("starting a new term and a new school year", () => {
         select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id
         join sections s on s.id = o.section_id
         where e.student_id = '${failed.student_id}' and o.curriculum_subject_id = ${failed.subject} and s.school_term_id = ${next.id}`);
-      const reported = r.unplaced.concat(r.waiting, r.over_limit).some((x) => x.student_id === failed.student_id);
-      expect(carried.n === 1 || reported).toBe(true);
+      const reported = r.to_place.concat(r.waiting, r.over_limit).some((x) => x.student_id === failed.student_id);
+      expect(carried.n).toBe(0);
+      expect(reported).toBe(true);
     }
-    expect(r.carried_added).toBeGreaterThan(0);
+    expect(r.to_place.length).toBeGreaterThan(0);
 
     // Undo is refused once a grade is entered in the new term. Clearing the grade doesn't help: the change stays in
     // the grade history, and a class with history is never deleted.

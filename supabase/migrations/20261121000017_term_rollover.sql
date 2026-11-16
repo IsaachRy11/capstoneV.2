@@ -66,6 +66,31 @@ create policy "secretary reads term_starts" on public.term_starts
   for select to authenticated using ((select private.is_secretary()));
 grant select on public.term_starts to authenticated;
 
+-- ─── Prerequisites on enrollment (the secretary, in the app) ───────────────
+-- Runs after the seat, status and clash rules (trigger names run alphabetically), so their messages come first.
+-- No override: a subject can't be added until its prerequisite is passed. Writes with no signed-in secretary
+-- (the seed, migrations, tests of other rules) are not checked, so existing demo records still load.
+create function private.check_prerequisite() returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_subject bigint;
+  v_missing text;
+begin
+  if not (select private.is_secretary()) then return new; end if;
+  if tg_op = 'UPDATE' and new.offering_id = old.offering_id then return new; end if;
+  select o.curriculum_subject_id into v_subject from public.class_offerings o where o.id = new.offering_id;
+  v_missing := private.missing_prerequisite(new.student_id, v_subject);
+  if v_missing is not null then
+    raise exception 'This subject needs % passed first. Enroll the student in % before this one.', v_missing, v_missing
+      using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+create trigger enrollments_prerequisite_check
+  before insert or update of offering_id on public.enrollments
+  for each row execute function private.check_prerequisite();
+
 -- ─── Prepare ───────────────────────────────────────────────────────────────
 create function public.prepare_term(p_school_year text, p_semester smallint, p_starts date, p_ends date)
 returns jsonb
@@ -206,6 +231,7 @@ declare
   v_unplaced jsonb := '[]'::jsonb;   -- carried subjects with no class that fits
   v_over jsonb := '[]'::jsonb;       -- subjects left out by the unit limit
   v_nosection jsonb := '[]'::jsonb;  -- students with no section of their year
+  v_to_place jsonb := '[]'::jsonb;   -- carried subjects the secretary still has to place
   s record;
   c record;
   v_section bigint;
@@ -320,9 +346,11 @@ begin
       end loop;
     end if;
 
-    -- Carried subjects: earlier years, this semester, not passed, not already in this term.
+    -- Carried subjects (earlier years, this semester, not passed) are NOT enrolled here. Each one is a decision
+    -- for the secretary (Section allocations or bulk enroll), so they are listed with the student. Prerequisites
+    -- still come first: a subject that waits for one is listed as waiting.
     for c in
-      select cs.id as subject_id, cs.code, cs.units, cs.standing_required
+      select cs.id as subject_id, cs.code, cs.units
       from public.curriculum_subjects cs
       where cs.curriculum_id = s.curriculum_id and cs.semester = v_t.semester and cs.year_level < s.year_level
         and not private.has_passed(s.id, cs.id)
@@ -334,40 +362,8 @@ begin
       v_missing := private.missing_prerequisite(s.id, c.subject_id);
       if v_missing is not null then
         v_waiting := v_waiting || jsonb_build_object('student_id', s.id, 'code', c.code, 'needs', v_missing);
-        continue;
-      end if;
-      if p_max_units is not null and v_units + c.units > p_max_units then
-        v_over := v_over || jsonb_build_object('student_id', s.id, 'code', c.code);
-        continue;
-      end if;
-      v_placed := null;
-      v_reason := 'not offered this term';
-      -- Try each class of that subject, emptiest first; the enrollment rules reject a full class or a clash.
-      for v_section in
-        select o.id from public.class_offerings o join public.sections sec on sec.id = o.section_id
-        where sec.school_term_id = p_term_id and o.curriculum_subject_id = c.subject_id
-        order by coalesce(o.capacity, sec.capacity)
-                 - (select count(*) from public.enrollments e where e.offering_id = o.id and e.status <> 'dropped') desc, sec.name
-      loop
-        begin
-          insert into public.enrollments (student_id, offering_id) values (s.id, v_section);
-          v_placed := v_section;
-          exit;
-        exception when others then
-          v_reason := 'no class with a free seat that fits their timetable';
-        end;
-      end loop;
-      if v_placed is null then
-        v_unplaced := v_unplaced || jsonb_build_object('student_id', s.id, 'code', c.code, 'reason', v_reason);
       else
-        v_units := v_units + c.units;
-        v_carried := v_carried + 1;
-        -- A student with no section of their own this term is registered where their first class is.
-        if not exists (select 1 from public.registrations r where r.student_id = s.id and r.school_term_id = p_term_id) then
-          insert into public.registrations (student_id, school_term_id, section_id, year_level)
-          select s.id, p_term_id, o.section_id, s.year_level from public.class_offerings o where o.id = v_placed;
-          v_registered := v_registered + 1;
-        end if;
+        v_to_place := v_to_place || jsonb_build_object('student_id', s.id, 'code', c.code, 'units', c.units);
       end if;
     end loop;
 
@@ -383,7 +379,7 @@ begin
   return jsonb_build_object(
     'term_id', p_term_id, 'new_school_year', v_new_year,
     'graduated', v_graduated, 'moved_up', v_moved, 'stayed_in_last_year', v_stayed,
-    'registered', v_registered, 'classes_added', v_classes, 'carried_added', v_carried,
+    'registered', v_registered, 'classes_added', v_classes, 'to_place', v_to_place,
     'waiting', v_waiting, 'unplaced', v_unplaced, 'over_limit', v_over, 'no_section', v_nosection);
 end $$;
 revoke all on function private.run_term_start(bigint, numeric) from public, anon;

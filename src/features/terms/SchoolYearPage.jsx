@@ -145,7 +145,7 @@ export default function SchoolYearPage() {
               {target.semester === 1 && target.school_year !== current.school_year
                 ? "Everyone moves up a year except students in their program's last year who still have subjects to pass. "
                 : ""}
-              Students get their section&apos;s subjects and their carried subjects, in a class that fits their timetable. A subject waits until its prerequisite is passed.
+              Students get their section&apos;s subjects. Subjects from earlier years are listed for the secretary to enroll: nothing is enrolled automatically. A subject waits until its prerequisite is passed.
               Students who passed every subject are marked Graduated. Nothing is saved here.
             </p>
             <div className="flex flex-wrap items-end gap-3">
