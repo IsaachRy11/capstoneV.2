@@ -577,7 +577,6 @@ describe("starting a new term and a new school year", () => {
     expect(r.moved_up).toBeGreaterThan(0);
     // Last-year students who didn't graduate stay in their last year.
     expect(r.stayed_in_last_year).toBe(lastYear.n - r.graduated);
-    expect(r.ungraded_classes).toBeGreaterThanOrEqual(0);
     expect((await one(`select count(*)::int n from students st join programs p on p.id = st.program_id
                        where st.year_level > p.duration_years`)).n).toBe(0);
 

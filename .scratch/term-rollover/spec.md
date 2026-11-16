@@ -36,9 +36,8 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
   can still change any of it afterwards on Section allocations.
 - **Prerequisites**: a subject whose prerequisite isn't passed is not added; the student takes the prerequisite
   first. Same for year standing ("3rd-year standing").
-- **No final grade yet**: a class from an earlier term that is still "Enrolled" (no grade, no INC/Dropped) is
-  pending: it isn't carried over (the student may have passed), and subjects that need it wait with the reason
-  "no final grade yet". The check warns with the number of ungraded classes.
+- **No grade entered**: a class with no final grade is treated like any subject that isn't passed (carried over,
+  and subjects that need it wait for it). Nothing special is done for it.
 - **Unit limit**: subjects past the limit are left out and listed.
 
 ## Holes and how they are handled
@@ -51,7 +50,7 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
 | Backlogs grow over the years | Carried subjects come from every earlier year, not only last year |
 | Prerequisites | Not added until passed; listed with what they need |
 | INC and Dropped | Count as not passed, so they carry over |
-| Grades not encoded yet when the term starts | Pending, not failed; warned in the check |
+| Grades not encoded yet when the term starts | Treated as not passed, like every other subject without a passed grade |
 | Summer | Summer is a term like the others; only sections with summer subjects are prepared |
 | Students who didn't enroll this school year | Not moved; placed by hand |
 | Too many students for a year's sections | Fallback section, then the check lists anyone without a section or seat |
@@ -71,3 +70,4 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
 - Credited subjects for transferees and shiftees.
 - The live 1st semester (SY 2026-2027) has no final grades in the demo data, so starting the 2nd semester live would
   hold back most prerequisite-dependent subjects until grades are encoded.
+- The unit limit is saved per start (the page's field). Remembering it as a school setting is not built yet.

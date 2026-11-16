@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
 
 // What a start did (or would do): counts first, then the lists the secretary may want to act on.
 // `result` is the JSON returned by preview_term_start / start_term.
@@ -45,13 +44,6 @@ export default function StartSummary({ result }) {
   if (result.error) return <p role="alert" className="rounded-lg px-4 py-3 text-[14px] tone-bad">{result.error}</p>;
   return (
     <div className="flex flex-col gap-3">
-      {result.ungraded_classes > 0 && (
-        <p className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-[14px] tone-warn">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <span><strong>{result.ungraded_classes} classes</strong> of the current term have no final grade yet. Subjects that need them wait,
-            and they aren't carried over. Encode the final grades first for the best result.</span>
-        </p>
-      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Count label="Students placed" value={result.registered} unit="students" />
         <Count label="Classes added" value={result.classes_added} unit="classes" />

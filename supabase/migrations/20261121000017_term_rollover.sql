@@ -34,27 +34,11 @@ as $$
     where e.student_id = p_student and o.curriculum_subject_id = p_subject and e.status = 'passed')
 $$;
 
--- Still waiting for a final grade: enrolled in an earlier term (any term but the one being started), no grade
--- or status yet. Such a subject is neither
--- passed nor failed: it isn't carried, and subjects that need it wait.
-create function private.grade_pending(p_student text, p_subject bigint) returns boolean
-language sql stable security definer set search_path = ''
-as $$
-  select exists (
-    select 1 from public.enrollments e
-    join public.class_offerings o on o.id = e.offering_id
-    join public.sections sec on sec.id = o.section_id
-    join public.school_terms t on t.id = sec.school_term_id
-    where e.student_id = p_student and o.curriculum_subject_id = p_subject and e.status = 'enrolled'
-      and t.id is distinct from nullif(current_setting('ccs.starting_term', true), '')::bigint)
-$$;
-
--- The first prerequisite of a subject that the student hasn't passed (null when all are passed),
--- e.g. "IT 306" or "IT 306 (no final grade yet)".
+-- The first prerequisite of a subject that the student hasn't passed (null when all are passed).
 create function private.missing_prerequisite(p_student text, p_subject bigint) returns text
 language sql stable security definer set search_path = ''
 as $$
-  select pre.code || case when private.grade_pending(p_student, pre.id) then ' (no final grade yet)' else '' end
+  select pre.code
   from public.subject_prerequisites sp
   join public.curriculum_subjects pre on pre.id = sp.prerequisite_id
   where sp.subject_id = p_subject and not private.has_passed(p_student, sp.prerequisite_id)
@@ -62,8 +46,7 @@ as $$
   limit 1
 $$;
 
-revoke all on function private.has_passed(text, bigint), private.grade_pending(text, bigint),
-  private.missing_prerequisite(text, bigint) from public, anon;
+revoke all on function private.has_passed(text, bigint), private.missing_prerequisite(text, bigint) from public, anon;
 
 -- ─── Record of each start, so it can be undone ───────────────────────────────
 create table public.term_starts (
@@ -223,7 +206,6 @@ declare
   v_unplaced jsonb := '[]'::jsonb;   -- carried subjects with no class that fits
   v_over jsonb := '[]'::jsonb;       -- subjects left out by the unit limit
   v_nosection jsonb := '[]'::jsonb;  -- students with no section of their year
-  v_ungraded int := 0;               -- classes of the current term still without a final grade
   s record;
   c record;
   v_section bigint;
@@ -248,12 +230,6 @@ begin
     raise exception 'Only a term that comes after the current one can be started.' using errcode = 'P0001';
   end if;
   v_new_year := v_cur.id is null or v_t.school_year <> v_cur.school_year;
-  perform set_config('ccs.starting_term', p_term_id::text, true);
-  if v_cur.id is not null then
-    select count(*) into v_ungraded from public.enrollments e
-    join public.class_offerings o on o.id = e.offering_id join public.sections sec on sec.id = o.section_id
-    where sec.school_term_id = v_cur.id and e.status = 'enrolled';
-  end if;
 
   insert into public.term_starts (from_term_id, to_term_id, started_by, students_before)
   select v_cur.id, p_term_id, (select auth.uid()),
@@ -323,7 +299,7 @@ begin
         from public.class_offerings o join public.curriculum_subjects cs on cs.id = o.curriculum_subject_id
         where o.section_id = v_section order by cs.sort_order
       loop
-        continue when private.has_passed(s.id, c.subject_id) or private.grade_pending(s.id, c.subject_id);
+        continue when private.has_passed(s.id, c.subject_id);
         v_missing := private.missing_prerequisite(s.id, c.subject_id);
         if v_missing is not null or coalesce(c.standing_required, 0) > s.year_level then
           v_waiting := v_waiting || jsonb_build_object('student_id', s.id, 'code', c.code,
@@ -350,7 +326,6 @@ begin
       from public.curriculum_subjects cs
       where cs.curriculum_id = s.curriculum_id and cs.semester = v_t.semester and cs.year_level < s.year_level
         and not private.has_passed(s.id, cs.id)
-        and not private.grade_pending(s.id, cs.id)
         and not exists (select 1 from public.enrollments e join public.class_offerings o on o.id = e.offering_id
                         join public.sections sec on sec.id = o.section_id
                         where e.student_id = s.id and o.curriculum_subject_id = cs.id and sec.school_term_id = p_term_id)
@@ -406,7 +381,7 @@ begin
   update public.school_terms set is_current = true where id = p_term_id;
 
   return jsonb_build_object(
-    'term_id', p_term_id, 'new_school_year', v_new_year, 'ungraded_classes', v_ungraded,
+    'term_id', p_term_id, 'new_school_year', v_new_year,
     'graduated', v_graduated, 'moved_up', v_moved, 'stayed_in_last_year', v_stayed,
     'registered', v_registered, 'classes_added', v_classes, 'carried_added', v_carried,
     'waiting', v_waiting, 'unplaced', v_unplaced, 'over_limit', v_over, 'no_section', v_nosection);
