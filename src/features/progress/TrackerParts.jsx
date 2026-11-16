@@ -8,6 +8,7 @@ export function TrackerSwitch() {
     <nav aria-label="Subject tracker views" className="seg seg-fill no-print lg:hidden">
       <NavLink to="/progress" end className={tab}>This semester</NavLink>
       <NavLink to="/progress/roadmap" className={tab}>Roadmap</NavLink>
+      <NavLink to="/curriculum" className={tab}>Curriculum</NavLink>
     </nav>
   );
 }

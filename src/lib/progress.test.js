@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, requirementText } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -124,5 +124,15 @@ describe("prerequisiteStatus", () => {
   it("is fine when the prerequisite is still ahead in the normal order", () => {
     expect(prerequisiteStatus({ missingPrereqs: [pre("not_taken", 2, 2)] }, pos)).toBeNull();
     expect(prerequisiteStatus({ missingPrereqs: [] }, pos)).toBeNull();
+  });
+});
+
+describe("prerequisiteText", () => {
+  it("lists course numbers like the curriculum, then a year standing", () => {
+    const prog = buildProgress({ curriculum, history, prerequisites: [{ subject_id: 4, prerequisite_id: 3 }, { subject_id: 4, prerequisite_id: 2 }] });
+    expect(prerequisiteText(bySubject(prog)["IT 204"])).toBe("IT 201, IT 103");
+    expect(prerequisiteText(bySubject(prog)["IT 101"])).toBe("");
+    expect(prerequisiteText({ prereqs: [{ code: "CAPSTONE 1" }], standing_required: 4 })).toBe("CAPSTONE 1, 4th year standing");
+    expect(prerequisiteText({ prereqs: [], standing_required: 4 })).toBe("4th year standing");
   });
 });

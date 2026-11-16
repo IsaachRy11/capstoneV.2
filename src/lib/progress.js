@@ -44,11 +44,11 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
 
   const byId = new Map(subjects.map((s) => [s.id, s]));
   // What passing a subject opens up: the subjects that list it as a prerequisite.
-  for (const s of subjects) s.unlocks = [];
+  for (const s of subjects) { s.unlocks = []; s.prereqs = []; }
   for (const p of prerequisites) {
     const pre = byId.get(p.prerequisite_id);
     const opens = byId.get(p.subject_id);
-    if (pre && opens) pre.unlocks.push(opens);
+    if (pre && opens) { pre.unlocks.push(opens); opens.prereqs.push(pre); }
   }
   for (const s of subjects) {
     s.missingPrereqs = prerequisites
@@ -121,4 +121,12 @@ export function prerequisiteStatus(subject, pos) {
     if (pre.state === "not_taken" && behind) return "blocked";
   }
   return waiting ? "waiting" : null;
+}
+
+// A subject's prerequisites written like the curriculum's Prerequisite column: course numbers, then a year standing.
+// e.g. "IT 201, IT 202" · "4th year standing" · "" when it has none.
+export function prerequisiteText(subject) {
+  const parts = (subject.prereqs || []).map((p) => p.code);
+  if (subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
+  return parts.join(", ");
 }

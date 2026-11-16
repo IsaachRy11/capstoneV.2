@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Pencil } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Pencil } from "lucide-react";
 import { saveGrades } from "../../services/students";
 import { Badge, FormError, StatusBadge } from "../../components/ui";
 import { GRADE_OPTIONS, formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
@@ -69,30 +69,32 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
 
   return (
     <section className="card overflow-hidden">
-      {/* Phones: title row (tap to open/close), details under it, then the badges and Encode button on their own row. */}
-      <div className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:border-b sm:border-line ${open ? "border-b border-line" : ""}`}>
-        <div className="min-w-0 sm:flex-1">
-          <h2 className="text-[17px] font-bold">
-            <button type="button" className="flex w-full items-center justify-between gap-3 text-left sm:hidden" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-              <span>{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</span>
-              <ChevronDown size={20} className={`shrink-0 text-ink-3 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} aria-hidden="true" />
-            </button>
-            <span className="hidden sm:inline">{yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}</span>
-          </h2>
-          <p className="mt-1 text-[13px] text-ink-3">SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units · {term.section_name}</p>
-        </div>
-        {(term.is_current || termAvg || (canEdit && !editing)) && (
-          <div className="flex flex-wrap items-center gap-3">
-            {term.is_current && <Badge tone="info" dot>Current term</Badge>}
-            {termAvg && <span className="text-[13px] text-ink-2">Term average <span className="font-mono font-semibold text-ink">{termAvg}</span></span>}
-            {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print hidden lg:inline-flex" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
-          </div>
-        )}
+      {/* The header opens and closes the term (on every screen), like "Completed" on the roadmap. */}
+      <div className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${open ? "border-b border-line" : ""}`}>
+        <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${term.is_current ? "tone-info" : "tone-ok"}`} aria-hidden="true">
+            {term.is_current ? <BookOpen size={16} /> : <Check size={16} />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-bold">
+              {yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}
+              {term.is_current && <Badge tone="info" dot>Current term</Badge>}
+            </span>
+            <span className="block text-[13px] font-normal text-ink-3">
+              SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units · {term.section_name}
+              {termAvg && <> · Term average <span className="font-mono font-semibold text-ink-2">{termAvg}</span></>}
+            </span>
+          </span>
+        </button>
+        {canEdit && !editing && <button className="btn btn-secondary btn-sm no-print hidden lg:inline-flex" onClick={start}><Pencil size={14} aria-hidden="true" />Encode grades</button>}
+        <button type="button" className="icon-btn no-print" aria-expanded={open} aria-label={open ? "Hide this term" : "Show this term"} onClick={() => setOpen((o) => !o)}>
+          <ChevronDown size={20} className={`transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
       </div>
-      <div className={`overflow-x-auto sm:block print:block ${open ? "" : "hidden"}`}>
+      <div className={`overflow-x-auto print:block ${open ? "" : "hidden"}`}>
         <table className="data-table">
           {/* Phones: code, units and status sit under the subject name so Midterm and Final always fit. */}
-          <thead><tr><th className="hidden sm:table-cell">Code</th><th>Subject</th><th className="hidden !text-center sm:table-cell">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className={editing ? "" : "hidden sm:table-cell"}>{editing ? "Mark as" : "Status"}</th></tr></thead>
+          <thead><tr><th className="hidden w-[128px] sm:table-cell">Course No.</th><th>Description</th><th className="hidden !text-center sm:table-cell">Units</th><th className="!text-center">Midterm</th><th className="!text-center">Final</th><th className={editing ? "" : "hidden sm:table-cell"}>{editing ? "Mark as" : "Status"}</th></tr></thead>
           <tbody>
             {rows.map((r) => {
               const bad = r.status === "failed";

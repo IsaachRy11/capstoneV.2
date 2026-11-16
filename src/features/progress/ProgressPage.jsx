@@ -2,6 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StandingBadge } from "../../components/ui";
 import { semesterLabel, sumUnits, termLabel, yearLabel } from "../../lib/format";
+import { prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
@@ -97,7 +98,7 @@ export default function Progress() {
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
-                  <tr><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Passing opens</th></tr>
+                  <tr><th className="w-[128px]">Course No.</th><th>Description</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th><th className="hidden lg:table-cell">Passing opens</th></tr>
                 </thead>
                 <tbody>
                   {taking.map((s) => (
@@ -105,17 +106,19 @@ export default function Progress() {
                       <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                       <td className="min-w-0 align-top font-medium">
                         {s.title}
-                        <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">{s.unlocks.length ? `Passing opens ${s.unlocks.map((o) => o.code).join(", ")}` : "No other subject depends on this one."}</span>
+                        {prerequisiteText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prerequisiteText(s)}</span>}
+                        <span className="mt-0.5 block text-[12px] font-normal text-ink-3 lg:hidden">{s.unlocks.length ? `Passing opens ${s.unlocks.map((o) => o.code).join(", ")}` : "No other subject depends on this one."}</span>
                       </td>
                       <td className="num align-top">{Number(s.units)}</td>
-                      <td className="hidden align-top text-[13px] md:table-cell">
-                        {s.unlocks.length ? <span className="font-mono text-[12px] text-accent">{s.unlocks.map((o) => o.code).join(", ")}</span> : <span className="text-ink-3">None: no other subject depends on it</span>}
+                      <td className="hidden align-top text-[13px] leading-snug text-ink-2 md:table-cell">{prerequisiteText(s) || <span className="text-ink-3">—</span>}</td>
+                      <td className="hidden align-top text-[13px] lg:table-cell">
+                        {s.unlocks.length ? <span className="font-mono text-[12px] text-accent">{s.unlocks.map((o) => o.code).join(", ")}</span> : <span className="text-ink-3">None</span>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr><td colSpan={2}>Total · {taking.length} {taking.length === 1 ? "subject" : "subjects"}</td><td className="num">{units}</td><td className="hidden md:table-cell" /></tr>
+                  <tr><td colSpan={2}>Total · {taking.length} {taking.length === 1 ? "subject" : "subjects"}</td><td className="num">{units}</td><td className="hidden md:table-cell" /><td className="hidden lg:table-cell" /></tr>
                 </tfoot>
               </table>
             </div>

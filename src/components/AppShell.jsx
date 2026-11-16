@@ -62,7 +62,7 @@ const NAV = {
   student: [
     { to: "/", end: true, icon: Home, label: "Home", tab: "Home" },
     { to: "/schedule", icon: CalendarClock, label: "Schedule", tab: "Schedule" },
-    { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker", also: ["/curriculum"], children: [{ to: "/progress", end: true, label: "This semester" }, { to: "/progress/roadmap", label: "Roadmap" }] },
+    { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker", children: [{ to: "/progress", end: true, label: "This semester" }, { to: "/progress/roadmap", label: "Roadmap" }, { to: "/curriculum", label: "Curriculum" }] },
     { to: "/record", icon: FileText, label: "Academic record", tab: "Grades" },
   ],
 };
@@ -86,7 +86,7 @@ function BottomTabs() {
 // inside it, and the arrow opens or closes it by hand. In the icon rail only the main icon shows.
 function NavGroup({ item, collapsed }) {
   const location = useLocation();
-  const inside = location.pathname.startsWith(item.to) || (item.also || []).some((p) => location.pathname.startsWith(p));
+  const inside = item.children.some((c) => location.pathname.startsWith(c.to));
   const [manual, setManual] = useState(null); // null = follow the page, true/false = the user chose
   const open = !collapsed && (manual ?? inside);
   const Icon = item.icon;

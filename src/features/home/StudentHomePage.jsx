@@ -7,12 +7,14 @@ import { getCurriculum, getPrerequisites, getPrograms } from "../../services/cat
 import { ErrorState, LoadingState, StandingBadge } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
 import { buildProgress, nextTermFor } from "../../lib/progress";
+import { useClassStatus } from "../../hooks/useCalendar";
 import TodayCard from "./TodayCard";
 import ProgressCard from "./ProgressCard";
 
 export default function StudentHome() {
   const { user } = useAuth();
   const { term, termLoading } = useOutletContext();
+  const status = useClassStatus();
 
   const { data, error, loading, reload } = useAsync(async () => {
     if (termLoading) return null; // wait for the semester instead of loading everything twice
@@ -87,7 +89,7 @@ export default function StudentHome() {
       {/* Today's classes and where the student stands in the program. The full week is on Schedule and
           the grades are on Academic record, so neither is repeated here. */}
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
-        <TodayCard classes={classes} />
+        <TodayCard classes={classes} status={status} />
         <ProgressCard progress={progress} next={next} pos={{ year: student.year_level, semester: term.semester }} />
       </div>
     </>

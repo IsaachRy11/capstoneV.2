@@ -44,7 +44,7 @@ export default function SubjectModal({ program, subject, onClose, onSaved }) {
           <select id="cy" className="field" value={form.year_level} onChange={set("year_level")}>{Array.from({ length: program.duration_years }, (_, i) => <option key={i} value={i + 1}>{yearLabel(i + 1)}</option>)}</select></div>
         <div><label className="label" htmlFor="cs">Semester</label>
           <select id="cs" className="field" value={form.semester} onChange={set("semester")}><option value={1}>1st Semester</option><option value={2}>2nd Semester</option><option value={3}>Summer</option></select></div>
-        <div><label className="label" htmlFor="cc">Code</label><input id="cc" className="field font-mono" placeholder="IT 307" value={form.code} onChange={set("code")} required /></div>
+        <div><label className="label" htmlFor="cc">Course No.</label><input id="cc" className="field font-mono" placeholder="IT 307" value={form.code} onChange={set("code")} required /></div>
         <div><label className="label" htmlFor="cu">Units</label><input id="cu" type="number" min={0.5} step={0.5} className="field font-mono" value={form.units} onChange={set("units")} required /></div>
         <div className="col-span-2"><label className="label" htmlFor="ct">Title</label><input id="ct" className="field" value={form.title} onChange={set("title")} required /></div>
         {editing && <p className="col-span-2 text-[13px] text-ink-3">Changes show up right away for students in this program (curriculum, subject tracker and grades).</p>}

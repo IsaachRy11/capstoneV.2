@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
-import { prerequisiteStatus, requirementText } from "../../lib/progress";
+import { prerequisiteStatus, prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
@@ -52,20 +52,24 @@ function AheadTerm({ t, isNext, pos }) {
         <div className="overflow-x-auto border-t border-line">
           <table className="data-table">
             <thead>
-              <tr><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Needs</th></tr>
+              <tr><th className="w-[128px]">Course No.</th><th>Description</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th></tr>
             </thead>
             <tbody>
               {t.subjects.map((s) => {
-                const need = requirementText(s, t.year);
+                const text = prerequisiteText(s);
+                const blocked = prerequisiteStatus(s, pos) === "blocked";
                 return (
                   <tr key={s.id}>
                     <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                     <td className="min-w-0 align-top font-medium">
                       {s.title}
-                      {need && <span className="mt-0.5 block text-[12px] font-normal text-warn md:hidden">{need}</span>}
+                      {text && <span className={`mt-0.5 block text-[12px] font-normal md:hidden ${blocked ? "text-bad" : "text-ink-3"}`}>Prerequisite: {text}{blocked ? " (to clear first)" : ""}</span>}
                     </td>
                     <td className="num align-top">{Number(s.units)}</td>
-                    <td className="hidden align-top text-[13px] md:table-cell">{need ? <span className="text-warn">{need}</span> : <span className="text-ink-3">—</span>}</td>
+                    <td className={`hidden align-top text-[13px] leading-snug md:table-cell ${blocked ? "font-semibold text-bad" : "text-ink-2"}`}>
+                      {text || <span className="text-ink-3">—</span>}
+                      {blocked && <span className="block text-[11px] font-normal">to clear first</span>}
+                    </td>
                   </tr>
                 );
               })}
@@ -102,7 +106,7 @@ function CompletedYear({ year, inYear, done, defaultOpen }) {
       <div className="overflow-x-auto border-t border-line">
         <table className="data-table">
           <thead>
-            <tr><th className="hidden w-[132px] sm:table-cell">Semester</th><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th></tr>
+            <tr><th className="hidden w-[132px] sm:table-cell">Semester</th><th className="w-[128px]">Course No.</th><th>Description</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th></tr>
           </thead>
           <tbody>
             {rows.map((s) => (
@@ -112,8 +116,10 @@ function CompletedYear({ year, inYear, done, defaultOpen }) {
                 <td className="min-w-0 align-top font-medium">
                   {s.title}
                   <span className="mt-0.5 block text-[12px] font-normal text-ink-3 sm:hidden">{semesterLabel(s.semester)}</span>
+                  {prerequisiteText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prerequisiteText(s)}</span>}
                 </td>
                 <td className="num align-top">{Number(s.units)}</td>
+                <td className="hidden align-top text-[13px] leading-snug text-ink-2 md:table-cell">{prerequisiteText(s) || <span className="text-ink-3">—</span>}</td>
               </tr>
             ))}
           </tbody>
@@ -122,6 +128,7 @@ function CompletedYear({ year, inYear, done, defaultOpen }) {
               <td className="hidden sm:table-cell" />
               <td colSpan={2}>{all ? "Total" : semesterLabel(visible[visible.length - 1])} · {rows.length} {rows.length === 1 ? "subject" : "subjects"}</td>
               <td className="num">{sumUnits(rows)}</td>
+              <td className="hidden md:table-cell" />
             </tr>
           </tfoot>
         </table>

@@ -63,3 +63,38 @@ export function dateSpan(e) {
     ? `${f(e.start, { month: "short", day: "numeric" })} – ${e.end.getDate()}`
     : `${f(e.start, { month: "short", day: "numeric" })} – ${f(e.end, { month: "short", day: "numeric" })}`;
 }
+
+// Whether today is a class day, from the official calendar. Returns one of
+//   { kind: "classes" }                                   normal school day (or no calendar to say otherwise)
+//   { kind: "exam", title, span }                         an exam week is on
+//   { kind: "none", title, span, resumes, resumesLabel }  no classes: a break, a holiday, or between semesters
+// terms: school_terms rows; events: school_calendar_events rows.
+export function classStatus(today, terms = [], events = []) {
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const evs = eventRanges(events);
+  const here = eventsOn(evs, day);
+
+  const off = here.find((e) => e.kind === "break") || here.find((e) => e.kind === "holiday");
+  const ranges = termRanges(terms);
+  const inTerm = termOn(ranges, day);
+  const nextTerm = ranges.filter((t) => t.start > day).sort((a, b) => a.start - b.start)[0];
+
+  if (off || (!inTerm && nextTerm && ranges.some((t) => t.end < day))) {
+    const resumes = nextTerm && (!off || off.end < nextTerm.start) ? nextTerm.start : off ? new Date(off.end.getFullYear(), off.end.getMonth(), off.end.getDate() + 1) : null;
+    return {
+      kind: "none",
+      title: off ? off.title : "Between semesters",
+      span: off ? dateSpan(off) : null,
+      resumes,
+      resumesLabel: nextTerm && resumes && sameDay(resumes, nextTerm.start) ? `${semesterWord(nextTerm.semester)} starts` : "Classes resume",
+    };
+  }
+  const exam = here.find((e) => e.kind === "exam");
+  if (exam) return { kind: "exam", title: exam.title, span: dateSpan(exam) };
+  return { kind: "classes" };
+}
+const semesterWord = (n) => (n === 1 ? "1st Semester" : n === 2 ? "2nd Semester" : "Summer");
+
+// "2nd Semester starts Monday, November 23" · "Classes resume Tuesday, December 1" (empty when unknown)
+export const resumeText = (status) =>
+  status?.resumes ? `${status.resumesLabel} ${status.resumes.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" })}` : "";

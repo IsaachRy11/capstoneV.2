@@ -5,6 +5,8 @@ import { getRooms, getSectionOfferings } from "../../services/sections";
 import SectionPicker from "../../components/SectionPicker";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
+import CalendarNotice from "../../components/CalendarNotice";
+import { useClassStatus } from "../../hooks/useCalendar";
 import WeekTimetable from "./WeekTimetable";
 import ClassTimes from "./ClassTimes";
 
@@ -12,6 +14,7 @@ import ClassTimes from "./ClassTimes";
 export default function SectionSchedules() {
   const picker = useSectionPicker();
   const { program, year, section } = picker;
+  const status = useClassStatus();
   const rooms = useAsync(getRooms, [], "rooms");
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
@@ -32,6 +35,8 @@ export default function SectionSchedules() {
     <>
       <PageHeader title="Schedules"
         actions={items.length > 0 && <button className="btn btn-secondary no-print hidden lg:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
+
+      <CalendarNotice status={status} />
 
       <SectionPicker picker={picker} />
 

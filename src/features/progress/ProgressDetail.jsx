@@ -26,14 +26,14 @@ export default function ProgressDetail({ view, progress, retakeNext, backTo = "/
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Subject</th><th className="hidden sm:table-cell">Curriculum</th><th className="hidden !text-center sm:table-cell">Units</th><th className="hidden sm:table-cell">Status</th>
+                  <th className="w-[128px]">Course No.</th><th>Description</th><th className="hidden sm:table-cell">Curriculum</th><th className="hidden !text-center sm:table-cell">Units</th><th className="hidden sm:table-cell">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((s) => (
                   <tr key={s.id}>
-                    <td className="sm:min-w-[200px]">
-                      <span className="block font-mono text-[13px] text-accent">{s.code}</span>
+                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                    <td className="min-w-0 align-top sm:min-w-[200px]">
                       <span className="block font-medium">{s.title}</span>
                       {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                       {/* Phones: the hidden columns are folded in here. */}
