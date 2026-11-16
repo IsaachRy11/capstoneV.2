@@ -7,6 +7,7 @@ import { getCurrentTerm } from "../services/catalog";
 import UserMenu from "./UserMenu";
 import TermCalendar from "./TermCalendar";
 import ErrorBoundary from "./ErrorBoundary";
+import TermEdgePop from "./TermEdgePop";
 import { SealLogo } from "./ui";
 
 const PAGE_TITLES = [
@@ -213,6 +214,7 @@ export default function AppShell() {
               <Monitor size={15} className="shrink-0 text-ink-3" aria-hidden="true" />View only on this screen. Use a computer to add, edit or encode.
             </p>
           )}
+          <TermEdgePop />
           <ErrorBoundary key={location.pathname}>
             <Outlet context={{ term: term.data, termLoading: term.loading }} />
           </ErrorBoundary>

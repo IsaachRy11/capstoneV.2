@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classStatus } from "./calendar";
+import { classStatus, edgeText, edgesOn, termEdges } from "./calendar";
 
 // The SY 2026-2027 shape: 1st semester ends Nov 7, break until Nov 21, 2nd semester starts Nov 23.
 const terms = [
@@ -38,5 +38,16 @@ describe("classStatus", () => {
   it("handles the gap between semesters even without a calendar entry for it", () => {
     const s = classStatus(new Date(2026, 10, 22, 9), terms, []);
     expect(s).toMatchObject({ kind: "none", title: "Between semesters", resumesLabel: "2nd Semester starts" });
+  });
+});
+
+describe("semester flags", () => {
+  it("marks each semester's first and last day of classes", () => {
+    const edges = termEdges(terms);
+    expect(edges).toHaveLength(4);
+    expect(edgesOn(edges, new Date(2026, 6, 6)).map(edgeText)).toEqual(["1st Semester starts"]);
+    expect(edgesOn(edges, new Date(2026, 10, 7)).map(edgeText)).toEqual(["1st Semester ends"]);
+    expect(edgesOn(edges, new Date(2026, 10, 23)).map(edgeText)).toEqual(["2nd Semester starts"]);
+    expect(edgesOn(edges, new Date(2026, 10, 24))).toEqual([]);
   });
 });

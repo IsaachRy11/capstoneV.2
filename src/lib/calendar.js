@@ -26,6 +26,15 @@ export const termRanges = (terms = []) =>
 
 export const termOn = (ranges, d) => ranges.find((r) => d >= r.start && d <= r.end);
 
+// Each semester's first and last day of classes ("flags"): [{ date, edge: "start" | "end", term }].
+export const termEdges = (terms = []) =>
+  termRanges(terms).flatMap((r) => [{ date: r.start, edge: "start", term: r }, { date: r.end, edge: "end", term: r }]);
+export const edgesOn = (edges, d) => edges.filter((x) => sameDay(x.date, d));
+// "2nd Semester starts" · "Summer ends"
+export const edgeText = (x) => `${semesterWord(x.term.semester)} ${x.edge === "start" ? "starts" : "ends"}`;
+// The same, short enough for a calendar day box: "2nd Sem starts" · "Summer ends"
+export const edgeShort = (x) => `${x.term.semester === 3 ? "Summer" : `${x.term.semester === 1 ? "1st" : "2nd"} Sem`} ${x.edge === "start" ? "starts" : "ends"}`;
+
 // Whole days from `today` to the end of a range (0 on the last day, never negative).
 export const daysLeft = (range, today) => Math.max(0, Math.ceil((range.end - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000));
 

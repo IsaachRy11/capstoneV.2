@@ -6,7 +6,7 @@ import { getCalendarEvents, getTerms } from "../../services/catalog";
 import { semesterLabel, termLabel } from "../../lib/format";
 import { useAuth } from "../../context/AuthContext";
 import CalendarEventModal from "./CalendarEventModal";
-import { EVENT_KINDS, classStatus, resumeText, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
+import { EVENT_KINDS, classStatus, edgeShort, edgeText, edgesOn, resumeText, termEdges, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
 import { BackButton, EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 
 // Full-page academic calendar: the official school calendar (exams, holidays, breaks, activities) on top of the
@@ -39,16 +39,11 @@ export default function CalendarPage() {
 
   const ranges = termRanges(data.terms);
   const events = eventRanges(data.events);
-  // Terms whose school year has an official calendar get their start/end from it; older years still show the term dates.
-  const officialYears = new Set(data.events.map((e) => e.school_year));
-  const looseTerms = ranges.filter((r) => !officialYears.has(r.school_year));
+  // Every semester's first and last day of classes gets a flag (they replace the plain "classes" entries on that day).
+  const edges = termEdges(data.terms);
   const cells = monthCells(month);
   const current = ranges.find((r) => r.is_current);
   const isThisMonth = month.getMonth() === today.getMonth() && month.getFullYear() === today.getFullYear();
-  const termMarks = (d) => looseTerms.flatMap((r) => [
-    ...(sameDay(d, r.start) ? [`${semesterLabel(r.semester)} starts`] : []),
-    ...(sameDay(d, r.end) ? [`${semesterLabel(r.semester)} ends`] : []),
-  ]);
   const inMonth = eventsInMonth(events, month);
   const status = classStatus(today, data.terms, data.events);
   const next = upcoming(events, today, 5);
@@ -76,13 +71,13 @@ export default function CalendarPage() {
               const here = d.getMonth() === month.getMonth();
               const t = termOn(ranges, d);
               const isToday = sameDay(d, today);
-              const dayEvents = eventsOn(events, d);
-              const marks = termMarks(d);
+              const marks = edgesOn(edges, d);
+              const dayEvents = eventsOn(events, d).filter((e) => !(marks.length && e.kind === "classes"));
               const shown = dayEvents.slice(0, 2);
               const more = dayEvents.length - shown.length;
               return (
                 <div key={d.toISOString()} role="gridcell"
-                  aria-label={`${fmt(d, { weekday: "long", month: "long", day: "numeric" })}${t ? `, ${semesterLabel(t.semester)}` : ""}${dayEvents.map((e) => `, ${e.title}`).join("")}${marks.map((m) => `, ${m}`).join("")}${isToday ? ", today" : ""}`}
+                  aria-label={`${fmt(d, { weekday: "long", month: "long", day: "numeric" })}${t ? `, ${semesterLabel(t.semester)}` : ""}${dayEvents.map((e) => `, ${e.title}`).join("")}${marks.map((m) => `, ${edgeText(m)}`).join("")}${isToday ? ", today" : ""}`}
                   className={`flex min-h-[56px] flex-col gap-1 border-line p-1.5 sm:min-h-[112px] sm:p-2 ${i % 7 ? "border-l" : ""} ${i >= 7 ? "border-t" : ""} ${t && here ? "bg-tint" : ""} ${here ? "" : "opacity-45"}`}>
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] ${isToday ? "font-bold text-white" : t ? "font-semibold text-ink" : "text-ink-2"}`}
                     style={isToday ? { background: "var(--btn)" } : undefined}>
@@ -93,12 +88,14 @@ export default function CalendarPage() {
                   ))}
                   {here && more > 0 && <span className="hidden px-1 text-[11px] font-semibold text-ink-3 sm:block">+{more} more</span>}
                   {here && marks.map((m) => (
-                    <span key={m} className="hidden truncate rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-white sm:block" style={{ background: "var(--btn)" }}>{m}</span>
+                    <span key={m.edge + m.term.id} title={edgeText(m)} className={`hidden items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-bold sm:flex ${m.edge === "start" ? "tone-ok" : "tone-info"}`}>
+                      <Flag size={11} className="shrink-0" aria-hidden="true" />{edgeShort(m)}
+                    </span>
                   ))}
                   {here && (dayEvents.length > 0 || marks.length > 0) && (
                     <span className="mx-auto flex gap-0.5 sm:hidden" aria-hidden="true">
                       {dayEvents.slice(0, 3).map((e) => <span key={e.id} className={`h-1.5 w-1.5 rounded-full tone-${EVENT_KINDS[e.kind].tone}`} style={{ background: "currentColor" }} />)}
-                      {marks.length > 0 && <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--btn)" }} />}
+                      {marks.map((m) => <span key={m.edge} className={`h-1.5 w-1.5 rounded-full ${m.edge === "start" ? "tone-ok" : "tone-info"}`} style={{ background: "currentColor" }} />)}
                     </span>
                   )}
                 </div>
@@ -109,6 +106,8 @@ export default function CalendarPage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-[12px] text-ink-3 sm:px-5" aria-label="Legend">
             <span className="font-semibold uppercase tracking-[0.08em]">Legend</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-tint ring-1 ring-line" />Semester days</span>
+            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-ok"><Flag size={11} aria-hidden="true" /></span>First day of classes</span>
+            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-info"><Flag size={11} aria-hidden="true" /></span>Last day of classes</span>
             {Object.entries(EVENT_KINDS).filter(([k]) => data.events.some((e) => e.kind === k)).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={`h-3 w-5 rounded tone-${v.tone}`} style={{ background: "currentColor" }} />{v.label}</span>)}
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: "var(--btn)" }} />Today</span>
           </div>
