@@ -23,7 +23,7 @@ on conflict do nothing;
 
 -- SY 2026-2027 follows the official academic calendar (migration 0013); the other years keep generic dates.
 update public.school_terms set starts_on = date '2026-07-06', ends_on = date '2026-11-07' where school_year = '2026-2027' and semester = 1;
-update public.school_terms set starts_on = date '2026-11-30', ends_on = date '2027-04-23' where school_year = '2026-2027' and semester = 2;
+update public.school_terms set starts_on = date '2026-11-23', ends_on = date '2027-04-23' where school_year = '2026-2027' and semester = 2;
 update public.school_terms set starts_on = date '2027-05-03', ends_on = date '2027-06-11' where school_year = '2026-2027' and semester = 3;
 
 -- ─── Rooms (made up) ──────────────────────────────────────────────────────

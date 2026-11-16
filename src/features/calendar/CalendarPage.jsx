@@ -102,7 +102,7 @@ export default function CalendarPage() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-[12px] text-ink-3 sm:px-5" aria-label="Legend">
             <span className="font-semibold uppercase tracking-[0.08em]">Legend</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-tint ring-1 ring-line" />Semester days</span>
-            {Object.entries(EVENT_KINDS).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={`h-3 w-5 rounded tone-${v.tone}`} style={{ background: "currentColor" }} />{v.label}</span>)}
+            {Object.entries(EVENT_KINDS).filter(([k]) => data.events.some((e) => e.kind === k)).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={`h-3 w-5 rounded tone-${v.tone}`} style={{ background: "currentColor" }} />{v.label}</span>)}
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: "var(--btn)" }} />Today</span>
           </div>
 

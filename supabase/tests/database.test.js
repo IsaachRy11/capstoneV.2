@@ -101,19 +101,19 @@ describe("seed data", () => {
     const terms = (await db.query(`select semester, starts_on::text s, ends_on::text e from school_terms where school_year = '2026-2027' order by semester`)).rows;
     expect(terms).toEqual([
       { semester: 1, s: "2026-07-06", e: "2026-11-07" },
-      { semester: 2, s: "2026-11-30", e: "2027-04-23" },
+      { semester: 2, s: "2026-11-23", e: "2027-04-23" },
       { semester: 3, s: "2027-05-03", e: "2027-06-11" },
     ]);
-    expect(await one(`select count(*)::int n from school_calendar_events`)).toEqual({ n: 40 });
+    expect(await one(`select count(*)::int n from school_calendar_events`)).toEqual({ n: 39 });
     // Start and end of classes on the calendar match the term dates.
     const classes = (await db.query(`select title, starts_on::text d from school_calendar_events where kind = 'classes' order by starts_on`)).rows;
-    expect(classes.map((c) => c.d)).toEqual(["2026-07-06", "2026-11-07", "2026-11-30", "2027-04-23", "2027-05-03", "2027-06-11"]);
+    expect(classes.map((c) => c.d)).toEqual(["2026-07-06", "2026-11-07", "2026-11-23", "2027-04-23", "2027-05-03", "2027-06-11"]);
     const exams = await one(`select count(*)::int n from school_calendar_events where kind = 'exam'`);
     expect(exams.n).toBe(10);
   });
 
   it("lets students read the calendar but not change it", async () => {
-    expect((await as("authenticated", STU, `select count(*)::int n from school_calendar_events`)).rows[0].n).toBe(40);
+    expect((await as("authenticated", STU, `select count(*)::int n from school_calendar_events`)).rows[0].n).toBe(39);
     const w = await as("authenticated", STU, `update school_calendar_events set title = 'x' returning id`);
     expect(w.rows ?? []).toHaveLength(0);
     expect((await as("authenticated", SEC, `update school_calendar_events set title = title where id = (select min(id) from school_calendar_events) returning id`)).rows).toHaveLength(1);

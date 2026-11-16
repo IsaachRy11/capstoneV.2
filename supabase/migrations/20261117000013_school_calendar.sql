@@ -1,14 +1,17 @@
 -- CCS Monitor · official academic calendar, SY 2026-2027.
 -- Source: the printed Saint Joseph College academic calendar (July 2026 to June 2027), provided by the user
 -- on 2026-11-16. Dates and titles are copied from it. The printed list gives dates and titles in two
--- separate columns, so each title was matched to its date by order. The matches the sheet leaves open are:
---   August 10 = Pre-Midterm Exams · August 15 = Maasin City Charter Day and Maasin City Town Fiesta
---   (two titles, one date) · November 30 = Start of Classes (2nd Semester) and Bonifacio Day · December 9 =
---   President's Birthday. Check these against the paper copy.
+-- separate columns, so each title was matched to its date and then checked against the sheet's own
+-- "Summary of School Days" (Monday to Saturday school week, 103 days per semester): every month's count
+-- comes out right with these dates.
+--   Aug 15 = Maasin City Charter Day and Town Fiesta (two titles, one date) · Nov 23 = Start of Classes
+--   (2nd Semester) and Nov 30 = Bonifacio Day (November's 2nd-semester count of 6 is Nov 23-28) ·
+--   Dec 9 = President's Birthday, a class day (December's count of 13 needs it).
+-- "Registration for 2nd Semester" is printed without a date, so it is not included.
 
 -- Term dates for SY 2026-2027 now follow the calendar (start and end of classes).
 update public.school_terms set starts_on = date '2026-07-06', ends_on = date '2026-11-07' where school_year = '2026-2027' and semester = 1;
-update public.school_terms set starts_on = date '2026-11-30', ends_on = date '2027-04-23' where school_year = '2026-2027' and semester = 2;
+update public.school_terms set starts_on = date '2026-11-23', ends_on = date '2027-04-23' where school_year = '2026-2027' and semester = 2;
 update public.school_terms set starts_on = date '2027-05-03', ends_on = date '2027-06-11' where school_year = '2026-2027' and semester = 3;
 
 create table public.school_calendar_events (
@@ -50,11 +53,10 @@ insert into public.school_calendar_events (school_year, title, starts_on, ends_o
   ('2026-2027', 'Final Exams',                              '2026-11-03', '2026-11-07', 'exam'),
   ('2026-2027', 'End of Classes',                           '2026-11-07', '2026-11-07', 'classes'),
   ('2026-2027', 'Semestral Break',                          '2026-11-09', '2026-11-21', 'break'),
-  ('2026-2027', 'Registration for 2nd Semester',            '2026-11-23', '2026-11-23', 'registration'),
-  ('2026-2027', 'Start of Classes (2nd Semester)',          '2026-11-30', '2026-11-30', 'classes'),
+  ('2026-2027', 'Start of Classes (2nd Semester)',          '2026-11-23', '2026-11-23', 'classes'),
   ('2026-2027', 'Bonifacio Day',                            '2026-11-30', '2026-11-30', 'holiday'),
   ('2026-2027', 'Feast of the Immaculate Conception',       '2026-12-08', '2026-12-08', 'holiday'),
-  ('2026-2027', 'President''s Birthday',                    '2026-12-09', '2026-12-09', 'holiday'),
+  ('2026-2027', 'President''s Birthday',                    '2026-12-09', '2026-12-09', 'school'),
   ('2026-2027', 'Pre-Midterm Exams',                        '2026-12-14', '2026-12-16', 'exam'),
   ('2026-2027', 'Christmas Break',                          '2026-12-17', '2026-12-31', 'break'),
   -- 2027
