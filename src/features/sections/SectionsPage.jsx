@@ -44,7 +44,7 @@ export default function Sections() {
   return (
     <>
       <PageHeader title="Section allocations"
-        actions={section && <Link to={`/sections/enroll?section=${section.id}`} className="btn btn-primary hidden lg:inline-flex"><UserPlus size={16} aria-hidden="true" />Enroll students in {section.name}</Link>} />
+        actions={section && <Link to={`/sections/enroll?section=${section.id}`} className="btn btn-primary hidden lg:inline-flex"><UserPlus size={16} aria-hidden="true" />Bulk enroll {section.name}</Link>} />
 
       <SectionPicker picker={picker} onChange={() => setOfferingId(null)} />
 

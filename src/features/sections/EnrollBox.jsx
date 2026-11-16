@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
-import { ListPlus, Plus, Search, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Search } from "lucide-react";
 import { enrollStudent, getPrerequisiteGaps, searchStudents } from "../../services/sections";
 import { FormError } from "../../components/ui";
 import { yearLabel } from "../../lib/format";
 
-// Secretary: add students to one class (irregular students, retakes). One at a time (Enroll), or several at once:
-// build a list from searches, then enroll them all. Whole sections are enrolled on the Enroll students page. The database refuses a student whose prerequisite isn't passed,
-// a full class and a timetable clash; a warning shows the prerequisite problem before anyone tries.
+// Secretary: add ONE student to THIS subject only (irregular students, retakes). Enrolling many students in all of a
+// section's subjects is Bulk enroll (the button at the top of Section allocations). The database refuses a student
+// whose prerequisite isn't passed, a full class and a timetable clash; the prerequisite problem shows before trying.
 export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [open, setOpen] = useState(false);
-  const [list, setList] = useState([]);       // students waiting to be enrolled together
-  const [gaps, setGaps] = useState({});       // studentId -> missing prerequisite code
-  const [outcome, setOutcome] = useState(null); // [{ student, ok, why }] after enrolling the list
-  const [running, setRunning] = useState(false);
+  const [gaps, setGaps] = useState({}); // studentId -> missing prerequisite code
+  const [added, setAdded] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -27,11 +26,11 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
   }, [q]);
 
   const seatsLeft = (offering.capacity ?? section.capacity) - offering.enrolled;
-  const inList = (id) => list.some((s) => s.id === id);
   const options = results.filter((r) => !rosterIds.has(r.id));
+  const code = offering.curriculum_subjects.code;
 
-  // Warn before adding: look up prerequisite gaps for everyone on screen.
-  const idsOnScreen = [...new Set([...options.map((s) => s.id), ...list.map((s) => s.id)])].sort().join(",");
+  // Warn before adding: prerequisite gaps for the students on screen.
+  const idsOnScreen = options.map((s) => s.id).sort().join(",");
   useEffect(() => {
     let alive = true;
     getPrerequisiteGaps(offering.id, idsOnScreen ? idsOnScreen.split(",") : []).then((g) => alive && setGaps(g));
@@ -41,35 +40,18 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
   const enroll = async (student) => {
     setBusyId(student.id);
     setError("");
+    setAdded("");
     try {
       await enrollStudent(student.id, offering.id);
       setQ("");
       setResults([]);
+      setAdded(`${student.full_name} was added to ${code}.`);
       onEnrolled();
     } catch (err) {
       setError(err.code === "23505" ? `${student.full_name} is already in this class.` : err.message);
     } finally {
       setBusyId(null);
     }
-  };
-
-  const addToList = (s) => { setOutcome(null); setList((l) => (inList(s.id) ? l : [...l, s])); };
-  const enrollList = async () => {
-    setRunning(true);
-    setError("");
-    const out = [];
-    for (const s of list) {
-      try {
-        await enrollStudent(s.id, offering.id);
-        out.push({ student: s, ok: true });
-      } catch (err) {
-        out.push({ student: s, ok: false, why: err.code === "23505" ? "Already in this class" : err.message });
-      }
-    }
-    setOutcome(out);
-    setList(out.filter((o) => !o.ok).map((o) => o.student)); // failures stay so they can be fixed and retried
-    setRunning(false);
-    onEnrolled();
   };
 
   const seatsText = seatsLeft > 0 ? `${seatsLeft} ${seatsLeft === 1 ? "seat" : "seats"} left` : "Class is full";
@@ -81,23 +63,22 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
           <span className="font-semibold text-ink">{offering.enrolled} {offering.enrolled === 1 ? "student" : "students"}</span> · {seatsText}
         </span>
         <button className="btn btn-secondary btn-sm hidden lg:inline-flex" onClick={() => setOpen(true)} disabled={seatsLeft <= 0}>
-          <Plus size={14} aria-hidden="true" />Add students
+          <Plus size={14} aria-hidden="true" />Add one student to {code}
         </button>
       </div>
     );
   }
 
-  const blocked = (s) => Boolean(gaps[s.id]);
-  const ready = list.filter((s) => !blocked(s));
-  const tooMany = ready.length > seatsLeft;
-
   return (
     <div className="flex flex-col gap-2 border-b border-line bg-surface-2 px-5 py-4 sm:px-6">
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor="enrol" className="text-[13px] font-semibold text-ink">Add students to {offering.curriculum_subjects.code} · {section.name}</label>
-        <button className="text-[13px] font-semibold text-accent" onClick={() => { setOpen(false); setQ(""); setList([]); setOutcome(null); setError(""); }}>Done</button>
+        <label htmlFor="enrol" className="text-[13px] font-semibold text-ink">Add one student to {code} · {section.name}</label>
+        <button className="text-[13px] font-semibold text-accent" onClick={() => { setOpen(false); setQ(""); setError(""); setAdded(""); }}>Done</button>
       </div>
-      <p className="text-[12px] text-ink-3">For irregular students taking this subject with {section.name}. Everyone in the block section is already enrolled. Enroll one student, or add several to a list first.</p>
+      <p className="text-[12px] text-ink-3">
+        For an irregular student or a retake: this adds <strong>only {code}</strong>. To enroll many students in all of {section.name}&apos;s subjects,
+        use <Link to={`/sections/enroll?section=${section.id}`} className="font-semibold">Bulk enroll</Link>.
+      </p>
       <div className="relative">
         <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
         <input id="enrol" className="field pl-9" placeholder="Search by name or student ID" value={q} onChange={(e) => setQ(e.target.value)} disabled={seatsLeft <= 0} autoComplete="off" autoFocus />
@@ -110,44 +91,16 @@ export default function EnrollBox({ section, offering, rosterIds, onEnrolled }) 
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[14px] font-semibold">{s.full_name}</div>
                 <div className="text-[12px] text-ink-3"><span className="font-mono">{s.id}</span> · {s.program_code} {yearLabel(s.year_level)} · {s.section_name || "no section"}</div>
-                {blocked(s) && <div className="mt-0.5 text-[12px] font-semibold text-warn">Needs {gaps[s.id]} passed first. It can't be added until then.</div>}
+                {gaps[s.id] && <div className="mt-0.5 text-[12px] font-semibold text-warn">Needs {gaps[s.id]} passed first. It can&apos;t be added until then.</div>}
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => addToList(s)} disabled={inList(s.id) || blocked(s)}><ListPlus size={14} aria-hidden="true" />{inList(s.id) ? "In the list" : "Add to list"}</button>
-              <button className="btn btn-primary btn-sm" onClick={() => enroll(s)} disabled={busyId !== null || blocked(s)}><Plus size={14} aria-hidden="true" />{busyId === s.id ? "Adding…" : "Enroll"}</button>
+              <button className="btn btn-primary btn-sm" onClick={() => enroll(s)} disabled={busyId !== null || Boolean(gaps[s.id])}>
+                <Plus size={14} aria-hidden="true" />{busyId === s.id ? "Adding…" : `Add to ${code}`}
+              </button>
             </li>
           ))}
         </ul>
       )}
-
-      {list.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] font-semibold text-ink">{list.length} {list.length === 1 ? "student" : "students"} in the list</span>
-            <button type="button" className="text-[13px] font-semibold text-ink-3" onClick={() => setList([])}>Clear</button>
-          </div>
-          <ul className="flex flex-wrap gap-1.5">
-            {list.map((s) => (
-              <li key={s.id} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] ${blocked(s) ? "border-warn text-warn" : "border-line text-ink-2"}`}
-                title={blocked(s) ? `Needs ${gaps[s.id]} passed first` : undefined}>
-                <span className="font-mono">{s.id}</span> {s.full_name}
-                <button type="button" aria-label={`Remove ${s.full_name} from the list`} onClick={() => setList((l) => l.filter((x) => x.id !== s.id))}><X size={12} /></button>
-              </li>
-            ))}
-          </ul>
-          {list.some(blocked) && <p className="text-[12px] text-warn">Students marked in orange need a prerequisite first; they are skipped.</p>}
-          {tooMany && <p className="text-[12px] text-bad">The class has {seatsLeft} {seatsLeft === 1 ? "seat" : "seats"} left but the list has {ready.length} students. Remove some or add seats.</p>}
-          <button className="btn btn-primary btn-sm w-fit" onClick={enrollList} disabled={running || ready.length === 0 || tooMany}>
-            {running ? "Enrolling…" : `Enroll ${ready.length} ${ready.length === 1 ? "student" : "students"}`}
-          </button>
-        </div>
-      )}
-
-      {outcome && (
-        <div role="status" className="rounded-lg border border-line bg-surface p-3 text-[13px]">
-          <p><strong className="text-ink">{outcome.filter((o) => o.ok).length} enrolled</strong>{outcome.some((o) => !o.ok) && <>, <strong className="text-bad">{outcome.filter((o) => !o.ok).length} not</strong> (still in the list)</>}.</p>
-          {outcome.filter((o) => !o.ok).map((o) => <p key={o.student.id} className="mt-1"><span className="font-mono">{o.student.id}</span> {o.student.full_name}: {o.why}</p>)}
-        </div>
-      )}
+      {added && <p role="status" className="rounded-lg px-3 py-2 text-[13px] tone-ok">{added}</p>}
       <FormError error={error} />
       <span className="text-[12px] text-ink-3">{seatsLeft > 0 ? `${seatsText}.` : "This class is full. Raise the section capacity to add more."}</span>
     </div>

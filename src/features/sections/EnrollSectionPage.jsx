@@ -6,7 +6,7 @@ import { enrollInSection, getEnrollPlan, searchStudents } from "../../services/s
 import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
-// Secretary: enroll students in a whole section at once (after a new semester or school year starts). Last term's
+// Secretary: Bulk enroll, students in a whole section at once (after a new semester or school year starts). Last term's
 // block is listed already; anyone else can be added with the search. Each row says what the student will get and
 // why a subject is left out (prerequisite not passed, already passed, unit limit), plus failed subjects to retake.
 // The database does the enrolling with the same rules (section_enroll_plan / enroll_in_section, migration 0017).
@@ -84,8 +84,8 @@ export default function EnrollSectionPage() {
   return (
     <>
       <BackButton to="/sections" label="Section allocations" />
-      <PageHeader title={`Enroll students in ${data.section}`} showTitle
-        subtitle={`${term ? termLabel(term) + " · " : ""}Listed: the students who were in ${lastBlock} last term. Add anyone else with the search.`} />
+      <PageHeader title={`Bulk enroll ${data.section}`} showTitle
+        subtitle={`${term ? termLabel(term) + " · " : ""}Enrolls each selected student in every ${data.section} subject they can take. Listed: the students who were in ${lastBlock} last term.`} />
 
       <p className="flex items-start gap-2.5 rounded-lg border border-line bg-surface px-4 py-3 text-[14px] text-ink-2 lg:hidden">
         <Monitor size={18} className="mt-0.5 shrink-0 text-ink-3" aria-hidden="true" />
@@ -117,7 +117,7 @@ export default function EnrollSectionPage() {
             <span className="text-[13px] text-ink-3">{chosen.length} of {rows.length} students selected</span>
             <div className="relative ml-auto w-[300px]">
               <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
-              <input className="field pl-9" placeholder="Add another student (name or ID)" aria-label="Add another student" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
+              <input className="field pl-9" placeholder="Add a student to this list" aria-label="Add a student to this list" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
               {q.trim().length >= 2 && (
                 <ul className="absolute right-0 top-[46px] z-10 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
                   {found.filter((s) => !rows.some((r) => r.student_id === s.id)).map((s) => (
