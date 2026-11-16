@@ -40,7 +40,8 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
   Writes with no signed-in secretary (the seed) are not checked.
 - **No grade entered**: a class with no final grade is treated like any subject that isn't passed (carried over,
   and subjects that need it wait for it). Nothing special is done for it.
-- **Unit limit**: subjects past the limit are left out and listed.
+- **Unit limit**: each student has their own (`students.max_units`, default 30 = placeholder), shown on their
+  record and edited there by the secretary (computer only). Section subjects past it are left out and listed.
 
 ## Holes and how they are handled
 
@@ -68,11 +69,11 @@ All of them live in `private.run_term_start` (migration `20261121000017_term_rol
   remove this.
 - The unit limit and the moving-up rule need the CCS office's confirmation (both are one place in the code).
 - A new curriculum issued by the school: students keep their curriculum; moving a batch to a new one isn't built.
-- Bulk add students (CSV) and bulk enroll (several students into one class): requested, not built yet. One at a
-  time (Create student, Enroll) still works.
-- A warning on the enroll box before adding a student whose prerequisite isn't passed (the database already refuses;
-  the message appears after the attempt).
+- (Built) Bulk add students: Students > Add several (paste or upload; rows with a problem are listed and skipped; a
+  one-time password list can be downloaded). Bulk enroll: Section allocations > Add students > list or pasted IDs.
+  The enroll box warns "Needs IT 306 passed first" before adding and disables the buttons.
 - Credited subjects for transferees and shiftees.
 - The live 1st semester (SY 2026-2027) has no final grades in the demo data, so starting the 2nd semester live would
   hold back most prerequisite-dependent subjects until grades are encoded.
-- The unit limit is saved per start (the page's field). Remembering it as a school setting is not built yet.
+- Demo grades for presentations: `supabase/demo_grades.sql` (some students complete, some partly graded, some not
+  yet; run it with the SQL runner, safe to repeat; not part of the seed).

@@ -3,7 +3,7 @@ import { AlertTriangle, KeyRound, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getGradeChanges, getHistory, getStudent, updateStudentStatus } from "../../services/students";
+import { getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
 import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
 import { STUDENT_STATUS, semesterLabel, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
@@ -21,12 +21,13 @@ export default function StudentRecord() {
   const isSecretary = user.role === "secretary";
   const [statusError, setStatusError] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  const [limitError, setLimitError] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [student, history, deficiencies, changes] = await Promise.all([
-      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [],
+    const [student, history, deficiencies, changes, limit] = await Promise.all([
+      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [], getUnitLimit(id),
     ]);
-    return { student, history, deficiencies, changes };
+    return { student, history, deficiencies, changes, limit };
   }, [id, isSecretary], "record");
 
   if (loading) return <LoadingState />;
@@ -35,7 +36,20 @@ export default function StudentRecord() {
     return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const { student, history, deficiencies, changes } = data;
+  const { student, history, deficiencies, changes, limit } = data;
+  // The most units this student may take in a term; used when a new term starts. Saved when the field loses focus.
+  const saveLimit = async (raw) => {
+    const n = Number(raw);
+    if (n === limit) return;
+    if (!Number.isInteger(n) || n < 1 || n > 60) return setLimitError("Enter a whole number from 1 to 60.");
+    setLimitError("");
+    try {
+      await updateUnitLimit(student.id, n);
+      reload();
+    } catch (err) {
+      setLimitError(err.message);
+    }
+  };
   const changeStatus = async (status) => {
     setStatusError("");
     setStatusBusy(true);
@@ -89,6 +103,7 @@ export default function StudentRecord() {
             ["Section", student.section_name || "Not registered"],
             ["Units this term", `${sumUnits(current)} units`],
             ["Units earned", `${earned} units`],
+            ...(limit && !isSecretary ? [["Unit limit", `${limit} units a term`]] : []),
             ["Student type", studentTypeLabel(student)],
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
@@ -108,6 +123,20 @@ export default function StudentRecord() {
               ) : studentStatusLabel(student)}
             </dd>
           </div>
+          {limit && isSecretary && (
+            <div>
+              <dt className="text-[12px] font-semibold text-ink-3"><label htmlFor="unit-limit">Unit limit</label></dt>
+              <dd className="mt-1 text-[15px] font-semibold text-ink">
+                <span className="lg:hidden print:inline">{limit} units a term</span>
+                <span className="no-print hidden items-center gap-2 lg:flex">
+                  <input id="unit-limit" type="number" min={1} max={60} key={limit} defaultValue={limit} onBlur={(e) => saveLimit(e.target.value)}
+                    className="field h-9 w-[84px] py-0 font-mono text-[14px]" />
+                  <span className="text-[13px] font-normal text-ink-3">units a term</span>
+                </span>
+                {limitError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={limitError} /></div>}
+              </dd>
+            </div>
+          )}
           <div><dt className="text-[12px] font-semibold text-ink-3">Failed subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
         </dl>
       </section>

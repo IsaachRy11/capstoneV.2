@@ -24,6 +24,11 @@
 --     takes the prerequisite first. A unit limit per student (passed in by the page) caps the load.
 --   * Whatever couldn't be done is listed for the secretary, who can still change everything afterwards.
 
+-- ─── Unit limit: each student has their own (shown and edited on their record) ─────────────
+-- The default is a placeholder until the CCS office confirms the number. The start leaves out a subject that would
+-- take a student past their limit, and lists it.
+alter table public.students add column max_units smallint not null default 30 check (max_units between 1 and 60);
+
 -- ─── Helpers ───────────────────────────────────────────────────────────────
 create function private.has_passed(p_student text, p_subject bigint) returns boolean
 language sql stable security definer set search_path = ''
@@ -90,6 +95,19 @@ end $$;
 create trigger enrollments_prerequisite_check
   before insert or update of offering_id on public.enrollments
   for each row execute function private.check_prerequisite();
+
+-- The warning shown before adding: which of these students would be refused for this class, and why.
+-- Returns {"2025-0001": "IT 306", ...} for the students whose prerequisite isn't passed (empty when none).
+create function public.prerequisite_gaps(p_offering bigint, p_students text[]) returns jsonb
+language sql stable security definer set search_path = ''
+as $$
+  select coalesce(jsonb_object_agg(x.s, x.m), '{}'::jsonb)
+  from (
+    select s, private.missing_prerequisite(s, (select o.curriculum_subject_id from public.class_offerings o where o.id = p_offering)) as m
+    from unnest(p_students) as s
+  ) x
+  where x.m is not null and (select private.is_secretary())
+$$;
 
 -- ─── Prepare ───────────────────────────────────────────────────────────────
 create function public.prepare_term(p_school_year text, p_semester smallint, p_starts date, p_ends date)
@@ -214,7 +232,7 @@ begin
 end $$;
 
 -- ─── The start itself ────────────────────────────────────────────────────────
-create function private.run_term_start(p_term_id bigint, p_max_units numeric) returns jsonb
+create function private.run_term_start(p_term_id bigint) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
 declare
@@ -291,7 +309,7 @@ begin
   end if;
 
   for s in
-    select st.id, st.year_level, st.program_id, st.curriculum_id, p.code as program_code,
+    select st.id, st.year_level, st.program_id, st.curriculum_id, st.max_units, p.code as program_code,
            (select sec.name from public.registrations r
             join public.sections sec on sec.id = r.section_id
             join public.school_terms t on t.id = r.school_term_id
@@ -332,7 +350,7 @@ begin
             'needs', coalesce(v_missing, c.standing_required || case c.standing_required when 2 then 'nd' when 3 then 'rd' else 'th' end || '-year standing'));
           continue;
         end if;
-        if p_max_units is not null and v_units + c.units > p_max_units then
+        if v_units + c.units > s.max_units then
           v_over := v_over || jsonb_build_object('student_id', s.id, 'code', c.code);
           continue;
         end if;
@@ -382,10 +400,10 @@ begin
     'registered', v_registered, 'classes_added', v_classes, 'to_place', v_to_place,
     'waiting', v_waiting, 'unplaced', v_unplaced, 'over_limit', v_over, 'no_section', v_nosection);
 end $$;
-revoke all on function private.run_term_start(bigint, numeric) from public, anon;
+revoke all on function private.run_term_start(bigint) from public, anon;
 
 -- Same work, rolled back: the preview can never drift from the real thing.
-create function public.preview_term_start(p_term_id bigint, p_max_units numeric default null) returns jsonb
+create function public.preview_term_start(p_term_id bigint) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
 declare
@@ -395,7 +413,7 @@ begin
     raise exception 'Only the secretary can start a term.' using errcode = '42501';
   end if;
   begin
-    v_result := private.run_term_start(p_term_id, p_max_units);
+    v_result := private.run_term_start(p_term_id);
     raise exception 'preview only' using errcode = 'PV001';
   exception
     when sqlstate 'PV001' then null;  -- undo everything, keep the summary
@@ -404,7 +422,7 @@ begin
   return v_result;
 end $$;
 
-create function public.start_term(p_term_id bigint, p_max_units numeric default null) returns jsonb
+create function public.start_term(p_term_id bigint) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
 declare
@@ -413,7 +431,7 @@ begin
   if not (select private.is_secretary()) then
     raise exception 'Only the secretary can start a term.' using errcode = '42501';
   end if;
-  v_result := private.run_term_start(p_term_id, p_max_units);
+  v_result := private.run_term_start(p_term_id);
   update public.term_starts set result = v_result
   where id = (select max(id) from public.term_starts where to_term_id = p_term_id);
   return v_result;
@@ -466,6 +484,9 @@ begin
 end $$;
 
 revoke all on function public.prepare_term(text, smallint, date, date), public.discard_term(bigint),
-  public.preview_term_start(bigint, numeric), public.start_term(bigint, numeric), public.undo_term_start() from public, anon;
+  public.preview_term_start(bigint), public.start_term(bigint), public.undo_term_start() from public, anon;
 grant execute on function public.prepare_term(text, smallint, date, date), public.discard_term(bigint),
-  public.preview_term_start(bigint, numeric), public.start_term(bigint, numeric), public.undo_term_start() to authenticated;
+  public.preview_term_start(bigint), public.start_term(bigint), public.undo_term_start() to authenticated;
+
+revoke all on function public.prerequisite_gaps(bigint, text[]) from public, anon;
+grant execute on function public.prerequisite_gaps(bigint, text[]) to authenticated;

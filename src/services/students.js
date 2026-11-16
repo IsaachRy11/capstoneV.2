@@ -44,6 +44,13 @@ export const getGradeChanges = (id) =>
 export const updateStudentStatus = (id, status) =>
   unwrap(supabase.from("students").update({ status }).eq("id", id));
 
+// The student's own unit limit (migration 0017). Null while that column doesn't exist yet, so the page still loads.
+export const getUnitLimit = (id) =>
+  unwrap(supabase.from("students").select("max_units").eq("id", id).maybeSingle()).then((r) => r?.max_units ?? null).catch(() => null);
+
+export const updateUnitLimit = (id, units) =>
+  unwrap(supabase.from("students").update({ max_units: units }).eq("id", id));
+
 // Secretary only. Sets a new one-time password (done on the server, which holds the secret key) and
 // returns it once. The student must choose their own password at the next sign-in.
 export async function resetStudentPassword(id) {

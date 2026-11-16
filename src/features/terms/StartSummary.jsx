@@ -57,7 +57,7 @@ export default function StartSummary({ result }) {
         hint="Not enrolled yet. The secretary enrolls each one on Section allocations (or with bulk enroll): a class with a free seat that fits the timetable." />
       <List title="Couldn't be placed" rows={result.unplaced} columns={[["code", "Subject"], ["reason", "Why"]]}
         hint="No class of this subject has a free seat that fits the student's timetable. Add seats or a class time, then add them by hand." />
-      <List title="Over the unit limit" rows={result.over_limit} columns={[["code", "Subject"]]} hint="Left out to keep the student within the unit limit." />
+      <List title="Over the unit limit" rows={result.over_limit} columns={[["code", "Subject"]]} hint="Left out to keep the student within their unit limit (set on their record)." />
       <List title="No section of their year" rows={result.no_section} unit="student" columns={[["program", "Program"], ["year_level", "Year"]]}
         hint="There is no section for their program and year this term. Add one on the next preparation, or place them by hand." />
     </div>

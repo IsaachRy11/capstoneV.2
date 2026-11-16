@@ -10,7 +10,6 @@ import StartSummary from "./StartSummary";
 // Secretary: move the whole site to the next semester, summer or school year in three steps (prepare, check, start),
 // with Undo while the new term has no grades. The rules are in migration 0017. Desktop only, like every edit.
 const fmt = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" });
-const DEFAULT_MAX_UNITS = 30; // placeholder until the CCS office confirms the limit
 
 // What can come after the current term: the next semester, summer, or a new school year.
 function nextTerms(cur) {
@@ -41,7 +40,6 @@ export default function SchoolYearPage() {
   }, [], "school-year");
   const [pick, setPick] = useState(0);
   const [dates, setDates] = useState({});
-  const [maxUnits, setMaxUnits] = useState(DEFAULT_MAX_UNITS);
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -66,11 +64,11 @@ export default function SchoolYearPage() {
     try { await fn(); } catch (e) { setErr(e.message); } finally { setBusy(""); }
   };
   const doPrepare = () => run("prepare", async () => { await prepareTerm(target.school_year, target.semester, starts, ends); setPreview(null); reload(); });
-  const doPreview = () => run("preview", async () => setPreview(await previewTermStart(row.id, Number(maxUnits) || null)));
+  const doPreview = () => run("preview", async () => setPreview(await previewTermStart(row.id)));
   const after = () => { window.location.assign("/school-year"); }; // every page reads the current term: start fresh
   const doConfirm = () => run(confirm, async () => {
     if (confirm === "discard") { await discardTerm(row.id); setConfirm(null); setPreview(null); reload(); return; }
-    if (confirm === "start") await startTerm(row.id, Number(maxUnits) || null);
+    if (confirm === "start") await startTerm(row.id);
     if (confirm === "undo") await undoTermStart();
     after();
   });
@@ -149,10 +147,8 @@ export default function SchoolYearPage() {
               Students who passed every subject are marked Graduated. Nothing is saved here.
             </p>
             <div className="flex flex-wrap items-end gap-3">
-              <label className="flex flex-col gap-1.5"><span className="label">Unit limit per student</span>
-                <input type="number" min={1} className="field w-[120px] font-mono" value={maxUnits} onChange={(e) => { setMaxUnits(e.target.value); setPreview(null); }} /></label>
               <button className="btn btn-secondary" disabled={!prepared || busy === "preview"} onClick={doPreview}>{busy === "preview" ? "Checking…" : "Check"}</button>
-              <span className="text-[12px] text-ink-3">Default {DEFAULT_MAX_UNITS} units until the CCS office sets the limit.</span>
+              <span className="text-[12px] text-ink-3">Each student&apos;s own unit limit (on their record) is used.</span>
             </div>
             {preview && <StartSummary result={preview} />}
           </Step>

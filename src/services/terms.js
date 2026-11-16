@@ -21,12 +21,12 @@ export const prepareTerm = (schoolYear, semester, starts, ends) =>
 export const discardTerm = (termId) => unwrap(supabase.rpc("discard_term", { p_term_id: termId }));
 
 // Does the whole start and rolls it back: what would happen, without changing anything.
-export const previewTermStart = (termId, maxUnits) =>
-  unwrap(supabase.rpc("preview_term_start", { p_term_id: termId, p_max_units: maxUnits }));
+// Each student's own unit limit (on their record) is used.
+export const previewTermStart = (termId) => unwrap(supabase.rpc("preview_term_start", { p_term_id: termId }));
 
 // The switch changes the current term for every page, so every cached result is dropped.
-export async function startTerm(termId, maxUnits) {
-  const result = await unwrap(supabase.rpc("start_term", { p_term_id: termId, p_max_units: maxUnits }));
+export async function startTerm(termId) {
+  const result = await unwrap(supabase.rpc("start_term", { p_term_id: termId }));
   clearCaches();
   return result;
 }

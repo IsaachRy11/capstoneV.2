@@ -40,6 +40,17 @@ export function searchStudents(query) {
   );
 }
 
+// Warning before adding: which of these students lack a prerequisite for this class ({ studentId: "IT 306" }).
+// Empty when there is none, and also on a database that predates the function.
+export const getPrerequisiteGaps = (offeringId, studentIds) =>
+  studentIds.length === 0 ? Promise.resolve({})
+    : unwrap(supabase.rpc("prerequisite_gaps", { p_offering: offeringId, p_students: studentIds })).then((r) => r || {}).catch(() => ({}));
+
+// Students by their exact IDs (the pasted list in the enroll box).
+export const getStudentsByIds = (ids) =>
+  ids.length === 0 ? Promise.resolve([])
+    : unwrap(supabase.from("v_student_overview").select("id, full_name, program_code, year_level, section_name, status").in("id", ids));
+
 export const enrollStudent = (studentId, offeringId) =>
   unwrap(supabase.from("enrollments").insert({ student_id: studentId, offering_id: offeringId }));
 
