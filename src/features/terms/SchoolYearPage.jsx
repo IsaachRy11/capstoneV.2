@@ -155,7 +155,7 @@ export default function SchoolYearPage() {
           {confirm === "start" ? (
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[14px] text-ink-2">
               <li>The whole site switches to {short(next.school_year)} {next.label}: {fmt(starts)} to {fmt(ends)}.</li>
-              <li>Sections and classes are made from the curriculum. Nobody is enrolled yet: you enroll them on Section allocations with Bulk enroll.</li>
+              <li>Sections and classes are made from the curriculum. Nobody is enrolled yet: you add them on Section allocations with Add students.</li>
               <li>A student&apos;s year level follows the subjects you enroll them in.</li>
               {isNewYear && <li>The calendar for the new school year starts with just these two days. Add holidays and exams on the Calendar page.</li>}
               <li>You can undo it until a grade is entered.</li>

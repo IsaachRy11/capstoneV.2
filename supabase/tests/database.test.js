@@ -613,6 +613,38 @@ describe("starting a term and enrolling sections", () => {
     expect(again.every((x) => x.added === 0)).toBe(true);
   }, 120_000);
 
+  it("adds students to one subject: lists the section and past attempts, skips missing prerequisites", async () => {
+    const t2 = await term("2026-2027", 2);
+    const off = await one(`select o.id from class_offerings o join sections s on s.id = o.section_id
+      where s.school_term_id = ${t2.id} and s.name = 'BSIT 2-S' order by o.id limit 1`);
+    const plan = await rpc(`public.subject_enroll_plan(${off.id})`);
+    expect(plan.section).toBe("BSIT 2-S");
+    expect(typeof plan.seats_left).toBe("number");
+    // "Retake" means an earlier term, never the class they are in now.
+    for (const s of plan.students.filter((x) => x.state === "enrolled" && x.retake)) {
+      const earlier = await one(`select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id join sections sx on sx.id = o.section_id
+        where e.student_id = '${s.student_id}' and sx.school_term_id <> ${t2.id} and e.status in ('failed', 'incomplete', 'dropped')
+          and o.curriculum_subject_id = (select curriculum_subject_id from class_offerings where id = ${off.id})`);
+      expect(earlier.n).toBeGreaterThan(0);
+    }
+    expect(plan.students.length).toBeGreaterThan(0);
+    for (const s of plan.students) expect(["add", "enrolled", "passed", "needs", "over_limit"]).toContain(s.state);
+    const ready = plan.students.filter((s) => s.state === "add").map((s) => s.student_id);
+    const blocked = plan.students.filter((s) => s.state === "needs").map((s) => s.student_id);
+    if (ready.length) {
+      const res = await rpc(`public.enroll_in_subject(${off.id}, ${list(ready)})`);
+      expect(res.every((x) => x.ok)).toBe(true);
+      const again = await rpc(`public.enroll_in_subject(${off.id}, ${list(ready.slice(0, 1))})`);
+      expect(again[0].ok).toBe(false);
+    }
+    if (blocked.length) {
+      const res = await rpc(`public.enroll_in_subject(${off.id}, ${list(blocked.slice(0, 1))})`);
+      expect(res[0].ok).toBe(false);
+      expect(res[0].why).toMatch(/passed first/);
+    }
+    expect((await as("authenticated", STU, `select public.subject_enroll_plan(${off.id})`)).error).toMatch(/Only the secretary/);
+  });
+
   it("year level follows the enrolled subjects, never below the highest passed year", async () => {
     const t2 = await term("2026-2027", 2);
     const who = carried[0];

@@ -5,8 +5,9 @@ import { useAsync } from "../../hooks/useAsync";
 import { enrollInSection, getEnrollPlan, searchStudents } from "../../services/sections";
 import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
+import AddToSubject from "./AddToSubject";
 
-// Secretary: Bulk enroll, students in a whole section at once (after a new semester or school year starts). Last term's
+// Secretary: Add students to a whole section at once (after a new semester or school year starts). Last term's
 // block is listed already; anyone else can be added with the search. Each row says what the student will get and
 // why a subject is left out (prerequisite not passed, already passed, unit limit), plus failed subjects to retake.
 // The database does the enrolling with the same rules (section_enroll_plan / enroll_in_section, migration 0017).
@@ -26,10 +27,16 @@ function Notices({ row }) {
   );
 }
 
-export default function EnrollSectionPage() {
-  const { term } = useOutletContext();
+// One "Add students" page: ?offering=ID adds to one subject, ?section=ID to every subject of a section.
+export default function AddStudentsPage() {
   const [params] = useSearchParams();
-  const sectionId = Number(params.get("section"));
+  const offeringId = Number(params.get("offering"));
+  if (offeringId) return <AddToSubject offeringId={offeringId} />;
+  return <AddToSection sectionId={Number(params.get("section"))} />;
+}
+
+function AddToSection({ sectionId }) {
+  const { term } = useOutletContext();
   const { data, error, loading, reload } = useAsync(() => getEnrollPlan(sectionId), [sectionId], `enroll-plan-${sectionId}`);
   const [extra, setExtra] = useState([]);           // students added with the search
   const [unticked, setUnticked] = useState(new Set());
@@ -84,12 +91,12 @@ export default function EnrollSectionPage() {
   return (
     <>
       <BackButton to="/sections" label="Section allocations" />
-      <PageHeader title={`Bulk enroll ${data.section}`} showTitle
+      <PageHeader title={`Add students to ${data.section}`} showTitle
         subtitle={`${term ? termLabel(term) + " · " : ""}Enrolls each selected student in every ${data.section} subject they can take. Listed: the students who were in ${lastBlock} last term.`} />
 
       <p className="flex items-start gap-2.5 rounded-lg border border-line bg-surface px-4 py-3 text-[14px] text-ink-2 lg:hidden">
         <Monitor size={18} className="mt-0.5 shrink-0 text-ink-3" aria-hidden="true" />
-        <span>Enrolling is done on a computer.</span>
+        <span>Adding students is done on a computer.</span>
       </p>
 
       <div className="hidden flex-col gap-4 lg:flex">
@@ -134,7 +141,7 @@ export default function EnrollSectionPage() {
               )}
             </div>
             <button className="btn btn-primary" onClick={enroll} disabled={busy || chosen.length === 0}>
-              <UserPlus size={16} aria-hidden="true" />{busy ? "Enrolling…" : `Enroll ${chosen.length} ${chosen.length === 1 ? "student" : "students"}`}
+              <UserPlus size={16} aria-hidden="true" />{busy ? "Adding…" : `Add ${chosen.length} ${chosen.length === 1 ? "student" : "students"}`}
             </button>
           </div>
           <FormError error={err} />

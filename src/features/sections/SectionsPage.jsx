@@ -44,7 +44,7 @@ export default function Sections() {
   return (
     <>
       <PageHeader title="Section allocations"
-        actions={section && <Link to={`/sections/enroll?section=${section.id}`} className="btn btn-primary hidden lg:inline-flex"><UserPlus size={16} aria-hidden="true" />Bulk enroll {section.name}</Link>} />
+        actions={section && <Link to={`/sections/enroll?section=${section.id}`} className="btn btn-primary hidden lg:inline-flex"><UserPlus size={16} aria-hidden="true" />Add students to {section.name}</Link>} />
 
       <SectionPicker picker={picker} onChange={() => setOfferingId(null)} />
 
@@ -130,7 +130,7 @@ export default function Sections() {
                 <WeekStrip meetings={offering.class_meetings} className="sm:min-w-[420px] sm:flex-[2_1_480px]" />
               </div>
 
-              <EnrollBox key={offering.id} section={section} offering={offering} rosterIds={new Set((roster.data || []).map((r) => r.student_id))} onEnrolled={refresh} />
+              <EnrollBox key={offering.id} section={section} offering={offering} />
 
               {roster.loading ? <LoadingState /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">

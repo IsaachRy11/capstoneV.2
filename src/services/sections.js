@@ -40,11 +40,12 @@ export function searchStudents(query) {
   );
 }
 
-// Warning before adding: which of these students lack a prerequisite for this class ({ studentId: "IT 306" }).
-// Empty when there is none, and also on a database that predates the function.
-export const getPrerequisiteGaps = (offeringId, studentIds) =>
-  studentIds.length === 0 ? Promise.resolve({})
-    : unwrap(supabase.rpc("prerequisite_gaps", { p_offering: offeringId, p_students: studentIds })).then((r) => r || {}).catch(() => ({}));
+// Add students to ONE subject: who to list and whether each can be added (migration 0018).
+export const getSubjectPlan = (offeringId, studentIds = null) =>
+  unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
+
+export const enrollInSubject = (offeringId, studentIds) =>
+  unwrap(supabase.rpc("enroll_in_subject", { p_offering: offeringId, p_students: studentIds }));
 
 // Enroll students page: who to enroll in a section and what each would get (all of last term's block when no IDs).
 export const getEnrollPlan = (sectionId, studentIds = null) =>
