@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getGradeChanges, getHistory, getStudent, updateStudentStatus } from "../../services/students";
-import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StandingBadge } from "../../components/ui";
-import { STUDENT_STATUS, STUDENT_TYPE, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
+import { STUDENT_STATUS, semesterLabel, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
@@ -72,7 +72,7 @@ export default function StudentRecord() {
             <div className="flex min-w-0 flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-[22px] font-bold leading-tight tracking-tight sm:text-[26px]">{student.full_name}</h1>
-                <StandingBadge standing={student.standing} />
+                <StudentStatusBadge student={student} />
               </div>
               <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
             </div>
@@ -89,7 +89,7 @@ export default function StudentRecord() {
             ["Section", student.section_name || "Not registered"],
             ["Units this term", `${sumUnits(current)} units`],
             ["Units earned", `${earned} units`],
-            ["Student type", STUDENT_TYPE[student.admission_type]],
+            ["Student type", studentTypeLabel(student)],
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
           ))}
@@ -98,14 +98,14 @@ export default function StudentRecord() {
             <dd className="mt-1 text-[15px] font-semibold text-ink">
               {isSecretary ? (
                 <>
-                  <span className="lg:hidden">{STUDENT_STATUS[student.status]}</span>
+                  <span className="lg:hidden">{studentStatusLabel(student)}</span>
                   <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
-                    {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                    {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
-                  <span className="hidden print:inline">{STUDENT_STATUS[student.status]}</span>
+                  <span className="hidden print:inline">{studentStatusLabel(student)}</span>
                   {statusError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={statusError} /></div>}
                 </>
-              ) : STUDENT_STATUS[student.status]}
+              ) : studentStatusLabel(student)}
             </dd>
           </div>
           <div><dt className="text-[12px] font-semibold text-ink-3">Failed subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>

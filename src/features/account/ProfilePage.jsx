@@ -5,8 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getStudent } from "../../services/students";
 import { removeAvatar, updateSecretaryName, uploadAvatar } from "../../services/account";
-import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StandingBadge } from "../../components/ui";
-import { STUDENT_TYPE, yearLabel } from "../../lib/format";
+import { Avatar, ErrorState, FormError, LoadingState, PageHeader, SectionHeader, StudentStatusBadge } from "../../components/ui";
+import { studentTypeLabel, yearLabel } from "../../lib/format";
 
 
 function Row({ label, children }) {
@@ -131,8 +131,8 @@ export default function Profile() {
               <Row label="Program">{student.program_name}</Row>
               <Row label="Year level">{yearLabel(student.year_level)}</Row>
               <Row label="Section">{student.section_name || "Not registered this semester"}</Row>
-              <Row label="Student type">{STUDENT_TYPE[student.admission_type]}</Row>
-              <Row label="Standing"><StandingBadge standing={student.standing} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
+              <Row label="Student type">{studentTypeLabel(student)}</Row>
+              <Row label="Status"><StudentStatusBadge student={student} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
             </>
           )}
         </dl>

@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
-import { ErrorState, LoadingState, StandingBadge } from "../../components/ui";
+import { ErrorState, LoadingState, StudentStatusBadge } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
 import { buildProgress, nextTermFor } from "../../lib/progress";
 import { useClassStatus } from "../../hooks/useCalendar";
@@ -48,7 +48,7 @@ export default function StudentHome() {
             <h1 className="text-[30px] font-bold tracking-tight">{student.full_name}</h1>
             <span className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name}</span>
           </div>
-          <StandingBadge standing={student.standing} />
+          <StudentStatusBadge student={student} />
         </div>
         <dl className="stat-grid border-t border-line-2 pt-5">
           {[

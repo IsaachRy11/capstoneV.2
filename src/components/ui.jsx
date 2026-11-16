@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Loader2, X } from "lucide-react";
-import { STATUS_LABEL, STATUS_TONE, colorIndex, initials } from "../lib/format";
+import { STATUS_LABEL, STATUS_TONE, STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE, colorIndex, initials, studentStatusKey } from "../lib/format";
 
 // "Back" for pages you reach by clicking. With `to` it always goes there (a detail view back to its list).
 // Without it, it steps back in history, or goes to `fallback` when the page was opened directly.
@@ -38,8 +38,12 @@ export function Badge({ tone = "neutral", dot = false, children, className = "" 
   return <span className={`badge tone-${tone} ${dot ? "badge-dot" : ""} ${className}`}>{children}</span>;
 }
 
-export const StandingBadge = ({ standing }) =>
-  standing === "irregular" ? <Badge tone="warn" dot>Irregular</Badge> : <Badge tone="ok" dot>Regular</Badge>;
+// A student's status: Regular or Irregular while active, otherwise Graduated, Dropped or Inactive.
+// student: anything with { status, standing } (v_student_overview rows have both).
+export const StudentStatusBadge = ({ student }) => {
+  const key = studentStatusKey(student);
+  return <Badge tone={STUDENT_STATUS_TONE[key]} dot>{STUDENT_STATUS_LABEL[key]}</Badge>;
+};
 
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 

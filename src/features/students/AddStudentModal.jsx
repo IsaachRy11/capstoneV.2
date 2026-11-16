@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { createStudent } from "../../services/students";
 import { FormError, Modal } from "../../components/ui";
-import { STUDENT_TYPE, yearLabel } from "../../lib/format";
+import { ADMISSION_FOR_TYPE, STUDENT_TYPE, yearLabel } from "../../lib/format";
 import { loginEmail } from "../../lib/login";
 
 export default function AddStudentModal({ programs, sections = [], term, onClose, onCreated }) {
-  const [form, setForm] = useState({ id: "", first_name: "", last_name: "", programId: programs[0]?.id ?? "", year_level: 1, admission_type: "new", sectionId: "" });
+  const [form, setForm] = useState({ id: "", first_name: "", last_name: "", programId: programs[0]?.id ?? "", year_level: 1, studentType: "freshman", sectionId: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   // Changing program or year changes which sections apply, so the section choice starts over.
   const setGroup = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value, sectionId: "" }));
+  // A Freshman is a first-time 1st year student: moving the year away from 1st makes them Continuing.
+  const setYear = (e) => setForm((f) => { const y = Number(e.target.value); return { ...f, year_level: y, sectionId: "", studentType: y !== 1 && f.studentType === "freshman" ? "continuing" : f.studentType }; });
   const program = programs.find((p) => String(p.id) === String(form.programId));
   const sectionsHere = sections.filter((x) => x.program_code === program?.code && x.year_level === Number(form.year_level));
 
@@ -20,7 +22,7 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
     setBusy(true);
     setError("");
     try {
-      const { sectionName, loginCreated, tempPassword } = await createStudent({ ...form, email: loginEmail(form.id), programId: Number(form.programId), year_level: Number(form.year_level), sectionId: form.sectionId ? Number(form.sectionId) : null }, term);
+      const { sectionName, loginCreated, tempPassword } = await createStudent({ ...form, admission_type: ADMISSION_FOR_TYPE[form.studentType], email: loginEmail(form.id), programId: Number(form.programId), year_level: Number(form.year_level), sectionId: form.sectionId ? Number(form.sectionId) : null }, term);
       const where = sectionName ? ` in ${sectionName} and enrolled in its classes` : "";
       const login = tempPassword
         ? ` Give them this one-time password: ${tempPassword}. They sign in with their student ID and choose their own password.`
@@ -50,7 +52,7 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
         </div>
         <div className="col-span-2 sm:col-span-1">
           <label className="label" htmlFor="syear">Year level</label>
-          <select id="syear" className="field" value={form.year_level} onChange={setGroup("year_level")}>
+          <select id="syear" className="field" value={form.year_level} onChange={setYear}>
             {Array.from({ length: program?.duration_years || 4 }, (_, i) => <option key={i + 1} value={i + 1}>{yearLabel(i + 1)}</option>)}
           </select>
         </div>
@@ -65,9 +67,10 @@ export default function AddStudentModal({ programs, sections = [], term, onClose
         )}
         <div className="col-span-2">
           <label className="label" htmlFor="sadm">Student type</label>
-          <select id="sadm" className="field" value={form.admission_type} onChange={set("admission_type")}>
-            {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <select id="sadm" className="field" value={form.studentType} onChange={set("studentType")}>
+            {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v} disabled={v === "freshman" && Number(form.year_level) !== 1}>{l}</option>)}
           </select>
+          <p className="mt-1.5 text-[12px] text-ink-3">Freshman: a first-time 1st year student. Continuing: carries on from an earlier year.</p>
         </div>
         <p className="col-span-2 text-[13px] text-ink-3">They're placed in their block section for this semester and enrolled in its classes. Their sign-in is created automatically. You'll get a one-time password to give them; they choose their own at first sign-in.</p>
         <div className="col-span-2"><FormError error={error} /></div>

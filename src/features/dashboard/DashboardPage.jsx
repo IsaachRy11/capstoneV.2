@@ -33,7 +33,10 @@ export default function Dashboard() {
   if (loading || !data) return error ? <ErrorState error={error} onRetry={reload} /> : <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const { students, sections, curriculum, programs, offerings } = data;
+  const { students: everyone, sections, curriculum, programs, offerings } = data;
+  // Graduated and dropped students are counted on their own tabs of the Students page, not in the year counts here.
+  const students = everyone.filter((s) => s.status !== "graduated" && s.status !== "dropped");
+  const graduated = everyone.filter((s) => s.status === "graduated").length;
   const byProgram = (code) => students.filter((s) => s.program_code === code);
   const seats = sections.reduce((t, s) => t + s.capacity, 0);
   const filled = sections.reduce((t, s) => t + s.enrolled, 0);
@@ -51,7 +54,7 @@ export default function Dashboard() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
-        <Kpi to="/students" label="Students" value={students.length} sub={programs.map((p) => `${p.code} ${byProgram(p.code).length}`).join(" · ")} />
+        <Kpi to="/students" label="Students" value={students.length} sub={programs.map((p) => `${p.code} ${byProgram(p.code).length}`).join(" · ") + (graduated ? ` · ${graduated} graduated` : "")} />
         <Kpi to="/sections" label="Sections" value={sections.length} sub="This semester" />
         <Kpi to="/sections" label="Seats filled" value={<>{filled}<span className="text-[18px] font-semibold text-ink-3"> / {seats}</span></>}>
           <div className="bar" role="img" aria-label={`${seats ? Math.round((filled / seats) * 100) : 0} percent of seats filled`}>

@@ -452,7 +452,7 @@ describe("state machine rules", () => {
 
   it("won't delete a student who has grades", async () => {
     const r = await asSec(`delete from students where id = (select student_id from enrollments where midterm_grade is not null limit 1)`);
-    expect(r.error).toMatch(/Left the college/);
+    expect(r.error).toMatch(/Dropped or Graduated/);
   });
 
   it("gives every demo student a name nobody else has", async () => {

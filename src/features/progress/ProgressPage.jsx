@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
-import { ErrorState, LoadingState, PageHeader, StandingBadge } from "../../components/ui";
+import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { semesterLabel, sumUnits, termLabel, yearLabel } from "../../lib/format";
 import { prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
@@ -53,7 +53,7 @@ export default function Progress() {
             <h2 className="mt-1 text-[24px] font-bold tracking-tight sm:text-[28px]">{yearLabel(student.year_level)} · {semesterLabel(term.semester)}</h2>
             <p className="mt-1 text-[14px] text-ink-2">{termLabel(term)}{student.section_name ? ` · ${student.section_name}` : ""}</p>
           </div>
-          <StandingBadge standing={student.standing} />
+          <StudentStatusBadge student={student} />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Tile to="/progress?view=enrolled" label="Subjects" value={taking.length} sub="you're taking" />

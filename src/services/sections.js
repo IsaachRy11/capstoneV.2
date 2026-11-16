@@ -15,7 +15,7 @@ export const getSectionOfferings = (sectionId) =>
 
 export async function getRoster(offeringId) {
   const rows = await unwrap(
-    supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name)").eq("offering_id", offeringId)
+    supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name, admission_type, status, year_level)").eq("offering_id", offeringId)
   );
   if (!rows.length) return [];
   const standings = await unwrap(
@@ -23,7 +23,10 @@ export async function getRoster(offeringId) {
   );
   const byId = Object.fromEntries(standings.map((s) => [s.id, s.standing]));
   return rows
-    .map((r) => ({ ...r, name: `${r.students.first_name} ${r.students.last_name}`, standing: byId[r.student_id] }))
+    .map((r) => ({
+      ...r, name: `${r.students.first_name} ${r.students.last_name}`, standing: byId[r.student_id],
+      student_status: r.students.status, admission_type: r.students.admission_type, year_level: r.students.year_level,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

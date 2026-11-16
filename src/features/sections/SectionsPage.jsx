@@ -6,8 +6,8 @@ import { useSectionPicker } from "../../hooks/useSectionPicker";
 import SectionPicker from "../../components/SectionPicker";
 import { getRoster, getSectionOfferings, removeEnrollment } from "../../services/sections";
 import WeekStrip from "../schedules/WeekStrip";
-import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StandingBadge } from "../../components/ui";
-import { yearLabel } from "../../lib/format";
+import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StudentStatusBadge } from "../../components/ui";
+import { studentTypeLabel, yearLabel } from "../../lib/format";
 import { meetingDays } from "../../lib/schedule";
 import EnrollBox from "./EnrollBox";
 import CapacityModal from "./CapacityModal";
@@ -119,7 +119,7 @@ export default function Sections() {
               {roster.loading ? <LoadingState /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">
                   <table className="data-table">
-                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Standing</th><th className="hidden lg:table-cell"><span className="sr-only">Remove</span></th></tr></thead>
+                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Type / status</th><th className="hidden lg:table-cell"><span className="sr-only">Remove</span></th></tr></thead>
                     <tbody>
                       {roster.data.map((r) => (
                         <tr key={r.id}>
@@ -133,7 +133,10 @@ export default function Sections() {
                             </div>
                           </td>
                           <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 sm:table-cell">{r.student_id}</td>
-                          <td><StandingBadge standing={r.standing} /></td>
+                          <td>
+                            <StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} />
+                            <span className="mt-0.5 block text-[12px] text-ink-3">{studentTypeLabel(r)}</span>
+                          </td>
                           <td className="hidden text-right lg:table-cell"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this class`}><Trash2 size={16} /></button></td>
                         </tr>
                       ))}

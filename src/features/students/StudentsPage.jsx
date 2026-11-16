@@ -5,13 +5,19 @@ import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { getPrograms } from "../../services/catalog";
 import { listCurrentSections } from "../../services/sections";
-import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StandingBadge } from "../../components/ui";
-import { yearLabel, STUDENT_TYPE } from "../../lib/format";
+import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
+import { STUDENT_TYPE, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, yearLabel } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
 import AddStudentModal from "./AddStudentModal";
 import DeleteStudentModal from "./DeleteStudentModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
+// Year tabs list the students still enrolled; Graduated and Dropped students have a tab each, so they never mix into a year.
+const TABS = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"], ["graduated", "Graduated"], ["dropped", "Dropped"]];
+const inTab = (s, tab) =>
+  tab === "graduated" ? s.status === "graduated"
+  : tab === "dropped" ? s.status === "dropped"
+  : String(s.year_level) === tab && s.status !== "graduated" && s.status !== "dropped";
 const SIZE_KEY = "ccs-students-per-page";
 function readPageSize() {
   try { const n = Number(localStorage.getItem(SIZE_KEY)); return PAGE_SIZES.includes(n) ? n : 25; } catch { return 25; }
@@ -23,7 +29,8 @@ export default function Students() {
   const year = params.get("year") || "1";
   const programFilter = params.get("program") || "all";
   const [q, setQ] = useState(params.get("q") || "");
-  const [standing, setStanding] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [type, setType] = useState("all");
   const [deleting, setDeleting] = useState(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(readPageSize);
@@ -53,31 +60,32 @@ export default function Students() {
     const needle = q.trim().toLowerCase();
     return data.students.filter((s) =>
       (programFilter === "all" || s.program_code === programFilter) &&
-      (standing === "all" || s.standing === standing || s.admission_type === standing) &&
+      (status === "all" || studentStatusKey(s) === status) &&
+      (type === "all" || studentTypeKey(s) === type) &&
       (!needle || `${s.full_name} ${s.id} ${s.section_name || ""}`.toLowerCase().includes(needle)));
-  }, [data, q, programFilter, standing]);
+  }, [data, q, programFilter, status, type]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   // Searching looks across all years; otherwise one year level at a time.
   const searching = q.trim().length > 0;
-  const rows = searching ? base : base.filter((s) => String(s.year_level) === year);
+  const rows = searching ? base : base.filter((s) => inTab(s, year));
   const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
-  const tabs = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
+  const tabLabel = TABS.find(([k]) => k === year)?.[1] ?? yearLabel(Number(year));
 
   const exportCsv = () => downloadFile("ccs-students.csv", toCsv(rows, [
     { label: "Student ID", value: (s) => s.id }, { label: "Last name", value: (s) => s.last_name },
     { label: "First name", value: (s) => s.first_name }, { label: "Program", value: (s) => s.program_code },
     { label: "Year", value: (s) => s.year_level }, { label: "Section", value: (s) => s.section_name },
-    { label: "Standing", value: (s) => s.standing }, { label: "Student type", value: (s) => STUDENT_TYPE[s.admission_type] }, { label: "Email", value: (s) => s.email },
+    { label: "Student type", value: (s) => studentTypeLabel(s) }, { label: "Status", value: (s) => studentStatusLabel(s) }, { label: "Email", value: (s) => s.email },
   ]));
 
   return (
     <>
       <PageHeader
         title="Students"
-        subtitle={searching ? `Search results from all years · ${rows.length} of ${data.students.length} students` : `${yearLabel(Number(year))} · ${rows.length} of ${data.students.length} students`}
+        subtitle={searching ? `Search results from all years · ${rows.length} of ${data.students.length} students` : `${tabLabel} · ${rows.length} of ${data.students.length} students`}
         actions={<>
           <button className="btn btn-secondary hidden lg:inline-flex" onClick={exportCsv}><Download size={16} aria-hidden="true" />Export CSV</button>
           <button className="btn btn-primary hidden lg:inline-flex" onClick={() => setAdding(true)}><Plus size={16} aria-hidden="true" />Create student</button>
@@ -86,13 +94,13 @@ export default function Students() {
       {notice && <p role="status" className="rounded-lg px-4 py-3 text-[14px] tone-ok">{notice}</p>}
 
       <section className="card overflow-hidden">
-        <div role="tablist" aria-label="Year level" className="flex gap-1 overflow-x-auto border-b border-line px-2 sm:gap-6 sm:px-5">
-          {tabs.map(([k, label]) => {
-            const n = base.filter((s) => String(s.year_level) === k).length;
+        <div role="tablist" aria-label="Year level and graduates" className="flex gap-1 overflow-x-auto border-b border-line px-2 sm:gap-6 sm:px-5">
+          {TABS.map(([k, label]) => {
+            const n = base.filter((s) => inTab(s, k)).length;
             const on = !searching && year === k;
             return (
               <button key={k} role="tab" aria-selected={on} onClick={() => { setQ(""); setParam("year", k); }}
-                className={`-mb-px inline-flex h-12 flex-1 items-center justify-center gap-1.5 whitespace-nowrap border-b-[3px] px-1 text-[14px] sm:flex-none sm:justify-start sm:gap-2 ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
+                className={`-mb-px inline-flex h-12 flex-none items-center justify-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 text-[14px] sm:justify-start sm:gap-2 sm:px-1 ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
                 <span className="sm:hidden">{label.replace(" Year", "")}</span><span className="hidden sm:inline">{label}</span>
                 <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] font-semibold ${on ? "text-white" : "bg-hover text-ink-3"}`} style={on ? { background: "var(--btn)" } : undefined}>{n}</span>
               </button>
@@ -111,10 +119,15 @@ export default function Students() {
             <option value="all">Program</option>
             {data.programs.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
           </select>
-          <label htmlFor="stand" className="sr-only">Standing</label>
-          <select id="stand" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={standing} onChange={(e) => { setStanding(e.target.value); setPage(0); }}>
-            <option value="all">Standing</option><option value="regular">Regular</option><option value="irregular">Irregular</option>
-            <option value="transferee">Transferee</option><option value="shiftee">Shiftee</option>
+          <label htmlFor="stype" className="sr-only">Student type</label>
+          <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
+            <option value="all">Student type</option>
+            {Object.entries(STUDENT_TYPE).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+          <label htmlFor="stat" className="sr-only">Status</label>
+          <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
+            <option value="all">Status</option><option value="regular">Regular</option><option value="irregular">Irregular</option>
+            <option value="graduated">Graduated</option><option value="dropped">Dropped</option>
           </select>
         </div>
 
@@ -128,8 +141,8 @@ export default function Students() {
                   <span className="block truncate text-[15px] font-semibold">{s.last_name}, {s.first_name}</span>
                   <span className="block truncate text-[12px] text-ink-3"><span className="font-mono">{s.id}</span> · {s.program_code} {s.section_name ? s.section_name.replace(/^\S+\s+/, "") : ""}</span>
                   <span className="mt-1.5 flex flex-wrap gap-1.5">
-                    <StandingBadge standing={s.standing} />
-                    {(s.admission_type === "transferee" || s.admission_type === "shiftee") && <span className="badge tone-info">{STUDENT_TYPE[s.admission_type]}</span>}
+                    <StudentStatusBadge student={s} />
+                    <span className="badge tone-neutral">{studentTypeLabel(s)}</span>
                   </span>
                 </span>
                 <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden="true" />
@@ -139,7 +152,7 @@ export default function Students() {
         </ul>
         <div className="hidden overflow-x-auto sm:block">
           <table className="data-table">
-            <thead><tr><th>Student</th><th className="hidden md:table-cell">Student ID</th><th className="hidden sm:table-cell">Program</th><th className="hidden md:table-cell">Year</th><th className="hidden md:table-cell">Section</th><th>Standing</th><th className="hidden text-right sm:table-cell">Actions</th></tr></thead>
+            <thead><tr><th>Student</th><th className="hidden md:table-cell">Student ID</th><th className="hidden sm:table-cell">Program</th><th className="hidden md:table-cell">Year</th><th className="hidden md:table-cell">Section</th><th className="hidden lg:table-cell">Student type</th><th>Status</th><th className="hidden text-right sm:table-cell">Actions</th></tr></thead>
             <tbody>
               {pageRows.map((s) => (
                 <tr key={s.id}>
@@ -153,12 +166,8 @@ export default function Students() {
                   <td className="hidden sm:table-cell">{s.program_code}</td>
                   <td className="hidden whitespace-nowrap md:table-cell">{s.year_level}</td>
                   <td className="hidden whitespace-nowrap md:table-cell">{s.section_name ? s.section_name.replace(/^\S+\s+/, "") : "—"}</td>
-                  <td>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <StandingBadge standing={s.standing} />
-                      {(s.admission_type === "transferee" || s.admission_type === "shiftee") && <span className="badge tone-info">{STUDENT_TYPE[s.admission_type]}</span>}
-                    </div>
-                  </td>
+                  <td className="hidden whitespace-nowrap text-[13px] text-ink-2 lg:table-cell">{studentTypeLabel(s)}</td>
+                  <td><StudentStatusBadge student={s} /></td>
                   <td className="hidden text-right sm:table-cell">
                     <div className="flex justify-end gap-2">
                       <Link to={`/students/${s.id}`} aria-label={`View ${s.full_name}'s record`} className="btn btn-secondary btn-sm">View</Link>
@@ -170,7 +179,13 @@ export default function Students() {
             </tbody>
           </table>
         </div>
-        {rows.length === 0 && <EmptyState>No students match these filters.</EmptyState>}
+        {rows.length === 0 && (
+          <EmptyState>
+            {!searching && year === "graduated" ? "No graduates yet. A student moves here when the secretary marks them as Graduated on their record."
+              : !searching && year === "dropped" ? "No dropped students. A student moves here when the secretary marks them as Dropped on their record."
+              : "No students match these filters."}
+          </EmptyState>
+        )}
 
         {rows.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-[13px] text-ink-3 sm:px-5">

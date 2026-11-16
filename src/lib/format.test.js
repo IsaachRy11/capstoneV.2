@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatGrade, inferSubjectKind, initials, normKey, shortProgramName, sumUnits, termLabel } from "./format";
+import { ADMISSION_FOR_TYPE, formatGrade, inferSubjectKind, initials, normKey, shortProgramName, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, sumUnits, termLabel } from "./format";
 import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
 import { isStaffId, isStudentId, loginEmail } from "./login";
 import { toCsv } from "./csv";
@@ -105,5 +105,30 @@ describe("CSV export", () => {
       { label: "ID", value: (r) => r.id },
     ]);
     expect(csv).toBe('"Name","ID"\n"Ana ""AJ"" Cruz","2025-0001"');
+  });
+});
+
+describe("student type and status", () => {
+  it("shows Freshman only for a first-time 1st year student, Continuing after that", () => {
+    expect(studentTypeLabel({ admission_type: "new", year_level: 1 })).toBe("Freshman");
+    expect(studentTypeLabel({ admission_type: "new", year_level: 3 })).toBe("Continuing");
+    expect(studentTypeLabel({ admission_type: "returnee", year_level: 1 })).toBe("Continuing");
+  });
+
+  it("keeps Transferee and Shiftee whatever the year", () => {
+    expect(studentTypeKey({ admission_type: "transferee", year_level: 1 })).toBe("transferee");
+    expect(studentTypeKey({ admission_type: "shiftee", year_level: 4 })).toBe("shiftee");
+  });
+
+  it("stores the type the secretary picked as an admission type", () => {
+    expect(ADMISSION_FOR_TYPE).toEqual({ freshman: "new", continuing: "returnee", transferee: "transferee", shiftee: "shiftee" });
+  });
+
+  it("shows Regular or Irregular while active, otherwise Graduated or Dropped", () => {
+    expect(studentStatusLabel({ status: "active", standing: "regular" })).toBe("Regular");
+    expect(studentStatusLabel({ status: "active", standing: "irregular" })).toBe("Irregular");
+    expect(studentStatusKey({ status: "graduated", standing: "irregular" })).toBe("graduated");
+    expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Dropped");
+    expect(studentStatusLabel({ standing: "irregular" })).toBe("Irregular");
   });
 });

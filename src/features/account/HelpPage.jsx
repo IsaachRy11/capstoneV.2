@@ -24,6 +24,10 @@ const COMMON = [
     ),
   },
   {
+    q: "What are Student type and Status?",
+    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated or Dropped.</>,
+  },
+  {
     q: "What do Regular and Irregular mean?",
     a: <>Regular: no failed subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
@@ -55,7 +59,7 @@ const SECRETARY = [
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record. Only Active students can be enrolled in classes. Inactive, Graduated and Left the college students can't.</>,
+    a: <>It is set on the student's record: Active, Graduated or Dropped. Regular and Irregular are worked out automatically for active students. Only active students can be enrolled in classes. Graduated and Dropped students have their own tabs on the Students page.</>,
   },
   {
     q: "Why can't I delete a subject?",
