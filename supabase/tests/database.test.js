@@ -572,6 +572,7 @@ describe("starting a new term and a new school year", () => {
                                 where st.status = 'active' and st.year_level = p.duration_years`);
     await rpc(`public.prepare_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
     const next = await term("2027-2028", 1);
+    const yearsBefore = (await one(`select sum(year_level)::int y from students`)).y;
     const r = await rpc(`public.start_term(${next.id}, 30)`);
     expect(r.new_school_year).toBe(true);
     expect(r.moved_up).toBeGreaterThan(0);
@@ -592,5 +593,29 @@ describe("starting a new term and a new school year", () => {
       expect(carried.n === 1 || reported).toBe(true);
     }
     expect(r.carried_added).toBeGreaterThan(0);
+
+    // Undo is refused once a grade is entered in the new term. Clearing the grade doesn't help: the change stays in
+    // the grade history, and a class with history is never deleted.
+    const someEnrollment = await one(`select e.id from enrollments e join class_offerings o on o.id = e.offering_id
+                                       join sections sec on sec.id = o.section_id where sec.school_term_id = ${next.id} limit 1`);
+    await db.exec(`update enrollments set midterm_grade = 2.00 where id = ${someEnrollment.id}`);
+    const refused = await asSec(`select public.undo_term_start()`);
+    expect(refused.error).toMatch(/Grades or statuses were already entered/);
+    await db.exec(`update enrollments set midterm_grade = null where id = ${someEnrollment.id}`);
+    expect((await asSec(`select public.undo_term_start()`)).error).toMatch(/Grades or statuses were already entered/);
+    // Test only: wipe that history (as if no grade had ever been typed) to check the undo itself.
+    await db.exec(`delete from grade_changes where enrollment_id = ${someEnrollment.id}`);
+
+    // Going back: the previous semester is current again, the new term's classes and registrations are gone,
+    // and every student has their old year level and status. The prepared term itself is kept.
+    const u = await rpc(`public.undo_term_start()`);
+    expect(u.restored_students).toBeGreaterThan(0);
+    expect((await term("2026-2027", 2)).is_current).toBe(true);
+    expect((await term("2027-2028", 1)).is_current).toBe(false);
+    expect((await one(`select count(*)::int n from registrations where school_term_id = ${next.id}`)).n).toBe(0);
+    expect((await one(`select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id
+                       join sections sec on sec.id = o.section_id where sec.school_term_id = ${next.id}`)).n).toBe(0);
+    expect((await one(`select sum(year_level)::int y from students`)).y).toBe(yearsBefore);
+    expect((await one(`select count(*)::int n from sections where school_term_id = ${next.id}`)).n).toBeGreaterThan(0);
   }, 240_000);
 });
