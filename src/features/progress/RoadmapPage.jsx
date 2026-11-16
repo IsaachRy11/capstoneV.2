@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, ChevronDown, Flag, GraduationCap, MapPin } from "lucide-react";
+import { Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import { prerequisiteStatus, requirementText } from "../../lib/progress";
@@ -66,6 +67,7 @@ function AheadTerm({ t, isNext, pos }) {
 }
 
 export default function Roadmap() {
+  const [showBasis, setShowBasis] = useState(false); // the small "based on your units" note
   const { data, error, loading, reload } = useProgress();
   const [params] = useSearchParams();
   const view = ROADMAP_VIEWS.includes(params.get("view")) && VIEWS[params.get("view")] ? params.get("view") : null;
@@ -103,42 +105,33 @@ export default function Roadmap() {
             <h2 className="text-[24px] font-bold tracking-tight sm:text-[28px]">{pct}% of the way</h2>
             <span className="pb-1 text-[13px] text-ink-3">{student.program_code}</span>
           </div>
-          {/* The track: a pin where the student is, a tick where each year ends, a flag at the finish line. */}
-          <div className="relative mb-9 mt-9 pr-3" role="img" aria-label={`${progress.unitsEarned} of ${progress.totalUnits} units earned: ${exact} percent. Finish line at ${progress.totalUnits} units.`}>
+          {/* Quiet by default: one small phrase says what the percentage is based on; a click shows the numbers. */}
+          <button type="button" className="mt-1 inline-flex min-h-8 items-center text-[13px] text-ink-3 underline decoration-dotted underline-offset-4 hover:text-ink" aria-expanded={showBasis} onClick={() => setShowBasis((v) => !v)}>
+            based on your units
+          </button>
+          {showBasis && (
+            <p className="mt-1 rounded-lg bg-surface-2 px-3.5 py-2.5 text-[13px] leading-relaxed text-ink-2" role="note">
+              {progress.unitsEarned} of {progress.totalUnits} units passed = {exact}%.{" "}
+              {byYear.map((b) => `${yearLabel(b.y)} ${b.earned}/${b.total}`).join(" · ")}.{" "}
+              Subjects you're taking now or failed don't count until you pass them.
+            </p>
+          )}
+          {/* The track: a marker where the student is, a tick where each year ends, a flag at the finish line. */}
+          <div className="relative mb-9 mt-7 pr-3" role="img" aria-label={`${progress.unitsEarned} of ${progress.totalUnits} units earned: ${exact} percent. Finish line at ${progress.totalUnits} units.`}>
             <div className="h-3 rounded-full" style={{ background: "var(--track)" }}>
               <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: "var(--accent)" }} />
             </div>
             {byYear.slice(0, -1).map((b) => (
               <span key={b.y} className="absolute top-0 h-3 w-0.5 bg-ink-3 opacity-50" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true" />
             ))}
-            {byYear.map((b) => (
-              <span key={`l${b.y}`} className="absolute top-5 -translate-x-full whitespace-nowrap pr-1.5 text-[11px] text-ink-3" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true">{b.y === years[years.length - 1] ? "" : `end of ${yearLabel(b.y).replace(" Year", "")} yr`}</span>
+            {byYear.slice(0, -1).map((b) => (
+              <span key={`l${b.y}`} className="absolute top-5 -translate-x-full whitespace-nowrap pr-1.5 text-[11px] text-ink-3" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true">{`end of ${yearLabel(b.y).replace(" Year", "")} yr`}</span>
             ))}
-            <span className="absolute -top-8 flex -translate-x-1/2 flex-col items-center text-accent" style={{ left: `calc((100% - 12px) * ${progress.totalUnits ? progress.unitsEarned / progress.totalUnits : 0})` }} aria-hidden="true">
-              <span className="whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: "var(--accent)" }}>You · {progress.unitsEarned}</span>
-              <MapPin size={14} className="-mt-0.5" />
-            </span>
-            <span className="absolute -top-8 right-0 flex flex-col items-center text-ink" aria-hidden="true">
-              <span className="whitespace-nowrap text-[11px] font-bold">Graduation · {progress.totalUnits}</span>
-              <Flag size={16} className="-mt-px" />
+            <span className="absolute -top-0.5 h-4 w-4 -translate-x-1/2 rounded-full border-[3px] bg-surface" style={{ left: `calc((100% - 12px) * ${progress.totalUnits ? progress.unitsEarned / progress.totalUnits : 0})`, borderColor: "var(--accent)" }} aria-hidden="true" />
+            <span className="absolute -top-6 right-0 flex items-center gap-1 text-[11px] font-bold text-ink" aria-hidden="true">
+              <Flag size={14} />Graduation
             </span>
           </div>
-          <p className="text-[13px] text-ink-2">
-            <span className="font-mono font-semibold text-ink">{progress.unitsEarned} ÷ {progress.totalUnits} = {exact}%</span> · units you've passed over every unit in your curriculum.
-          </p>
-          <details className="mt-3 rounded-lg border border-line-2">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3.5 text-[13px] font-semibold [&::-webkit-details-marker]:hidden">Show the computation, year by year<ChevronDown size={16} className="text-ink-3" aria-hidden="true" /></summary>
-            <div className="overflow-x-auto border-t border-line-2">
-              <table className="data-table">
-                <thead><tr><th>Year</th><th className="!text-right">Units passed</th><th className="!text-right">Units total</th></tr></thead>
-                <tbody>
-                  {byYear.map((b) => <tr key={b.y}><td>{yearLabel(b.y)}</td><td className="num !text-right">{b.earned}</td><td className="num !text-right">{b.total}</td></tr>)}
-                  <tr className="font-semibold"><td>Total</td><td className="num !text-right">{progress.unitsEarned}</td><td className="num !text-right">{progress.totalUnits}</td></tr>
-                </tbody>
-              </table>
-              <p className="border-t border-line-2 px-3.5 py-2.5 text-[12px] text-ink-3">{progress.unitsEarned} ÷ {progress.totalUnits} = {(progress.unitsEarned / (progress.totalUnits || 1)).toFixed(4)}, shown as {exact}% (rounded to {pct}% in the title). A subject only counts once it is passed; subjects you are taking now or failed do not.</p>
-            </div>
-          </details>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat to="/progress/roadmap?view=units" label="Units earned" value={progress.unitsEarned} sub={`of ${progress.totalUnits} units`} />
