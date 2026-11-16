@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarRange, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -15,6 +15,7 @@ const PAGE_TITLES = [
   [/^\/students/, "Students"],
   [/^\/sections/, "Section allocations"],
   [/^\/curriculum/, "Curriculum"],
+  [/^\/school-year/, "School year"],
   [/^\/record/, "Academic record"],
   [/^\/progress/, "Subject tracker"],
   [/^\/schedules\/edit/, "Edit class times"],
@@ -60,6 +61,8 @@ const NAV = {
     { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
     { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
+    // Not in the phone tab bar: starting a term is done on a computer.
+    { to: "/school-year", icon: CalendarRange, label: "School year", noTab: true },
   ],
   student: [
     { to: "/", end: true, icon: Home, label: "Home", tab: "Home" },
@@ -74,7 +77,7 @@ function BottomTabs() {
   const { user } = useAuth();
   return (
     <nav aria-label="Main" className="tabbar no-print lg:hidden">
-      {NAV[user.role].map(({ to, end, icon: Icon, label, tab }) => (
+      {NAV[user.role].filter((item) => !item.noTab).map(({ to, end, icon: Icon, label, tab }) => (
         <NavLink key={to} to={to} end={end} aria-label={label} className={({ isActive }) => `tab ${isActive ? "active" : ""}`}>
           <span className="tab-icon"><Icon size={21} aria-hidden="true" /></span>
           <span>{tab}</span>

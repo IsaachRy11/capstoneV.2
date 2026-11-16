@@ -488,3 +488,110 @@ describe("state machine rules", () => {
     expect((await asSec(`update sections set capacity = 40 where ${where}`)).error).toBeUndefined();
   });
 });
+
+// Runs last: it moves the current term forward. Undo is tested on the way.
+describe("starting a new term and a new school year", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const term = (sy, sem) => one(`select id, is_current from school_terms where school_year = '${sy}' and semester = ${sem}`);
+  const rpc = async (sql) => {
+    const r = await asSec(`select ${sql} as r`);
+    if (r.error) throw new Error(r.error);
+    return r.rows[0].r;
+  };
+
+  it("lets only the secretary prepare a term", async () => {
+    const r = await as("authenticated", STU, `select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
+    expect(r.error).toMatch(/Only the secretary/);
+  });
+
+  it("prepares the 2nd semester from the curriculum, copying sections and class times", async () => {
+    const r = await rpc(`public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
+    expect(r.sections).toBeGreaterThan(0);
+    // Every class is a 2nd-semester subject of its section's year in the active curriculum.
+    const wrong = await one(`
+      select count(*)::int n from class_offerings o
+      join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where s.school_term_id = ${r.term_id} and (cs.semester <> 2 or cs.year_level <> s.year_level)`);
+    expect(wrong.n).toBe(0);
+    expect(r.classes).toBeGreaterThan(r.sections);
+    const again = await asSec(`select public.prepare_term('2026-2027', 2::smallint, '2026-11-23', '2027-04-23')`);
+    expect(again.error).toMatch(/already prepared/);
+  }, 60_000);
+
+  it("previews a start without changing anything", async () => {
+    const t = await term("2026-2027", 2);
+    const before = await one(`select (select count(*)::int from registrations) r, (select count(*)::int from enrollments) e,
+                                     (select sum(year_level)::int from students) y`);
+    const p = await rpc(`public.preview_term_start(${t.id}, 30)`);
+    expect(p.error).toBeUndefined();
+    expect(p.registered).toBeGreaterThan(0);
+    expect(p.classes_added).toBeGreaterThan(0);
+    expect(p.new_school_year).toBe(false);
+    expect(p.moved_up).toBe(0);
+    const after = await one(`select (select count(*)::int from registrations) r, (select count(*)::int from enrollments) e,
+                                    (select sum(year_level)::int from students) y`);
+    expect(after).toEqual(before);
+    expect((await term("2026-2027", 2)).is_current).toBe(false);
+  }, 120_000);
+
+  it("starts the 2nd semester: same year levels, no class whose prerequisite isn't passed, then undoes it", async () => {
+    const t = await term("2026-2027", 2);
+    const years = await one(`select sum(year_level)::int y from students`);
+    const r = await rpc(`public.start_term(${t.id}, 30)`);
+    expect((await term("2026-2027", 2)).is_current).toBe(true);
+    expect((await one(`select sum(year_level)::int y from students`)).y).toBe(years.y);
+    const blocked = await one(`
+      select count(*)::int n from enrollments e
+      join class_offerings o on o.id = e.offering_id join sections s on s.id = o.section_id
+      join subject_prerequisites sp on sp.subject_id = o.curriculum_subject_id
+      where s.school_term_id = ${t.id}
+        and not exists (select 1 from enrollments e2 join class_offerings o2 on o2.id = e2.offering_id
+                        where e2.student_id = e.student_id and o2.curriculum_subject_id = sp.prerequisite_id and e2.status = 'passed')`);
+    expect(blocked.n).toBe(0);
+    expect(r.registered).toBeGreaterThan(0);
+
+    const u = await rpc(`public.undo_term_start()`);
+    expect(u.restored_students).toBeGreaterThan(0);
+    expect((await term("2026-2027", 1)).is_current).toBe(true);
+    expect((await one(`select count(*)::int n from registrations where school_term_id = ${t.id}`)).n).toBe(0);
+  }, 120_000);
+
+  it("starts a new school year: everyone moves up except the last year, carried subjects are placed", async () => {
+    // A 1st-year student who failed a 1st-semester subject (the seed has some).
+    const failed = await one(`
+      select e.student_id, o.curriculum_subject_id subject from enrollments e
+      join class_offerings o on o.id = e.offering_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      join students st on st.id = e.student_id
+      where e.status = 'failed' and cs.year_level = 1 and cs.semester = 1 and st.year_level = 1 and st.status = 'active'
+        and not exists (select 1 from subject_prerequisites sp where sp.subject_id = cs.id)
+      limit 1`);
+    const sem2 = await term("2026-2027", 2);
+    await rpc(`public.start_term(${sem2.id}, 30)`);
+
+    const lastYear = await one(`select count(*)::int n from students st join programs p on p.id = st.program_id
+                                where st.status = 'active' and st.year_level = p.duration_years`);
+    await rpc(`public.prepare_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    const next = await term("2027-2028", 1);
+    const r = await rpc(`public.start_term(${next.id}, 30)`);
+    expect(r.new_school_year).toBe(true);
+    expect(r.moved_up).toBeGreaterThan(0);
+    // Last-year students who didn't graduate stay in their last year.
+    expect(r.stayed_in_last_year).toBe(lastYear.n - r.graduated);
+    expect(r.ungraded_classes).toBeGreaterThanOrEqual(0);
+    expect((await one(`select count(*)::int n from students st join programs p on p.id = st.program_id
+                       where st.year_level > p.duration_years`)).n).toBe(0);
+
+    if (failed) {
+      const st = await one(`select year_level from students where id = '${failed.student_id}'`);
+      expect(st.year_level).toBe(2);
+      // The failed 1st-year subject was carried into a 1st-year class of the new term (or reported as unplaced).
+      const carried = await one(`
+        select count(*)::int n from enrollments e join class_offerings o on o.id = e.offering_id
+        join sections s on s.id = o.section_id
+        where e.student_id = '${failed.student_id}' and o.curriculum_subject_id = ${failed.subject} and s.school_term_id = ${next.id}`);
+      const reported = r.unplaced.concat(r.waiting, r.over_limit).some((x) => x.student_id === failed.student_id);
+      expect(carried.n === 1 || reported).toBe(true);
+    }
+    expect(r.carried_added).toBeGreaterThan(0);
+  }, 240_000);
+});

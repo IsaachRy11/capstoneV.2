@@ -23,6 +23,7 @@ const Settings = lazy(() => import("./features/account/SettingsPage"));
 const Help = lazy(() => import("./features/account/HelpPage"));
 const Privacy = lazy(() => import("./features/account/PrivacyPage"));
 const CalendarPage = lazy(() => import("./features/calendar/CalendarPage"));
+const SchoolYearPage = lazy(() => import("./features/terms/SchoolYearPage"));
 
 function SecretaryOnly({ children }) {
   const { user } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="sections" element={<SecretaryOnly><Sections /></SecretaryOnly>} />
             <Route path="schedules" element={<SecretaryOnly><SectionSchedules /></SecretaryOnly>} />
             <Route path="schedules/edit" element={<SecretaryOnly><ClassTimesPage /></SecretaryOnly>} />
+            <Route path="school-year" element={<SecretaryOnly><SchoolYearPage /></SecretaryOnly>} />
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
             <Route path="progress/roadmap" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Roadmap />} />
