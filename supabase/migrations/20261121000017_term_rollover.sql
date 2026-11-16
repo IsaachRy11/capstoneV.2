@@ -9,6 +9,10 @@
 --   start_term()          the switch, all or nothing (see private.run_term_start for the rules).
 --   undo_term_start()     puts the previous term back while the new one has no grades yet.
 --
+-- Every step takes the same transaction lock (pg_advisory_xact_lock(20261121)), so two term changes never run at the
+-- same time (two tabs, two people, or Undo pressed while a Start is still running): the second waits for the first to
+-- finish and then sees its result.
+--
 -- Rules (user decisions, Nov 2026; the CCS office still has to confirm them, so they live here in one place):
 --   * Graduation: a student whose every curriculum subject is passed is marked Graduated when any term starts
 --     (so summer subjects count).
@@ -125,6 +129,7 @@ begin
   if not (select private.is_secretary()) then
     raise exception 'Only the secretary can prepare a term.' using errcode = '42501';
   end if;
+  perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
   if p_school_year !~ '^\d{4}-\d{4}$'
      or split_part(p_school_year, '-', 2)::int <> split_part(p_school_year, '-', 1)::int + 1 then
     raise exception 'The school year must look like 2027-2028.' using errcode = 'P0001';
@@ -220,6 +225,7 @@ begin
   if not (select private.is_secretary()) then
     raise exception 'Only the secretary can discard a term.' using errcode = '42501';
   end if;
+  perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
   if exists (select 1 from public.school_terms where id = p_term_id and is_current) then
     raise exception 'This term has already started. Use Undo instead.' using errcode = 'P0001';
   end if;
@@ -259,6 +265,7 @@ declare
   v_placed bigint;
   v_reason text;
 begin
+  perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
   select * into v_t from public.school_terms where id = p_term_id;
   if not found then
     raise exception 'That term doesn''t exist.' using errcode = 'P0001';
@@ -448,6 +455,7 @@ begin
   if not (select private.is_secretary()) then
     raise exception 'Only the secretary can undo a term start.' using errcode = '42501';
   end if;
+  perform pg_advisory_xact_lock(20261121);  -- one term change at a time (see the top of this file)
   select * into v_start from public.term_starts where undone_at is null order by id desc limit 1;
   if not found then
     raise exception 'There is no term start to undo.' using errcode = 'P0001';
