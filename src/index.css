@@ -309,3 +309,11 @@ main table:not(.no-grid) tbody tr:last-child td { border-bottom: 0; }
 main table:not(.no-grid) tfoot td { background: var(--surface-2); font-weight: 600; }
 /* Printed copies: darker lines, like the paper forms. */
 @media print { main table:not(.no-grid) :is(th, td) { border-color: #999; } }
+
+/* A small on/off button (the INC and Drop buttons while encoding grades). */
+.toggle-btn {
+  height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: 12px; font-weight: 600;
+}
+.toggle-btn:hover { background: var(--hover); color: var(--ink); }
+.toggle-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); color: var(--tint-ink); }
