@@ -80,6 +80,64 @@ function AheadTerm({ t, isNext, pos }) {
   );
 }
 
+// One finished year: opens on its 1st semester so the table stays short; the next semester is one click away.
+function CompletedYear({ year, inYear, done, defaultOpen }) {
+  const [shown, setShown] = useState(1); // how many of this year's semesters are listed, first semester first
+  const sems = [...new Set(done.map((s) => s.semester))].sort((a, b) => a - b);
+  const visible = sems.slice(0, shown);
+  const rows = done.filter((s) => visible.includes(s.semester)).sort((x, z) => x.semester - z.semester || x.sort_order - z.sort_order);
+  const all = shown >= sems.length;
+  const nextSem = sems[shown];
+  const nextRows = nextSem ? done.filter((s) => s.semester === nextSem) : [];
+  return (
+    <details open={defaultOpen} className="card group overflow-hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 [&::-webkit-details-marker]:hidden">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full tone-ok" aria-hidden="true"><Check size={16} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-bold">{yearLabel(year)}</span>
+          <span className="block text-[13px] text-ink-3">{done.length} of {inYear.length} subjects passed · {sumUnits(done)} units</span>
+        </span>
+        <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+      </summary>
+      <div className="overflow-x-auto border-t border-line">
+        <table className="data-table">
+          <thead>
+            <tr><th className="hidden w-[132px] sm:table-cell">Semester</th><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((s) => (
+              <tr key={s.id}>
+                <td className="hidden whitespace-nowrap align-top text-[13px] text-ink-2 sm:table-cell">{semesterLabel(s.semester)}</td>
+                <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                <td className="min-w-0 align-top font-medium">
+                  {s.title}
+                  <span className="mt-0.5 block text-[12px] font-normal text-ink-3 sm:hidden">{semesterLabel(s.semester)}</span>
+                </td>
+                <td className="num align-top">{Number(s.units)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="hidden sm:table-cell" />
+              <td colSpan={2}>{all ? "Total" : semesterLabel(visible[visible.length - 1])} · {rows.length} {rows.length === 1 ? "subject" : "subjects"}</td>
+              <td className="num">{sumUnits(rows)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {sems.length > 1 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 sm:px-5">
+          <span className="text-[13px] text-ink-3">{shown} of {sems.length} {sems.length === 1 ? "semester" : "semesters"} shown</span>
+          {all
+            ? <button className="btn btn-secondary btn-sm" onClick={() => setShown(1)}>Show {semesterLabel(sems[0])} only</button>
+            : <button className="btn btn-secondary btn-sm" onClick={() => setShown(shown + 1)}>Show {semesterLabel(nextSem)} · {nextRows.length} {nextRows.length === 1 ? "subject" : "subjects"} · {sumUnits(nextRows)} units</button>}
+        </div>
+      )}
+    </details>
+  );
+}
+
 export default function Roadmap() {
   const [showBasis, setShowBasis] = useState(false); // the small "based on your units" note
   const { data, error, loading, reload } = useProgress();
@@ -161,45 +219,10 @@ export default function Roadmap() {
           <div className="card"><EmptyState>Subjects you pass will appear here, year by year.</EmptyState></div>
         ) : (
           <div className="flex flex-col gap-3">
-            {completedYears.map((y) => {
-              const inYear = progress.subjects.filter((s) => s.year_level === y);
-              const done = passed.filter((s) => s.year_level === y);
-              return (
-                <details key={y} open={y === completedYears[completedYears.length - 1]} className="card group overflow-hidden">
-                  <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 [&::-webkit-details-marker]:hidden">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full tone-ok" aria-hidden="true"><Check size={16} /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-bold">{yearLabel(y)}</span>
-                      <span className="block text-[13px] text-ink-3">{done.length} of {inYear.length} subjects passed · {sumUnits(done)} units</span>
-                    </span>
-                    <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
-                  </summary>
-                  <div className="overflow-x-auto border-t border-line">
-                    <table className="data-table">
-                      <thead>
-                        <tr><th className="hidden w-[132px] sm:table-cell">Semester</th><th className="w-[124px]">Code</th><th>Subject</th><th className="w-px !text-center">Units</th></tr>
-                      </thead>
-                      <tbody>
-                        {[...done].sort((x, z) => x.semester - z.semester || x.sort_order - z.sort_order).map((s) => (
-                          <tr key={s.id}>
-                            <td className="hidden whitespace-nowrap align-top text-[13px] text-ink-2 sm:table-cell">{semesterLabel(s.semester)}</td>
-                            <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
-                            <td className="min-w-0 align-top font-medium">
-                              {s.title}
-                              <span className="mt-0.5 block text-[12px] font-normal text-ink-3 sm:hidden">{semesterLabel(s.semester)}</span>
-                            </td>
-                            <td className="num align-top">{Number(s.units)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr><td className="hidden sm:table-cell" /><td colSpan={2}>Total · {done.length} {done.length === 1 ? "subject" : "subjects"}</td><td className="num">{sumUnits(done)}</td></tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </details>
-              );
-            })}
+            {completedYears.map((y) => (
+              <CompletedYear key={y} year={y} inYear={progress.subjects.filter((s) => s.year_level === y)} done={passed.filter((s) => s.year_level === y)}
+                defaultOpen={y === completedYears[completedYears.length - 1]} />
+            ))}
           </div>
         )}
       </section>

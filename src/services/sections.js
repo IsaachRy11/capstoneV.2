@@ -56,5 +56,9 @@ export const updateMeeting = (meetingId, fields) =>
 export const deleteMeeting = (meetingId) =>
   unwrap(supabase.from("class_meetings").delete().eq("id", meetingId));
 
+// One subject's own seats; null = follow the section's number. The database refuses less than the students already in it.
+export const updateOfferingCapacity = (offeringId, capacity) =>
+  unwrap(supabase.from("class_offerings").update({ capacity }).eq("id", offeringId));
+
 export const updateSectionCapacity = (sectionId, capacity) =>
   unwrap(supabase.from("sections").update({ capacity }).eq("id", sectionId));

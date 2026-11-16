@@ -460,6 +460,19 @@ describe("state machine rules", () => {
     expect(d.names).toBe(d.n);
   });
 
+  it("sets seats for one subject at a time and won't go below the students already in it", async () => {
+    const off = await firstOffering("BSIT 4-S", 1);
+    const enrolled = (await one(`select count(*)::int n from enrollments where offering_id = ${off.id} and status <> 'dropped'`)).n;
+    expect(enrolled).toBeGreaterThan(1);
+    const tooLow = await asSec(`update class_offerings set capacity = ${enrolled - 1} where id = ${off.id}`);
+    expect(tooLow.error).toMatch(/Seats can't be lower than the \d+ students/);
+    expect((await asSec(`update class_offerings set capacity = ${enrolled + 5} where id = ${off.id}`)).error).toBeUndefined();
+    // Only that subject changed; the section and its other subjects keep following the section's number.
+    const other = await firstOffering("BSIT 4-S", 0);
+    expect((await one(`select capacity from class_offerings where id = ${other.id}`)).capacity).toBeNull();
+    expect((await asSec(`update class_offerings set capacity = null where id = ${off.id}`)).error).toBeUndefined();
+  });
+
   it("won't lower a section's capacity below the students already enrolled", async () => {
     const where = `name = 'BSIT 4-S' and school_term_id = (select id from school_terms where is_current)`;
     const low = await asSec(`update sections set capacity = 5 where ${where}`);

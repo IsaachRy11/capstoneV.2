@@ -11,12 +11,14 @@ import { yearLabel } from "../../lib/format";
 import { meetingDays } from "../../lib/schedule";
 import EnrollBox from "./EnrollBox";
 import CapacityModal from "./CapacityModal";
+import SubjectCapacityModal from "./SubjectCapacityModal";
 
 export default function Sections() {
   const picker = useSectionPicker();
   const { program, year, section } = picker;
   const [offeringId, setOfferingId] = useState(null);
   const [editingCap, setEditingCap] = useState(false);
+  const [editingSeats, setEditingSeats] = useState(false); // one subject's own seats
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [actionError, setActionError] = useState("");
 
@@ -61,14 +63,15 @@ export default function Sections() {
                 <button key={o.id} className="chip" aria-pressed={o.id === offering?.id} onClick={() => setOfferingId(o.id)}>
                   <span className="font-mono text-[12px] text-accent">{o.curriculum_subjects.code}</span>
                   <span className="w-full truncate text-[13px] font-semibold text-ink">{o.curriculum_subjects.title}</span>
+                  <span className="font-mono text-[11px] text-ink-3">{o.enrolled} / {o.capacity ?? section.capacity} seats</span>
                 </button>
               ))}
             </div>
           </section>
           <section aria-label="Subjects" className="card hidden flex-[1_1_320px] flex-col gap-0.5 p-2 sm:flex">
             <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-2.5">
-              <span className="text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
-              <button className="hidden min-h-10 items-center text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)}>Capacity {section.enrolled} / {section.capacity}</button>
+              <span className="whitespace-nowrap text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
+              <button className="hidden min-h-10 whitespace-nowrap items-center text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)} title="The seats every subject follows unless it has its own number">Default {section.capacity} seats · Change</button>
               <span className="font-mono text-[13px] font-semibold text-ink-2 lg:hidden">{section.enrolled} / {section.capacity} seats</span>
             </div>
             {offerings.loading && <LoadingState />}
@@ -83,9 +86,10 @@ export default function Sections() {
                     <span className="text-[14px] font-semibold leading-snug text-ink">{o.curriculum_subjects.title}</span>
                     <span className="text-[12px] text-ink-3">{Number(o.curriculum_subjects.units)} units · {meetingDays(o.class_meetings) || "To be arranged"}</span>
                   </div>
-                  {o.enrolled !== section.enrolled && (
-                    <span className="whitespace-nowrap font-mono text-[12px] text-ink-2" title="Differs from the section because of irregular students">{o.enrolled} / {o.capacity ?? section.capacity}</span>
-                  )}
+                  <span className="whitespace-nowrap text-right font-mono text-[12px] text-ink-2" title={o.capacity !== null ? "This subject has its own number of seats" : "Follows the section's seats"}>
+                    {o.enrolled} / {o.capacity ?? section.capacity}
+                    <span className="block text-[11px] font-sans text-ink-3">{o.capacity !== null ? "own seats" : "seats"}</span>
+                  </span>
                 </button>
               );
             })}
@@ -101,6 +105,10 @@ export default function Sections() {
                     {offering.class_meetings.length
                       ? `Meets ${offering.class_meetings.length} ${offering.class_meetings.length === 1 ? "day" : "days"} a week`
                       : "No fixed schedule yet"}
+                  </span>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-2">
+                    <span><span className="font-mono font-semibold text-ink">{offering.enrolled} / {offering.capacity ?? section.capacity}</span> seats{offering.capacity !== null ? " (this subject's own)" : " (the section's)"}</span>
+                    <button className="hidden min-h-8 items-center font-semibold text-accent lg:inline-flex" onClick={() => setEditingSeats(true)}>Change seats</button>
                   </span>
                 </div>
                 <WeekStrip meetings={offering.class_meetings} className="sm:min-w-[420px] sm:flex-[2_1_480px]" />
@@ -139,6 +147,7 @@ export default function Sections() {
         </div>
       )}
 
+      {editingSeats && offering && <SubjectCapacityModal section={section} offering={offering} onClose={() => setEditingSeats(false)} onSaved={() => { setEditingSeats(false); refresh(); }} />}
       {editingCap && section && <CapacityModal section={section} onClose={() => setEditingCap(false)} onSaved={() => { setEditingCap(false); refresh(); }} />}
       {confirmRemove && (
         <Modal title="Remove from class?" onClose={() => setConfirmRemove(null)}
