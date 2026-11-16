@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, nextTermFor, requirementText } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, requirementText } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -79,5 +79,50 @@ describe("requirementText", () => {
     expect(requirementText(s, 3)).toBe("Needs IT 201, IT 202 first and 4th year standing");
     expect(requirementText({ missingPrereqs: [], standing_required: 3 }, 3)).toBe("");
     expect(requirementText({ missingPrereqs: [], standing_required: 3 }, 2)).toBe("Needs 3rd year standing");
+  });
+});
+
+describe("unlocks and futureTerms", () => {
+  const prog = buildProgress({ curriculum, history, prerequisites: [{ subject_id: 4, prerequisite_id: 3 }, { subject_id: 2, prerequisite_id: 1 }] });
+  const byCode = bySubject(prog);
+
+  it("lists what passing a subject opens", () => {
+    expect(byCode["IT 201"].unlocks.map((x) => x.code)).toEqual(["IT 204"]);
+    expect(byCode["IT 101"].unlocks.map((x) => x.code)).toEqual(["IT 103"]);
+    expect(byCode["IT 204"].unlocks).toEqual([]);
+  });
+
+  it("lists the remaining semesters in order, without passed or current subjects", () => {
+    // Student standing in 2nd year, 1st semester: only IT 204 (2-2) is still ahead.
+    const ahead = futureTerms(prog.subjects, 2, 1);
+    expect(ahead.map((t) => [t.year, t.semester, t.subjects.map((x) => x.code)])).toEqual([[2, 2, ["IT 204"]]]);
+  });
+
+  it("puts summer between the 2nd semester and the next year", () => {
+    const subs = [
+      { id: 1, year_level: 3, semester: 3, state: "not_taken" },
+      { id: 2, year_level: 4, semester: 1, state: "not_taken" },
+      { id: 3, year_level: 3, semester: 2, state: "not_taken" },
+    ];
+    expect(futureTerms(subs, 3, 1).map((t) => [t.year, t.semester])).toEqual([[3, 2], [3, 3], [4, 1]]);
+  });
+});
+
+describe("prerequisiteStatus", () => {
+  const pos = { year: 2, semester: 1 };
+  const pre = (state, year_level, semester) => ({ state, year_level, semester });
+
+  it("is blocked by a failed prerequisite or one that should already have been taken", () => {
+    expect(prerequisiteStatus({ missingPrereqs: [pre("back", 1, 2)] }, pos)).toBe("blocked");
+    expect(prerequisiteStatus({ missingPrereqs: [pre("not_taken", 1, 1)] }, pos)).toBe("blocked");
+  });
+
+  it("is waiting when the prerequisite is being taken now", () => {
+    expect(prerequisiteStatus({ missingPrereqs: [pre("in_progress", 2, 1)] }, pos)).toBe("waiting");
+  });
+
+  it("is fine when the prerequisite is still ahead in the normal order", () => {
+    expect(prerequisiteStatus({ missingPrereqs: [pre("not_taken", 2, 2)] }, pos)).toBeNull();
+    expect(prerequisiteStatus({ missingPrereqs: [] }, pos)).toBeNull();
   });
 });

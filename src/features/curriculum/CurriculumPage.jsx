@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { getStudent } from "../../services/students";
-import { ErrorState, LoadingState, PageHeader } from "../../components/ui";
+import { BackButton, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
 import SubjectModal from "./SubjectModal";
 import DeleteSubjectModal from "./DeleteSubjectModal";
@@ -41,17 +41,22 @@ export default function Curriculum() {
   };
   const effective = subjects[0]?.curricula.effective_school_year;
 
+  // Like the printed checklist: Code | Description | Units | Prerequisite, each in its own column.
+  // The columns are fixed-width so the description keeps the room; phones fold code and prerequisite under the title.
   const semesterCard = (sem, rows) => (
     <div key={sem} className="card overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
         <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
       </div>
-      <table className="data-table [&_td]:px-3 [&_th]:px-3 [&_td:first-child]:pl-5 [&_th:first-child]:pl-5 [&_td:last-child]:pr-5 [&_th:last-child]:pr-5">
+      <table className="data-table w-full table-fixed [&_td]:px-2.5 [&_th]:px-2.5 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:last-child]:pr-4">
         <thead>
           <tr>
-            <th className="hidden min-w-[7.5rem] sm:table-cell">Code</th><th>Subject</th><th className="w-px !text-center">Units</th>
-            {isSecretary && <th className="hidden w-px lg:table-cell"><span className="sr-only">Actions</span></th>}
+            <th className="hidden w-[92px] sm:table-cell">Code</th>
+            <th>Description</th>
+            <th className="w-[54px] !text-center">Units</th>
+            <th className="hidden w-[112px] md:table-cell">Prerequisite</th>
+            {isSecretary && <th className="hidden w-[84px] lg:table-cell"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -61,14 +66,14 @@ export default function Curriculum() {
               <td className="min-w-0 align-top font-medium">
                 <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{s.code}</span>
                 {s.title}
-                {/* The prerequisite sits under the title (as the PRERE column does on the sheet), so the title keeps its room. */}
-                {prereqText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3">Prerequisite: {prereqText(s)}</span>}
+                {prereqText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prereqText(s)}</span>}
               </td>
               <td className="num align-top">{Number(s.units)}</td>
+              <td className="hidden align-top text-[13px] leading-snug text-ink-2 md:table-cell">{prereqText(s) || <span className="text-ink-3">—</span>}</td>
               {isSecretary && (
                 <td className="hidden whitespace-nowrap text-right align-top lg:table-cell">
-                  <button className="icon-btn touch-40 h-9 w-9" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
-                  <button className="icon-btn icon-btn-danger touch-40 h-9 w-9" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
+                  <button className="icon-btn touch-40 h-8 w-8" onClick={() => setEditing(s)} aria-label={`Edit ${s.code}`} title="Edit"><Pencil size={15} /></button>
+                  <button className="icon-btn icon-btn-danger touch-40 h-8 w-8" onClick={() => setDeleting(s)} aria-label={`Delete ${s.code}`} title="Delete"><Trash2 size={15} /></button>
                 </td>
               )}
             </tr>
@@ -80,6 +85,7 @@ export default function Curriculum() {
 
   return (
     <>
+      {!isSecretary && <BackButton fallback="/progress/roadmap" label="Back to subject tracker" />}
       <PageHeader showTitle
         title={program.name}
         subtitle={`${subjects.length} subjects · ${sumUnits(subjects)} units · ${program.duration_years} years${effective ? ` · Effective AY ${effective.replace("-", "–")}` : ""}`}
@@ -103,7 +109,7 @@ export default function Curriculum() {
               <span className="text-[13px] text-ink-3">Total: {count(ofYear)} · {sumUnits(ofYear)} units</span>
             </div>
             {/* 1st and 2nd semester side by side (stacked on phones and tablets), as on the official checklist. */}
-            <div className="grid items-start gap-5 lg:grid-cols-2">
+            <div className="grid items-start gap-5 min-[1360px]:grid-cols-2">
               {[1, 2].filter((sem) => inSem(sem).length > 0).map((sem) => semesterCard(sem, inSem(sem)))}
             </div>
             {/* Summer is its own full-width strip underneath, like the "Summer" bar on the sheet. */}

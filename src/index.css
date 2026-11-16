@@ -160,6 +160,9 @@
   }
   .nav-link:hover { background: var(--hover); color: var(--ink); }
   .nav-link.active { background: var(--tint); color: var(--tint-ink); font-weight: 600; }
+  .nav-sub { display: flex; align-items: center; min-height: 38px; padding: 0 12px; border-radius: 8px; color: var(--ink-2); font-size: 14px; font-weight: 500; }
+  .nav-sub:hover { background: var(--hover); color: var(--ink); }
+  .nav-sub.active { color: var(--tint-ink); font-weight: 700; background: var(--tint); }
   /* Sidebar labels fade (never rewrap) when the desktop sidebar collapses to an icon rail */
   .nav-label { white-space: nowrap; transition: opacity .16s ease; }
   .sidebar-collapsed .nav-label { opacity: 0; }

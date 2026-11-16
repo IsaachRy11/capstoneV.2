@@ -5,14 +5,14 @@ import { VIEWS } from "./progressViews";
 
 // The list behind each summary card on the subject tracker (opened with ?view=units|passed|enrolled|failed).
 // Grades live on the Academic record, so these lists show the subject, where it sits in the curriculum, and its status.
-export default function ProgressDetail({ view, progress, retakeNext }) {
+export default function ProgressDetail({ view, progress, retakeNext, backTo = "/progress", backLabel = "Back to subject tracker" }) {
   const cfg = VIEWS[view];
   const rows = cfg.pick(progress);
   const offeredAgain = new Set(retakeNext.map((s) => s.id));
 
   return (
     <>
-      <BackButton to="/progress" label="Back to subject tracker" />
+      <BackButton to={backTo} label={backLabel} />
       <PageHeader title={cfg.title} />
       <section className="card flex flex-col gap-1.5 p-6">
         <h2 className="text-[15px] font-semibold text-ink-2">{cfg.title}</h2>

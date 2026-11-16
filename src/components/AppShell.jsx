@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
+import { BookOpen, CalendarClock, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -62,7 +62,7 @@ const NAV = {
   student: [
     { to: "/", end: true, icon: Home, label: "Home", tab: "Home" },
     { to: "/schedule", icon: CalendarClock, label: "Schedule", tab: "Schedule" },
-    { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker" },
+    { to: "/progress", icon: ListChecks, label: "Subject tracker", tab: "Tracker", also: ["/curriculum"], children: [{ to: "/progress", end: true, label: "This semester" }, { to: "/progress/roadmap", label: "Roadmap" }] },
     { to: "/record", icon: FileText, label: "Academic record", tab: "Grades" },
   ],
 };
@@ -82,6 +82,37 @@ function BottomTabs() {
   );
 }
 
+// A menu entry with a dropdown (Subject tracker: This semester / Roadmap). It opens by itself while you are
+// inside it, and the arrow opens or closes it by hand. In the icon rail only the main icon shows.
+function NavGroup({ item, collapsed }) {
+  const location = useLocation();
+  const inside = location.pathname.startsWith(item.to) || (item.also || []).some((p) => location.pathname.startsWith(p));
+  const [manual, setManual] = useState(null); // null = follow the page, true/false = the user chose
+  const open = !collapsed && (manual ?? inside);
+  const Icon = item.icon;
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        <NavLink to={item.to} className={`nav-link flex-1 ${inside ? "active" : ""}`} title={collapsed ? item.label : undefined} onClick={() => setManual(null)}>
+          <Icon size={20} className="shrink-0" aria-hidden="true" /><span className="nav-label">{item.label}</span>
+        </NavLink>
+        {!collapsed && (
+          <button type="button" className="icon-btn" aria-expanded={open} aria-label={`${open ? "Hide" : "Show"} ${item.label} views`} onClick={() => setManual(!open)}>
+            <ChevronDown size={18} className={`transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="ml-[22px] mt-1 flex flex-col gap-0.5 border-l border-line pl-3">
+          {item.children.map((c) => (
+            <NavLink key={c.to} to={c.to} end={c.end} className={({ isActive }) => `nav-sub ${isActive ? "active" : ""}`}>{c.label}</NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Sidebar({ collapsed = false, onToggle }) {
   const { user } = useAuth();
 
@@ -92,7 +123,9 @@ function Sidebar({ collapsed = false, onToggle }) {
         {NAV[user.role].map((item) => (
           <Fragment key={item.to}>
             {item.group && <div className="nav-label px-3.5 pb-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3" aria-hidden={collapsed}>{item.group}</div>}
-            <NavItem collapsed={collapsed} to={item.to} end={item.end} icon={item.icon} label={item.label} />
+            {item.children
+              ? <NavGroup item={item} collapsed={collapsed} />
+              : <NavItem collapsed={collapsed} to={item.to} end={item.end} icon={item.icon} label={item.label} />}
           </Fragment>
         ))}
       </nav>

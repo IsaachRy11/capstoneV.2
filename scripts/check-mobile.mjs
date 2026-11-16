@@ -30,7 +30,7 @@ const roles = {
   secretary: { id: "CCS-001", pw: env.DEMO_SECRETARY_PASSWORD,
     pages: ["/", "/students", "/students/2025-0002", "/sections", "/schedules", "/curriculum", "/profile", "/settings"] },
   student: { id: "2025-0001", pw: env.STUDENT_DEFAULT_PASSWORD || env.DEMO_STUDENT_PASSWORD,
-    pages: ["/", "/schedule", "/progress", "/progress?view=units", "/progress?view=failed", "/record", "/calendar", "/help", "/privacy"] },
+    pages: ["/", "/schedule", "/progress", "/progress/roadmap", "/progress/roadmap?view=units", "/progress?view=failed", "/curriculum", "/record", "/calendar", "/help", "/privacy"] },
 };
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || EDGE });

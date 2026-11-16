@@ -15,6 +15,7 @@ const Sections = lazy(() => import("./features/sections/SectionsPage"));
 const Curriculum = lazy(() => import("./features/curriculum/CurriculumPage"));
 const Profile = lazy(() => import("./features/account/ProfilePage"));
 const Progress = lazy(() => import("./features/progress/ProgressPage"));
+const Roadmap = lazy(() => import("./features/progress/RoadmapPage"));
 const Schedule = lazy(() => import("./features/schedules/StudentSchedulePage"));
 const SectionSchedules = lazy(() => import("./features/schedules/SectionSchedulesPage"));
 const Settings = lazy(() => import("./features/account/SettingsPage"));
@@ -55,9 +56,10 @@ export default function App() {
             <Route path="schedules" element={<SecretaryOnly><SectionSchedules /></SecretaryOnly>} />
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
+            <Route path="progress/roadmap" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Roadmap />} />
             <Route path="schedule" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Schedule />} />
-            {/* Students see their curriculum inside the Subject tracker; the full curriculum page is the secretary's. */}
-            <Route path="curriculum" element={user.role === "secretary" ? <Curriculum /> : <Navigate to="/progress" replace />} />
+            {/* Students reach the curriculum from the end of the Subject tracker pages (it is not in their menu). */}
+            <Route path="curriculum" element={<Curriculum />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="help" element={<Help />} />

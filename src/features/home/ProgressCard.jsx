@@ -1,17 +1,16 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
-import { requirementText } from "../../lib/progress";
+import { prerequisiteStatus } from "../../lib/progress";
 
 // Home: where the student stands in the whole program, and what comes next.
 // progress comes from buildProgress(); next is { year, semester } or null (last semester).
-export default function ProgressCard({ progress, next, className = "" }) {
+export default function ProgressCard({ progress, next, pos, className = "" }) {
   const pct = progress.totalUnits ? Math.round((progress.unitsEarned / progress.totalUnits) * 100) : 0;
   const nextSubjects = next ? progress.subjects.filter((s) => s.year_level === next.year && s.semester === next.semester) : [];
-  // "Blocked": a prerequisite was failed or never taken, or the year standing isn't reached yet.
-  // "Waiting": the only missing prerequisites are subjects the student is taking right now.
-  const blocked = nextSubjects.filter((s) => s.missingPrereqs.some((p) => p.state !== "in_progress") || (requirementText(s, next.year) && !s.missingPrereqs.length));
-  const waiting = nextSubjects.filter((s) => !blocked.includes(s) && s.missingPrereqs.length > 0);
+  // "Blocked": a prerequisite was failed or skipped. "Waiting": it is being taken right now (see prerequisiteStatus).
+  const blocked = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "blocked");
+  const waiting = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "waiting");
   const retakes = next ? progress.back.filter((s) => s.semester === next.semester) : [];
 
   return (

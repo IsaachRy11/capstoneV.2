@@ -88,7 +88,7 @@ export default function StudentHome() {
           the grades are on Academic record, so neither is repeated here. */}
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
         <TodayCard classes={classes} />
-        <ProgressCard progress={progress} next={next} />
+        <ProgressCard progress={progress} next={next} pos={{ year: student.year_level, semester: term.semester }} />
       </div>
     </>
   );
