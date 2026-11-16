@@ -1,27 +1,25 @@
-import { Printer } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Pencil, Printer } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { useSectionPicker } from "../../hooks/useSectionPicker";
-import { getRooms, getSectionOfferings } from "../../services/sections";
+import { getSectionOfferings } from "../../services/sections";
 import SectionPicker from "../../components/SectionPicker";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { sumUnits, yearLabel } from "../../lib/format";
 import CalendarNotice from "../../components/CalendarNotice";
 import { useClassStatus } from "../../hooks/useCalendar";
 import WeekTimetable from "./WeekTimetable";
-import ClassTimes from "./ClassTimes";
 
-// Secretary: weekly timetable of each block section (current semester), with class-time editing.
+// Secretary: weekly timetable of each block section (current semester). Changing class times is on its own page
+// (Schedules > Edit class times), so this one is only for looking and printing.
 export default function SectionSchedules() {
   const picker = useSectionPicker();
   const { program, year, section } = picker;
   const status = useClassStatus();
-  const rooms = useAsync(getRooms, [], "rooms");
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
-  if (picker.loading || rooms.loading) return <LoadingState />;
-  if (picker.error || rooms.error) {
-    return <ErrorState error={picker.error || rooms.error} onRetry={() => { picker.reload(); rooms.reload(); }} />;
-  }
+  if (picker.loading) return <LoadingState />;
+  if (picker.error) return <ErrorState error={picker.error} onRetry={picker.reload} />;
 
   const items = (offerings.data || []).map((o) => ({
     id: o.id,
@@ -34,7 +32,10 @@ export default function SectionSchedules() {
   return (
     <>
       <PageHeader title="Schedules"
-        actions={items.length > 0 && <button className="btn btn-secondary no-print hidden lg:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
+        actions={<>
+          {items.length > 0 && <button className="btn btn-secondary no-print hidden lg:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>}
+          <Link to="/schedules/edit" className="btn btn-secondary no-print hidden lg:inline-flex"><Pencil size={16} aria-hidden="true" />Edit class times</Link>
+        </>} />
 
       <CalendarNotice status={status} />
 
@@ -55,10 +56,6 @@ export default function SectionSchedules() {
             </span>
           </div>
           <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />
-          {/* Changing class times is done on a computer; phones and tablets only view the timetable. */}
-          <div className="hidden lg:block">
-            <ClassTimes offerings={offerings.data} rooms={rooms.data} onChanged={offerings.reload} />
-          </div>
         </>
       )}
     </>

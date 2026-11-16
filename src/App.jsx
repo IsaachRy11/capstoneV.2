@@ -18,6 +18,7 @@ const Progress = lazy(() => import("./features/progress/ProgressPage"));
 const Roadmap = lazy(() => import("./features/progress/RoadmapPage"));
 const Schedule = lazy(() => import("./features/schedules/StudentSchedulePage"));
 const SectionSchedules = lazy(() => import("./features/schedules/SectionSchedulesPage"));
+const ClassTimesPage = lazy(() => import("./features/schedules/ClassTimesPage"));
 const Settings = lazy(() => import("./features/account/SettingsPage"));
 const Help = lazy(() => import("./features/account/HelpPage"));
 const Privacy = lazy(() => import("./features/account/PrivacyPage"));
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="students/:id" element={<SecretaryOnly><StudentRecord /></SecretaryOnly>} />
             <Route path="sections" element={<SecretaryOnly><Sections /></SecretaryOnly>} />
             <Route path="schedules" element={<SecretaryOnly><SectionSchedules /></SecretaryOnly>} />
+            <Route path="schedules/edit" element={<SecretaryOnly><ClassTimesPage /></SecretaryOnly>} />
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
             <Route path="progress/roadmap" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Roadmap />} />

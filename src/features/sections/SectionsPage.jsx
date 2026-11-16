@@ -68,31 +68,46 @@ export default function Sections() {
               ))}
             </div>
           </section>
-          <section aria-label="Subjects" className="card hidden flex-[1_1_320px] flex-col gap-0.5 p-2 sm:flex">
-            <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-2.5">
-              <span className="whitespace-nowrap text-[12px] font-semibold text-ink-3">{section.name} · {offerings.data?.length ?? "…"} subjects</span>
-              <button className="hidden min-h-10 whitespace-nowrap items-center text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)} title="The seats every subject follows unless it has its own number">Default {section.capacity} seats · Change</button>
-              <span className="font-mono text-[13px] font-semibold text-ink-2 lg:hidden">{section.enrolled} / {section.capacity} seats</span>
+          <section aria-label="Subjects" className="card hidden flex-[1_1_340px] flex-col overflow-hidden sm:flex">
+            {/* The section on one line, the default seats on their own row underneath, so neither is squeezed. */}
+            <div className="border-b border-line px-4 pb-3.5 pt-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-[16px] font-bold">{section.name}</h2>
+                <span className="text-[13px] text-ink-3">{offerings.data?.length ?? "…"} subjects</span>
+              </div>
+              <div className="mt-2.5 flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2">
+                <span className="text-[13px] text-ink-2">Each subject has <span className="font-mono font-semibold text-ink">{section.capacity}</span> seats unless it has its own</span>
+                <button className="hidden shrink-0 text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)} title="Sets the seats for every subject without its own number">Change</button>
+              </div>
             </div>
             {offerings.loading && <LoadingState />}
             {offerings.error && <ErrorState error={offerings.error} onRetry={offerings.reload} />}
-            {offerings.data?.map((o) => {
-              const on = o.id === offering?.id;
-              return (
-                <button key={o.id} aria-pressed={on} onClick={() => setOfferingId(o.id)}
-                  className={`flex w-full items-center gap-3.5 rounded-[10px] border px-4 py-3.5 text-left ${on ? "border-accent bg-tint" : "border-transparent hover:bg-hover"}`}>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="font-mono text-[13px] text-accent">{o.curriculum_subjects.code}</span>
-                    <span className="text-[14px] font-semibold leading-snug text-ink">{o.curriculum_subjects.title}</span>
-                    <span className="text-[12px] text-ink-3">{Number(o.curriculum_subjects.units)} units · {meetingDays(o.class_meetings) || "To be arranged"}</span>
-                  </div>
-                  <span className="whitespace-nowrap text-right font-mono text-[12px] text-ink-2" title={o.capacity !== null ? "This subject has its own number of seats" : "Follows the section's seats"}>
-                    {o.enrolled} / {o.capacity ?? section.capacity}
-                    <span className="block text-[11px] font-sans text-ink-3">{o.capacity !== null ? "own seats" : "seats"}</span>
-                  </span>
-                </button>
-              );
-            })}
+            <ul className="flex flex-col gap-2 p-3">
+              {offerings.data?.map((o) => {
+                const on = o.id === offering?.id;
+                const cap = o.capacity ?? section.capacity;
+                const pct = cap ? Math.min(100, Math.round((o.enrolled / cap) * 100)) : 0;
+                return (
+                  <li key={o.id}>
+                    <button aria-pressed={on} onClick={() => setOfferingId(o.id)}
+                      className={`flex w-full items-center gap-3.5 rounded-xl border px-3.5 py-3 text-left transition-colors ${on ? "border-accent bg-tint" : "border-line hover:border-ink-3 hover:bg-hover"}`}>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] font-semibold text-accent">{o.curriculum_subjects.code}</span>
+                          <span className="text-[12px] text-ink-3">{Number(o.curriculum_subjects.units)} units · {meetingDays(o.class_meetings) || "To be arranged"}</span>
+                        </span>
+                        <span className="mt-1.5 block text-[15px] font-semibold leading-snug text-ink">{o.curriculum_subjects.title}</span>
+                      </span>
+                      <span className="w-[68px] shrink-0 text-right" title={o.capacity !== null ? "This subject has its own number of seats" : "Follows the section's seats"}>
+                        <span className="font-mono text-[14px] font-semibold text-ink">{o.enrolled}<span className="text-ink-3">/{cap}</span></span>
+                        <span className="bar mt-1.5 block" aria-hidden="true"><span style={{ width: `${pct}%` }} /></span>
+                        <span className="mt-1 block text-[11px] text-ink-3">{o.capacity !== null ? "own seats" : "seats"}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           {offering && (

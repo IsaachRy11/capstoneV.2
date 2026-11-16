@@ -17,6 +17,7 @@ const PAGE_TITLES = [
   [/^\/curriculum/, "Curriculum"],
   [/^\/record/, "Academic record"],
   [/^\/progress/, "Subject tracker"],
+  [/^\/schedules\/edit/, "Edit class times"],
   [/^\/schedules/, "Schedules"],
   [/^\/schedule/, "Schedule"],
   [/^\/profile/, "Profile"],
@@ -56,7 +57,7 @@ const NAV = {
     { to: "/", end: true, icon: LayoutDashboard, label: "Dashboard", tab: "Home" },
     { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records" },
     { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
-    { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules" },
+    { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
   ],
   student: [
