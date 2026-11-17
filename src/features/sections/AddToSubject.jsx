@@ -148,9 +148,8 @@ export default function AddToSubject({ offeringId }) {
                       <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : st.text}</td>
                       <td className="text-[12px]">
                         <div className="flex flex-col gap-1">
-                          {r.in_block && <span className="text-ink-3">From {data.section}&apos;s block</span>}
-                          {r.retake && <span className="badge tone-warn w-fit">Retake (took it before)</span>}
-                          {r.failed > 0 && <span className="badge tone-bad w-fit">{r.failed} failed {r.failed === 1 ? "subject" : "subjects"}</span>}
+                          {r.retake && <span className="badge tone-warn w-fit">Retake</span>}
+                          {r.failed_this ? <span className="badge tone-bad w-fit">Failed this subject</span> : <span className="text-ink-3">Did not fail it</span>}
                         </div>
                       </td>
                     </tr>

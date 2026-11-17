@@ -60,7 +60,9 @@ begin
            exists (select 1 from public.enrollments e join public.class_offerings o2 on o2.id = e.offering_id
                    join public.sections sx on sx.id = o2.section_id
                    where e.student_id = st.id and o2.curriculum_subject_id = v_o.subject_id and sx.school_term_id <> v_o.school_term_id
-                     and e.status in ('failed', 'incomplete', 'dropped')) as tried_before
+                     and e.status in ('failed', 'incomplete', 'dropped')) as tried_before,
+           exists (select 1 from public.enrollments e join public.class_offerings o2 on o2.id = e.offering_id
+                   where e.student_id = st.id and o2.curriculum_subject_id = v_o.subject_id and e.status = 'failed') as failed_this
     from public.students st
     where (p_students is not null and st.id = any(p_students))
        or (p_students is null and st.status = 'active' and not private.has_passed(st.id, v_o.subject_id) and (
@@ -94,7 +96,7 @@ begin
       end if;
     end if;
     v_rows := v_rows || jsonb_build_object('student_id', s.id, 'full_name', s.full_name, 'year_level', s.year_level,
-      'failed', s.failed, 'section', s.this_term_section, 'in_block', s.in_block, 'retake', s.tried_before,
+      'failed', s.failed, 'failed_this', s.failed_this, 'section', s.this_term_section, 'in_block', s.in_block, 'retake', s.tried_before,
       'state', v_state, 'needs', v_missing);
   end loop;
   return jsonb_build_object('code', v_o.code, 'title', v_o.title, 'units', v_o.units, 'section', v_o.section_name,

@@ -203,8 +203,8 @@ export default function Roadmap() {
             {byYear.slice(0, -1).map((b) => (
               <span key={b.y} className="absolute top-0 h-3 w-0.5 bg-ink-3 opacity-50" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true" />
             ))}
-            {byYear.slice(0, -1).map((b) => (
-              <span key={`l${b.y}`} className="absolute top-5 -translate-x-full whitespace-nowrap pr-1.5 text-[11px] text-ink-3" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true">{`end of ${yearLabel(b.y).replace(" Year", "")} yr`}</span>
+            {byYear.slice(0, -1).map((b, i) => (
+              <span key={`l${b.y}`} className="absolute top-5 -translate-x-full whitespace-nowrap pr-1.5 text-[11px] text-ink-3" style={{ left: `calc((100% - 12px) * ${b.mark})` }} aria-hidden="true">{`${byYear.slice(0, i + 1).reduce((n, x) => n + x.total, 0)} units`}</span>
             ))}
             <span className="absolute -top-0.5 h-4 w-4 -translate-x-1/2 rounded-full border-[3px] bg-surface" style={{ left: `calc((100% - 12px) * ${progress.totalUnits ? progress.unitsEarned / progress.totalUnits : 0})`, borderColor: "var(--accent)" }} aria-hidden="true" />
             <span className="absolute -top-6 right-0 flex items-center gap-1 text-[11px] font-bold text-ink" aria-hidden="true">
