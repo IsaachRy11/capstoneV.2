@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, GraduationCap, Monitor, RotateCcw, Sun, UserPlus } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap, Monitor, RotateCcw, Sun } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { beginTerm, getLastStart, getTermsOverview, undoTermStart } from "../../services/terms";
 import { termLabel } from "../../lib/format";
@@ -95,12 +94,6 @@ export default function SchoolYearPage() {
             <button className="btn btn-secondary hidden lg:inline-flex" onClick={() => setConfirm("undo")}><RotateCcw size={16} aria-hidden="true" />Undo this start</button>
           )}
         </div>
-        {lastIsCurrent && (
-          <div className="hidden flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-2 px-4 py-3 lg:flex">
-            <span className="text-[14px] text-ink-2">Started {new Date(last.started_at).toLocaleDateString("en-PH", { month: "long", day: "numeric" })}. Next step: add students to each subject on Section allocations.</span>
-            <Link to="/sections" className="btn btn-primary btn-sm"><UserPlus size={15} aria-hidden="true" />Go to Section allocations</Link>
-          </div>
-        )}
       </section>
 
       <p className="flex items-start gap-2.5 rounded-lg border border-line bg-surface px-4 py-3 text-[14px] text-ink-2 lg:hidden">
