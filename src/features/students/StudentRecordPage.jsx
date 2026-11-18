@@ -100,7 +100,7 @@ export default function StudentRecord() {
         </div>
         <dl className="stat-grid border-t border-line-2 pt-5">
           {[
-            ["Section", student.section_name || "Not registered"],
+            ["Section", student.section_name || "Not yet enrolled"],
             ["Units this term", `${sumUnits(current)} units`],
             ["Units earned", `${earned} units`],
             ...(limit && !isSecretary ? [["Unit limit", `${limit} units a term`]] : []),

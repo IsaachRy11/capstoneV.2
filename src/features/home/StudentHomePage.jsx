@@ -53,7 +53,7 @@ export default function StudentHome() {
         <dl className="stat-grid border-t border-line-2 pt-5">
           {[
             ["Year level", yearLabel(student.year_level)],
-            ["Section", student.section_name || "Not registered"],
+            ["Section", student.section_name || "Not yet enrolled"],
             ["Subjects this term", `${active.length} subjects`],
             ["Units this term", `${units} units`],
           ].map(([k, v]) => (

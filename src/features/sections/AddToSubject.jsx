@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
-import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
+import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
 // Add students to ONE subject, the only enrolling page. Listed: this section's block (pre-ticked) and anyone who took the
@@ -132,7 +132,7 @@ export default function AddToSubject({ offeringId }) {
             <EmptyState>Nobody is listed for {data.code}. Find a student with the search above.</EmptyState>
           ) : (
             <table className="data-table">
-              <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Notices</th></tr></thead>
+              <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Status</th></tr></thead>
               <tbody>
                 {rows.map((r) => {
                   const st = STATE[r.state];
@@ -144,14 +144,9 @@ export default function AddToSubject({ offeringId }) {
                         <Link to={`/students/${r.student_id}`} className="font-semibold text-ink">{r.full_name}</Link>
                         <span className="block font-mono text-[12px] text-ink-3">{r.student_id} · {yearLabel(r.year_level)}</span>
                       </td>
-                      <td className="whitespace-nowrap text-[13px] text-ink-2">{r.section || "Not enrolled yet"}</td>
+                      <td className="whitespace-nowrap text-[13px] text-ink-2">{r.section || "Not yet enrolled"}</td>
                       <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : st.text}</td>
-                      <td className="text-[12px]">
-                        <div className="flex flex-col gap-1">
-                          {r.retake && <span className="badge tone-warn w-fit">Retake</span>}
-                          {r.failed_this ? <span className="badge tone-bad w-fit">Failed this subject</span> : <span className="text-ink-3">Did not fail it</span>}
-                        </div>
-                      </td>
+                      <td><StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} /></td>
                     </tr>
                   );
                 })}

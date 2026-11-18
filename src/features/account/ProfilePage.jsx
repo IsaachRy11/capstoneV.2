@@ -130,7 +130,7 @@ export default function Profile() {
               <Row label="Student ID"><span className="font-mono">{student.id}</span></Row>
               <Row label="Program">{student.program_name}</Row>
               <Row label="Year level">{yearLabel(student.year_level)}</Row>
-              <Row label="Section">{student.section_name || "Not registered this semester"}</Row>
+              <Row label="Section">{student.section_name || "Not yet enrolled"}</Row>
               <Row label="Student type">{studentTypeLabel(student)}</Row>
               <Row label="Status"><StudentStatusBadge student={student} /> <Link to="/record" className="ml-2 text-[14px] font-semibold">View record</Link></Row>
             </>
