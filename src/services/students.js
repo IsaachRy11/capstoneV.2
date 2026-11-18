@@ -78,19 +78,16 @@ export const saveGrades = (changes) =>
     })
   );
 
-// Creates the student, registers them in their block section for the current term and enrolls
-// them in that section's classes, all in one database transaction (public.add_student).
-export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type, sectionId = null }) {
+// Creates the student only (public.add_student). Enrolling happens per subject on Section allocations > Add students.
+export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }) {
   const params = {
     p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
     p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
   };
-  // Sent only when a section was picked, so "Automatic" also works on a database that predates migration 0010.
-  if (sectionId) params.p_section_id = sectionId;
-  const sectionName = await unwrap(supabase.rpc("add_student", params));
+  await unwrap(supabase.rpc("add_student", params));
   // The sign-in account is made on the server (it needs a secret key). If that fails the student still exists.
   // It returns a one-time password, shown once to the secretary to hand to the student.
   const { data, error } = await supabase.functions.invoke("create-student-login", { body: { studentId: id } });
   const loginCreated = !error && data?.ok === true;
-  return { sectionName, loginCreated, tempPassword: data?.tempPassword ?? null };
+  return { loginCreated, tempPassword: data?.tempPassword ?? null };
 }

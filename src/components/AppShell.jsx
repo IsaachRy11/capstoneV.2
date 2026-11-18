@@ -16,7 +16,7 @@ const PAGE_TITLES = [
   [/^\/sections\/enroll/, "Add students"],
   [/^\/sections/, "Section allocations"],
   [/^\/curriculum/, "Curriculum"],
-  [/^\/school-year/, "School year"],
+  [/^\/school-year/, "Start new term"],
   [/^\/record/, "Academic record"],
   [/^\/progress/, "Subject tracker"],
   [/^\/schedules\/edit/, "Edit class times"],
@@ -63,7 +63,7 @@ const NAV = {
     { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
     // Not in the phone tab bar: starting a term is done on a computer.
-    { to: "/school-year", icon: CalendarRange, label: "School year", noTab: true },
+    { to: "/school-year", icon: CalendarRange, label: "New term", noTab: true },
   ],
   student: [
     { to: "/", end: true, icon: Home, label: "Home", tab: "Home" },

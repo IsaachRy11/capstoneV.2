@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CalendarDays, GraduationCap, Monitor, RotateCcw, Sun } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, GraduationCap, Monitor, RotateCcw, Sun } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { beginTerm, getLastStart, getTermsOverview, undoTermStart } from "../../services/terms";
 import { termLabel } from "../../lib/format";
@@ -7,8 +7,9 @@ import { parseDate } from "../../lib/calendar";
 import { ErrorState, FormError, LoadingState, Modal, PageHeader } from "../../components/ui";
 import DateRangePicker from "./DateRangePicker";
 
-// Secretary: move the whole site to the next semester, summer or school year. Pick what comes next, click the first
-// and last day of classes on the calendar, press Start. Starting only creates the term (sections and classes from the
+// Secretary: move the whole site to the next semester, summer or school year. The page offers the usual next term
+// (Start 2nd Semester / Start new school year), warns when the current one has not ended yet (Continue is kept for
+// demos and testing), then the secretary clicks the first and last day of classes on the calendar and presses Start. Starting only creates the term (sections and classes from the
 // curriculum); students are enrolled afterwards on Section allocations > Enroll students, and a student's year level
 // follows the subjects they are enrolled in. Undo works until grades are entered. Rules: migration 0017.
 const fmt = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" });
@@ -24,6 +25,7 @@ function nextChoices(cur) {
   };
   if (cur.semester === 1) return [{ school_year: cur.school_year, semester: 2, icon: ArrowRight, title: "2nd Semester", label: "2nd Semester", what: "Same sections, the 2nd semester subjects." }];
   if (cur.semester === 2) return [newYear, { school_year: cur.school_year, semester: 3, icon: Sun, title: "Summer", label: "Summer", what: "Only years with summer subjects (3rd year BSIT and BSCS)." }];
+  // (the new school year comes first: it is what normally follows the 2nd semester)
   return [newYear];
 }
 
@@ -50,6 +52,8 @@ export default function SchoolYearPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [confirm, setConfirm] = useState(null); // "start" | "undo"
+  const [step, setStep] = useState("ask"); // "ask" (Start ...?) then "dates" (the calendar)
+  const [early, setEarly] = useState(false); // the current term has not ended yet
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -64,6 +68,8 @@ export default function SchoolYearPage() {
   const lastIsCurrent = last && last.to_term_id === current?.id;
   const isNewYear = next && next.school_year !== current.school_year;
   const range = next && bounds(next, current);
+  const daysLeft = current?.ends_on ? Math.ceil((parseDate(current.ends_on) - new Date().setHours(0, 0, 0, 0)) / 86400000) : 0;
+  const begin = () => { setErr(""); if (daysLeft > 0) setEarly(true); else setStep("dates"); };
 
   const doConfirm = async () => {
     setBusy(true);
@@ -80,7 +86,7 @@ export default function SchoolYearPage() {
 
   return (
     <>
-      <PageHeader title="School year" />
+      <PageHeader title="Start a new term" />
 
       <section className="card flex flex-col gap-4 p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-4">
@@ -101,40 +107,55 @@ export default function SchoolYearPage() {
         <span>Starting a new semester or school year is done on a computer.</span>
       </p>
 
-      {next && (
-        <section className="card hidden flex-col gap-6 p-5 sm:p-6 lg:flex">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-[19px] font-bold">1. What comes next?</h2>
-            <div className="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="What comes next">
-              {choices.map((c, i) => {
-                const on = c === next;
-                const Icon = c.icon;
-                return (
-                  <button key={c.title} type="button" role="radio" aria-checked={on} onClick={() => { setPick(i); setDates(null); setErr(""); }}
-                    className={`flex items-center gap-3.5 rounded-xl border p-4 text-left transition-colors ${on ? "border-accent bg-tint" : "border-line hover:border-ink-3 hover:bg-hover"}`}>
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${on ? "bg-surface text-accent" : "bg-surface-2 text-ink-3"}`}><Icon size={18} aria-hidden="true" /></span>
-                    <span className="min-w-0">
-                      <span className="block text-[15px] font-bold text-ink">{c.title}</span>
-                      <span className="block text-[13px] text-ink-2">{c.what}</span>
-                    </span>
-                  </button>
-                );
-              })}
+      {next && step === "ask" && (
+        <section className="card hidden flex-col gap-4 p-5 sm:p-6 lg:flex">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"><next.icon size={22} aria-hidden="true" /></span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[13px] font-semibold text-ink-3">Next</h2>
+              <p className="font-display text-[20px] font-bold text-ink">{next.title}</p>
+              <p className="text-[14px] text-ink-2">{next.what}</p>
             </div>
+            <button className="btn btn-primary" onClick={begin}>Start {next.title}<ArrowRight size={16} aria-hidden="true" /></button>
           </div>
+          {choices.length > 1 && (
+            <p className="border-t border-line pt-3 text-[13px] text-ink-3">
+              Not what you need?{" "}
+              {choices.filter((c) => c !== next).map((c) => (
+                <button key={c.title} className="font-semibold text-accent underline-offset-2 hover:underline" onClick={() => { setPick(choices.indexOf(c)); setDates(null); }}>Start {c.title} instead</button>
+              ))}
+            </p>
+          )}
+        </section>
+      )}
 
-          <div className="flex flex-col gap-3">
-            <h2 className="text-[19px] font-bold">2. When are classes{isNewYear ? " in the 1st semester" : ""}?</h2>
-            <p className="-mt-1 text-[14px] text-ink-2">Click the first day of classes, then the last day.</p>
-            <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} termName={next.label} />
+      {next && step === "dates" && (
+        <section className="card hidden flex-col gap-5 p-5 sm:p-6 lg:flex">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-[19px] font-bold">When are classes{isNewYear ? " in the 1st semester" : ""}?</h2>
+              <p className="text-[14px] text-ink-2">Click the first day of classes, then the last day.</p>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setStep("ask"); setDates(null); setErr(""); }}><ArrowLeft size={15} aria-hidden="true" />Back</button>
           </div>
+          <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} termName={next.label} />
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
             <p className="text-[13px] text-ink-3">Sections and classes are made from the curriculum. Students are enrolled after the start.</p>
-            <button className="btn btn-primary" disabled={!starts || !ends} onClick={() => { setErr(""); setConfirm("start"); }}>3. Start {next.title}</button>
+            <button className="btn btn-primary" disabled={!starts || !ends} onClick={() => { setErr(""); setConfirm("start"); }}>Start {next.title}</button>
           </div>
           {!confirm && <FormError error={err} />}
         </section>
+      )}
+
+      {early && (
+        <Modal title={`${termLabel(current)} hasn't ended yet`} onClose={() => setEarly(false)}
+          footer={<>
+            <button className="btn btn-secondary" onClick={() => setEarly(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={() => { setEarly(false); setStep("dates"); }}>Continue anyway</button>
+          </>}>
+          <p className="text-[14px] text-ink-2">Classes run until {fmt(current.ends_on)}, {daysLeft} {daysLeft === 1 ? "day" : "days"} from now. In real use you start the next term after this one ends. Continue only for a demo or a test.</p>
+        </Modal>
       )}
 
       {confirm && (

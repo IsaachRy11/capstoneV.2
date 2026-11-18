@@ -170,7 +170,7 @@ export default function Sections() {
       {confirmRemove && (
         <Modal title="Remove from class?" onClose={() => setConfirmRemove(null)}
           footer={<><button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button><button className="btn btn-danger" onClick={doRemove}>Remove</button></>}>
-          <p className="text-[14px] text-ink-2">{confirmRemove.name} will be removed from {offering.curriculum_subjects.code}. This only works for a class added by mistake: once a class has a grade or a status, mark it Dropped on the student's record instead so the history is kept.</p>
+          <p className="text-[14px] text-ink-2">{confirmRemove.name} will be removed from {offering.curriculum_subjects.code}. If the class already has grades, they are removed with it, and the removal is saved in the grade change history on the student&apos;s record.</p>
           <div className="mt-3"><FormError error={actionError} /></div>
         </Modal>
       )}

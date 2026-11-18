@@ -209,11 +209,20 @@ describe("security rules (RLS)", () => {
 });
 
 describe("add_student (one transaction)", () => {
-  it("creates the student, registers them and enrolls them in every class of their section", async () => {
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student','test.student@x.test',${bsit},1::smallint,'new') sec`);
+  it("with a section: creates the student, registers them and enrolls them in every class of the section", async () => {
+    const s = await one(`select id from sections where name = 'BSIT 1-S' and school_term_id = (select id from school_terms where is_current)`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student','test.student@x.test',${bsit},1::smallint,'new',${s.id}) sec`);
     expect(r.rows[0].sec).toBe("BSIT 1-S");
     const made = await one(`select (select count(*)::int from registrations where student_id='2026-9099') r, (select count(*)::int from enrollments where student_id='2026-9099') e`);
     expect(made).toEqual({ r: 1, e: 9 }); // BSIT 1st year, 1st semester: 9 subjects (AY 2024-2025 checklist)
+  });
+
+  it("without a section: creates only the student, enrolled nowhere", async () => {
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9079','Plain','Student','plain.student@x.test',${bsit},1::smallint,'new') sec`);
+    expect(r.error).toBeUndefined();
+    expect(r.rows[0].sec).toBeNull();
+    const made = await one(`select (select count(*)::int from students where id='2026-9079') s, (select count(*)::int from registrations where student_id='2026-9079') r, (select count(*)::int from enrollments where student_id='2026-9079') e`);
+    expect(made).toEqual({ s: 1, r: 0, e: 0 });
   });
 
   it("leaves nothing behind when it fails", async () => {
@@ -234,13 +243,6 @@ describe("add_student (one transaction)", () => {
     const r = await as("authenticated", SEC, `select public.add_student('2026-9095','Wrong','Section','wrong.section@x.test',${bsit},1::smallint,'new',${other.id})`);
     expect(r.error).toMatch(/isn't open for this program and year/);
     expect(await one(`select count(*)::int n from students where id='2026-9095'`)).toEqual({ n: 0 });
-  });
-
-  it("without a choice, uses the section with the most free seats", async () => {
-    await db.exec(`update sections set capacity = 60 where name = 'BSIT 1-V' and school_term_id = (select id from school_terms where is_current)`);
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9094','Most','Seats','most.seats@x.test',${bsit},1::smallint,'new') sec`);
-    await db.exec(`update sections set capacity = 40 where name = 'BSIT 1-V' and school_term_id = (select id from school_terms where is_current)`);
-    expect(r.rows[0].sec).toBe("BSIT 1-V");
   });
 
   it("refuses students", async () => {
@@ -434,13 +436,25 @@ describe("state machine rules", () => {
     expect((await one(`select status from enrollments where id = ${e.id}`)).status).toBe("passed");
   });
 
-  it("won't delete a class that has grades, and keeps the history", async () => {
+  it("removes a class that has grades, and keeps a permanent log of the removal", async () => {
     const off = await firstOffering("BSIT 4-S");
-    const id = (await enrollmentIds(off.id))[3].id;
+    const row = (await enrollmentIds(off.id))[3];
+    const id = row.id;
     await save(id, { midterm: 2.0, final: 2.25, status: "auto" });
-    const r = await asSec(`delete from enrollments where id = ${id}`);
-    expect(r.error).toMatch(/Mark the class as Dropped/);
-    expect((await one(`select count(*)::int n from grade_changes where enrollment_id = ${id}`)).n).toBe(1);
+    const student = (await one(`select student_id from enrollments where id = ${id}`)).student_id;
+    const r = await asSec(`delete from enrollments where id = ${id} returning id`);
+    expect(r.error).toBeUndefined();
+    expect(r.rows).toHaveLength(1);
+    // The grade edit and the removal both stay in the log, which no longer points at the deleted class.
+    const log = (await db.query(`select class_removed, enrollment_id, old_final, new_final, subject_code from grade_changes where student_id = '${student}' and subject_code is not null order by id`)).rows;
+    const removal = log.filter((l) => l.class_removed);
+    expect(removal).toHaveLength(1);
+    expect(removal[0]).toMatchObject({ enrollment_id: null, new_final: null });
+    expect(Number(removal[0].old_final)).toBe(2.25);
+    expect(log.some((l) => !l.class_removed)).toBe(true);
+    // Log rows can't be deleted by the secretary.
+    const del = await asSec(`delete from grade_changes where student_id = '${student}' returning id`);
+    expect(del.rows ?? []).toHaveLength(0);
   });
 
   it("still lets the secretary remove a class entered by mistake", async () => {

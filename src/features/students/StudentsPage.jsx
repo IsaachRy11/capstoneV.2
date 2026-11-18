@@ -4,7 +4,6 @@ import { ChevronRight, Download, Plus, Search } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { getPrograms } from "../../services/catalog";
-import { listCurrentSections } from "../../services/sections";
 import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { STUDENT_TYPE, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, yearLabel } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
@@ -49,8 +48,8 @@ export default function Students() {
   const [notice, setNotice] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [students, programs, sections] = await Promise.all([listStudents(), getPrograms(), listCurrentSections()]);
-    return { students, programs, sections };
+    const [students, programs] = await Promise.all([listStudents(), getPrograms()]);
+    return { students, programs };
   }, [], "students");
 
   const setParam = (k, v) => {
@@ -219,7 +218,7 @@ export default function Students() {
       )}
 
       {adding && (
-        <AddStudentModal programs={data.programs} sections={data.sections} term={term}
+        <AddStudentModal programs={data.programs} term={term}
           onClose={() => { setAdding(false); setParam("add", null); }}
           onCreated={(msg) => { setAdding(false); setNotice(msg); reload(); }} />
       )}
