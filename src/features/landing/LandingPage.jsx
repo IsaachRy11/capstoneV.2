@@ -22,7 +22,7 @@ const FOR_OFFICE = [
   { icon: PenLine, title: "Grade encoding", text: "Every grade change is logged." },
 ];
 const STEPS = [
-  { title: "Sign in with your student ID", text: "Staff sign in with their email." },
+  { title: "Sign in with your student ID", text: "Staff sign in with their staff ID, such as CCS-001." },
   { title: "Check your subjects and grades", text: "Your schedule, grades and standing in one place." },
   { title: "Spot a failed subject? Act early", text: "Visit the CCS office while there's still time to plan." },
 ];
@@ -125,7 +125,7 @@ export default function LandingPage() {
               <Link to="/signin" className="btn btn-primary h-12 px-6 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
               <a href="#how" className="btn btn-secondary h-12 px-6 text-[15px]">How it works</a>
             </div>
-            <p className="text-[13px] text-ink-3">Students sign in with their student ID. Staff sign in with their email.</p>
+            <p className="text-[13px] text-ink-3">Students sign in with their student ID. Staff sign in with their staff ID, such as CCS-001.</p>
           </div>
           <PathToGraduation />
         </section>
