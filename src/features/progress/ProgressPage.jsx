@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
-import { semesterLabel, sumUnits, termLabel, yearLabel } from "../../lib/format";
+import { sumUnits, termLabel, yearSemesterLabel } from "../../lib/format";
 import { prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
@@ -50,7 +50,7 @@ export default function Progress() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">This semester</span>
-            <h2 className="mt-1 text-[24px] font-bold tracking-tight sm:text-[28px]">{yearLabel(student.year_level)} · {semesterLabel(term.semester)}</h2>
+            <h2 className="mt-1 text-[24px] font-bold tracking-tight sm:text-[28px]">{yearSemesterLabel(student.year_level, term.semester)}</h2>
             <p className="mt-1 text-[14px] text-ink-2">{termLabel(term)}{student.section_name ? ` · ${student.section_name}` : ""}</p>
           </div>
           <StudentStatusBadge student={student} />

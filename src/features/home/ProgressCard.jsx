@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, GraduationCap } from "lucide-react";
-import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { sumUnits, yearSemesterLabel } from "../../lib/format";
 import { prerequisiteStatus } from "../../lib/progress";
 
 // Home: where the student stands in the whole program, and what comes next.
@@ -29,7 +29,7 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
       <div className="border-t border-line-2 pt-4">
         {next ? (
           <>
-            <h3 className="text-[14px] font-bold">Next semester: {yearLabel(next.year)}, {semesterLabel(next.semester)}</h3>
+            <h3 className="text-[14px] font-bold">Next semester: {yearSemesterLabel(next.year, next.semester)}</h3>
             <p className="mt-1 text-[13px] text-ink-3">{nextSubjects.length} subjects · {sumUnits(nextSubjects)} units</p>
             <ul className="mt-3 flex flex-col gap-1.5 text-[13px]">
               {blocked.length > 0 && (

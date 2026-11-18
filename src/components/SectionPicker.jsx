@@ -3,7 +3,7 @@ import { sectionLetter, yearLabel } from "../lib/format";
 // Program + year level (+ section letter) buttons. `picker` comes from useSectionPicker(); `onChange` runs after any pick.
 // Phones: one full-width switcher per row (program, year, section), like an app; wider screens keep them inline.
 export default function SectionPicker({ picker, onChange }) {
-  const { programs, program, year, section, sectionsHere = [], pickProgram, pickYear, pickSection } = picker;
+  const { programs, program, year, years, section, sectionsHere = [], pickProgram, pickYear, pickSection } = picker;
   if (!program) return null;
   return (
     <div className="no-print flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
@@ -13,7 +13,7 @@ export default function SectionPicker({ picker, onChange }) {
         ))}
       </div>
       <div className="seg seg-fill" role="group" aria-label="Year level">
-        {Array.from({ length: program.duration_years }, (_, i) => i + 1).map((y) => (
+        {(years?.length ? years : Array.from({ length: program.duration_years }, (_, i) => i + 1)).map((y) => (
           <button key={y} aria-pressed={y === year} onClick={() => { pickYear(y); onChange?.(); }}>{yearLabel(y)}</button>
         ))}
       </div>

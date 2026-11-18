@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
-import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
 import { prerequisiteStatus, prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
@@ -40,7 +40,7 @@ function AheadTerm({ t, isNext, pos }) {
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 [&::-webkit-details-marker]:hidden">
           <span className="min-w-0 flex-1">
             {isNext && <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-accent">Next semester</span>}
-            <span className="block text-[15px] font-bold">{yearLabel(t.year)} · {semesterLabel(t.semester)}</span>
+            <span className="block text-[15px] font-bold">{yearSemesterLabel(t.year, t.semester)}</span>
             <span className="block text-[13px] text-ink-3">
               {count(t.subjects.length, "subject", "subjects")} · {units} units
               {blocked > 0 && <span className="text-warn"> · {blocked} blocked</span>}

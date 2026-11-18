@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BookOpen, Check, ChevronDown, Pencil } from "lucide-react";
 import { saveGrades } from "../../services/students";
 import { Badge, FormError, StatusBadge } from "../../components/ui";
-import { GRADE_OPTIONS, STATUS_LABEL, formatGrade, semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { GRADE_OPTIONS, STATUS_LABEL, formatGrade, sumUnits, yearSemesterLabel } from "../../lib/format";
 
 // What a row will be once saved. Passed and Failed always follow the final grade (3.00 or better passes, 5.00 fails),
 // so they can never disagree with it; INC and Dropped are chosen with their buttons and carry no final grade.
@@ -116,11 +116,11 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-bold">
-              {yearLabel(term.curriculum_year)} · {semesterLabel(term.semester)}
+              {yearSemesterLabel(term.curriculum_year, term.semester)}
               {term.is_current && <Badge tone="info" dot>Current term</Badge>}
             </span>
             <span className="block text-[13px] font-normal text-ink-3">
-              SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units · {term.section_name}
+              SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units{term.semester === 3 ? "" : ` · ${term.section_name}`}
               {termAvg && <> · Term average <span className="font-mono font-semibold text-ink-2">{termAvg}</span></>}
             </span>
           </span>

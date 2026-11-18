@@ -672,6 +672,22 @@ describe("starting a term and enrolling sections", () => {
     expect(await yearOf(who)).toBe(base);
   });
 
+  it("a summer term also offers the subjects students failed and have not passed since", async () => {
+    await rpc(`public.prepare_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
+    const t3 = await term("2026-2027", 3);
+    const extra = (await db.query(`select o.curriculum_subject_id id, s.program_id, cs.curriculum_id
+      from class_offerings o join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where s.school_term_id = ${t3.id} and cs.semester <> 3`)).rows;
+    expect(extra.length).toBeGreaterThan(0); // retake subjects are offered next to the summer subjects
+    for (const x of extra) {
+      const owed = await one(`select private.needs_retake(${x.curriculum_id}, ${x.id}) n`);
+      expect(owed.n).toBe(true); // ... and each one is owed by at least one active student
+    }
+    // The curriculum's own summer subjects are still there.
+    expect((await one(`select count(*)::int n from class_offerings o join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      where s.school_term_id = ${t3.id} and cs.semester = 3`)).n).toBeGreaterThan(0);
+  }, 120_000);
+
   it("a new school year: nobody moves up until enrolled; the next year's block raises the year", async () => {
     for (const id of carried) yearsAtStart[id] = await yearOf(id);
     const r = await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);

@@ -3,6 +3,8 @@
 
 export const yearLabel = (y) => ["", "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"][y] || `Year ${y}`;
 export const semesterLabel = (s) => (s === 1 ? "1st Semester" : s === 2 ? "2nd Semester" : "Summer");
+// "3rd Year · 1st Semester"; summer is just "Summer" (it also holds retakes from any year).
+export const yearSemesterLabel = (year, sem) => (sem === 3 ? "Summer" : `${yearLabel(year)} · ${semesterLabel(sem)}`);
 export const termLabel = (t) => (t ? `SY ${t.school_year.replace("-", "–")} · ${semesterLabel(t.semester)}` : "");
 
 // "Bachelor of Science in Computer Science" → "BS Computer Science" (display only).

@@ -1,5 +1,5 @@
 import { BackButton, Badge, EmptyState, PageHeader } from "../../components/ui";
-import { semesterLabel, sumUnits, yearLabel } from "../../lib/format";
+import { sumUnits, yearSemesterLabel } from "../../lib/format";
 import { SUBJECT_STATE } from "../../lib/progress";
 import { VIEWS } from "./progressViews";
 
@@ -37,13 +37,13 @@ export default function ProgressDetail({ view, progress, retakeNext, backTo = "/
                       <span className="block font-medium">{s.title}</span>
                       {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                       {/* Phones: the hidden columns are folded in here. */}
-                      <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearLabel(s.year_level)} · {semesterLabel(s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
+                      <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearSemesterLabel(s.year_level, s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                       <span className="mt-1.5 block sm:hidden">
                         <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
                         {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
                       </span>
                     </td>
-                    <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearLabel(s.year_level)} · {semesterLabel(s.semester)}</td>
+                    <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearSemesterLabel(s.year_level, s.semester)}</td>
                     <td className="num hidden sm:table-cell">{Number(s.units)}</td>
                     <td className="hidden sm:table-cell">
                       <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
