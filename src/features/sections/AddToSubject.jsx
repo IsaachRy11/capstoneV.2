@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
-import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
+import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
 // Add students to ONE subject, the only enrolling page. Listed: this section's block (pre-ticked) and anyone who took the
@@ -12,10 +12,19 @@ import { termLabel, yearLabel } from "../../lib/format";
 // prerequisites, unit limit): subject_enroll_plan / enroll_in_subject, migration 0018.
 const STATE = {
   add: { text: "Can be added", tone: "text-ok" },
-  enrolled: { text: "Already in this class", tone: "text-ink-3" },
+  enrolled: { text: "Already in this subject", tone: "text-ink-3" },
   passed: { text: "Already passed it", tone: "text-ink-3" },
   over_limit: { text: "Over their unit limit", tone: "text-warn" },
 };
+
+// The student's own history with THIS subject (not their overall Regular/Irregular status).
+function subjectStatus(r) {
+  if (r.state === "passed") return <span className="badge tone-ok">Passed</span>;
+  if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
+  if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
+  if (r.retake) return <span className="badge tone-warn">Retake</span>;
+  return <span className="text-[13px] text-ink-3">Not yet enrolled</span>;
+}
 
 export default function AddToSubject({ offeringId }) {
   const { term } = useOutletContext();
@@ -132,7 +141,7 @@ export default function AddToSubject({ offeringId }) {
             <EmptyState>Nobody is listed for {data.code}. Find a student with the search above.</EmptyState>
           ) : (
             <table className="data-table">
-              <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Status</th></tr></thead>
+              <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Status in this subject</th></tr></thead>
               <tbody>
                 {rows.map((r) => {
                   const st = STATE[r.state];
@@ -146,7 +155,7 @@ export default function AddToSubject({ offeringId }) {
                       </td>
                       <td className="whitespace-nowrap text-[13px] text-ink-2">{r.section || "Not yet enrolled"}</td>
                       <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : st.text}</td>
-                      <td><StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} /></td>
+                      <td>{subjectStatus(r)}</td>
                     </tr>
                   );
                 })}

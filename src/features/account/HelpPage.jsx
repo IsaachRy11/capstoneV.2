@@ -46,20 +46,20 @@ const STUDENT = [
 
 const SECRETARY = [
   {
-    q: "Why can't I enroll a student in a class?",
-    a: <>The class is full, its schedule clashes with another class of that student, or the student's status isn't Active. The message tells you which. Raise the section's capacity, pick another class, or change the status on the student's record.</>,
+    q: "Why can't I add a student to a subject?",
+    a: <>The subject is full, its schedule clashes with another subject of that student, a prerequisite isn't passed yet, the student would go over their unit limit, or the student's status isn't Active. The message tells you which. Change the seats, or fix the student's record, and try again.</>,
   },
   {
-    q: "Why can't I remove a student from a class?",
-    a: <>Once a class has a grade, a status such as INC or Dropped, or any grade history, it can't be removed, so the history is kept. Mark the class as Dropped on the student's record instead. Removing only works for a class added by mistake.</>,
+    q: "Can I remove a student from a subject after grades were entered?",
+    a: <>Yes. You are asked to confirm, the grades go away with the subject, and the removal is saved in the student's grade change history, which can't be edited or deleted.</>,
   },
   {
-    q: "Why can't I put a dropped student back in a class?",
-    a: <>Bringing a student back runs the same checks as a new enrollment: the class must have a free seat and no schedule clash.</>,
+    q: "Why can't I put a dropped student back in a subject?",
+    a: <>Bringing a student back runs the same checks as a new enrollment: the subject must have a free seat and no schedule clash.</>,
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record: Active, Graduated or Dropped. Regular and Irregular are worked out automatically for active students. Only active students can be enrolled in classes. Graduated and Dropped students have their own tabs on the Students page.</>,
+    a: <>It is set on the student's record: Active, Graduated, Dropped or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated and Dropped students have their own tabs on the Students page.</>,
   },
   {
     q: "Why can't I delete a subject?",
@@ -67,7 +67,7 @@ const SECRETARY = [
   },
   {
     q: "Why was a class time refused?",
-    a: <>It overlaps another class of the same section, a room that is already booked, or an enrolled student's other class. The gymnasium is the only room that can be shared.</>,
+    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The gymnasium is the only room that can be shared.</>,
   },
   {
     q: "Where can I see who changed a grade?",

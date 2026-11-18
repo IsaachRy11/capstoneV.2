@@ -41,14 +41,8 @@ export function searchStudents(query) {
 }
 
 // Add students to ONE subject: who to list and whether each can be added (migration 0018).
-// Each row also carries the student's status (Regular, Irregular, ...) from v_student_overview.
-export async function getSubjectPlan(offeringId, studentIds = null) {
-  const plan = await unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
-  if (!plan.students?.length) return plan;
-  const info = await unwrap(supabase.from("v_student_overview").select("id, status, standing").in("id", plan.students.map((r) => r.student_id)));
-  const byId = Object.fromEntries(info.map((s) => [s.id, s]));
-  return { ...plan, students: plan.students.map((r) => ({ ...r, student_status: byId[r.student_id]?.status, standing: byId[r.student_id]?.standing })) };
-}
+export const getSubjectPlan = (offeringId, studentIds = null) =>
+  unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
 
 export const enrollInSubject = (offeringId, studentIds) =>
   unwrap(supabase.rpc("enroll_in_subject", { p_offering: offeringId, p_students: studentIds }));

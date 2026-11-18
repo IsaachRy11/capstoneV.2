@@ -42,7 +42,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
     }
     const clears = d.final !== "";
     setDraft((all) => ({ ...all, [r.enrollment_id]: { ...d, status: kind, final: "", finalBackup: d.status === "auto" ? d.final : d.finalBackup } }));
-    setNote(clears ? `${r.code}: the final grade ${Number(d.final).toFixed(2)} was set aside because ${KIND_NAME[kind]} classes have no final grade. Press ${KIND_NAME[kind]} again to bring it back.` : "");
+    setNote(clears ? `${r.code}: the final grade ${Number(d.final).toFixed(2)} was set aside because ${KIND_NAME[kind]} subjects have no final grade. Press ${KIND_NAME[kind]} again to bring it back.` : "");
   };
 
   // Whole semester at once (someone who drops everything). Classes that already have a saved final grade are left alone,
@@ -58,8 +58,8 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
     }
     setDraft(next);
     setNote(n === 0
-      ? "Every class here already has a final grade, so nothing changed."
-      : `${n} ${n === 1 ? "class" : "classes"} set to ${KIND_NAME[kind]}${kept ? `; ${kept} with final grades ${kept === 1 ? "was" : "were"} left alone` : ""}. Nothing is saved until you press Save grades.`);
+      ? "Every subject here already has a final grade, so nothing changed."
+      : `${n} ${n === 1 ? "subject" : "subjects"} set to ${KIND_NAME[kind]}${kept ? `; ${kept} with final grades ${kept === 1 ? "was" : "were"} left alone` : ""}. Nothing is saved until you press Save grades.`);
   };
 
   const save = async () => {

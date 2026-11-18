@@ -61,7 +61,7 @@ export default function Dashboard() {
             <span style={{ width: `${seats ? (filled / seats) * 100 : 0}%` }} />
           </div>
         </Kpi>
-        <Kpi to="/sections" label="Classes offered" value={offerings} sub="Subjects scheduled this semester" />
+        <Kpi to="/sections" label="Subjects offered" value={offerings} sub="Offered this semester" />
       </div>
 
       <div className="flex flex-wrap items-start gap-6">

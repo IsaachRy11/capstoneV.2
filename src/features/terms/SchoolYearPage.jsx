@@ -15,17 +15,17 @@ import DateRangePicker from "./DateRangePicker";
 const fmt = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" });
 const short = (sy) => sy.replace("-", "–");
 
-// What can come after the current term, in plain words.
+// What can come after the current term. The first choice is the usual one. Titles read "1st Sem · S.Y 2027–2028".
 function nextChoices(cur) {
   const [, y2] = cur.school_year.split("-").map(Number);
   const nextYear = `${y2}-${y2 + 1}`;
   const newYear = {
-    school_year: nextYear, semester: 1, icon: GraduationCap, title: `New school year ${short(nextYear)}`, label: "1st Semester",
-    what: "Starts with its 1st semester and a fresh calendar.",
+    school_year: nextYear, semester: 1, icon: GraduationCap, title: `1st Sem · S.Y ${short(nextYear)}`, label: "1st Semester",
+    what: "A new school year, with a fresh calendar.",
   };
-  if (cur.semester === 1) return [{ school_year: cur.school_year, semester: 2, icon: ArrowRight, title: "2nd Semester", label: "2nd Semester", what: "Same sections, the 2nd semester subjects." }];
-  if (cur.semester === 2) return [newYear, { school_year: cur.school_year, semester: 3, icon: Sun, title: "Summer", label: "Summer", what: "Only years with summer subjects (3rd year BSIT and BSCS)." }];
-  // (the new school year comes first: it is what normally follows the 2nd semester)
+  if (cur.semester === 1) return [{ school_year: cur.school_year, semester: 2, icon: ArrowRight, title: `2nd Sem · S.Y ${short(cur.school_year)}`, label: "2nd Semester", what: "Same sections, the 2nd semester subjects." }];
+  const summer = { school_year: cur.school_year, semester: 3, icon: Sun, title: `Summer · S.Y ${short(cur.school_year)}`, label: "Summer", what: "Summer subjects only (3rd year BSIT and BSCS). It comes before the next 1st semester." };
+  if (cur.semester === 2) return [newYear, summer];
   return [newYear];
 }
 
@@ -112,20 +112,22 @@ export default function SchoolYearPage() {
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"><next.icon size={22} aria-hidden="true" /></span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-[13px] font-semibold text-ink-3">Next</h2>
+              <h2 className="text-[13px] font-semibold text-ink-3">Usually next</h2>
               <p className="font-display text-[20px] font-bold text-ink">{next.title}</p>
               <p className="text-[14px] text-ink-2">{next.what}</p>
             </div>
             <button className="btn btn-primary" onClick={begin}>Start {next.title}<ArrowRight size={16} aria-hidden="true" /></button>
           </div>
-          {choices.length > 1 && (
-            <p className="border-t border-line pt-3 text-[13px] text-ink-3">
-              Not what you need?{" "}
-              {choices.filter((c) => c !== next).map((c) => (
-                <button key={c.title} className="font-semibold text-accent underline-offset-2 hover:underline" onClick={() => { setPick(choices.indexOf(c)); setDates(null); }}>Start {c.title} instead</button>
-              ))}
-            </p>
-          )}
+          {choices.map((c, i) => c === next ? null : (
+            <div key={c.title} className="flex flex-wrap items-center gap-4 border-t border-line pt-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"><c.icon size={22} aria-hidden="true" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-bold text-ink">{c.title}</p>
+                <p className="text-[13px] text-ink-2">{c.what}</p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => { setPick(i); setDates(null); begin(); }}>Start {c.title}</button>
+            </div>
+          ))}
         </section>
       )}
 
@@ -141,7 +143,7 @@ export default function SchoolYearPage() {
           <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} termName={next.label} />
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-            <p className="text-[13px] text-ink-3">Sections and classes are made from the curriculum. Students are enrolled after the start.</p>
+            <p className="text-[13px] text-ink-3">Sections and subjects are made from the curriculum. Students are enrolled after the start.</p>
             <button className="btn btn-primary" disabled={!starts || !ends} onClick={() => { setErr(""); setConfirm("start"); }}>Start {next.title}</button>
           </div>
           {!confirm && <FormError error={err} />}
@@ -159,7 +161,7 @@ export default function SchoolYearPage() {
       )}
 
       {confirm && (
-        <Modal title={confirm === "start" ? `Start ${isNewYear ? `school year ${short(next.school_year)}` : `the ${next.title}`}?` : "Undo this start?"} onClose={() => !busy && setConfirm(null)}
+        <Modal title={confirm === "start" ? `Start ${next.title}?` : "Undo this start?"} onClose={() => !busy && setConfirm(null)}
           footer={<>
             <button className="btn btn-secondary" onClick={() => setConfirm(null)} disabled={busy}>Cancel</button>
             <button className={confirm === "start" ? "btn btn-primary" : "btn btn-danger"} disabled={busy} onClick={doConfirm}>
@@ -168,14 +170,14 @@ export default function SchoolYearPage() {
           </>}>
           {confirm === "start" ? (
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[14px] text-ink-2">
-              <li>The whole site switches to {short(next.school_year)} {next.label}: {fmt(starts)} to {fmt(ends)}.</li>
-              <li>Sections and classes are made from the curriculum. Nobody is enrolled yet: you add them subject by subject on Section allocations (Add students).</li>
+              <li>The whole site switches to {next.title}: {fmt(starts)} to {fmt(ends)}.</li>
+              <li>Sections and subjects are made from the curriculum. Nobody is enrolled yet: you add them subject by subject on Section allocations (Add students).</li>
               <li>A student&apos;s year level follows the subjects you enroll them in.</li>
               {isNewYear && <li>The calendar for the new school year starts with just these two days. Add holidays and exams on the Calendar page.</li>}
               <li>You can undo it until a grade is entered.</li>
             </ul>
           ) : (
-            <p className="text-[14px] text-ink-2">{current ? termLabel(current) : "This term"} stops being current. Its classes, enrollments and calendar dates added by the start are removed, and every student gets back their year level and status.</p>
+            <p className="text-[14px] text-ink-2">{current ? termLabel(current) : "This term"} stops being current. Its subjects, enrollments and calendar dates added by the start are removed, and every student gets back their year level and status.</p>
           )}
           <div className="mt-3"><FormError error={err} /></div>
         </Modal>

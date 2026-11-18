@@ -25,7 +25,7 @@ export default function SubjectCapacityModal({ section, offering, onClose, onSav
   const submit = (e) => {
     e.preventDefault();
     const n = Number(value);
-    if (!Number.isInteger(n) || n < least) return setError(`Enter a whole number of at least ${least} (students already in this class).`);
+    if (!Number.isInteger(n) || n < least) return setError(`Enter a whole number of at least ${least} (students already in this subject).`);
     save(n);
   };
 

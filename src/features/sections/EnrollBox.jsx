@@ -10,7 +10,7 @@ export default function EnrollBox({ section, offering }) {
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-2 px-5 py-3.5 sm:px-6">
       <span className="text-[13px] text-ink-2">
         <span className="font-semibold text-ink">{offering.enrolled} {offering.enrolled === 1 ? "student" : "students"}</span> ·{" "}
-        {seatsLeft > 0 ? `${seatsLeft} ${seatsLeft === 1 ? "seat" : "seats"} left` : "Class is full"}
+        {seatsLeft > 0 ? `${seatsLeft} ${seatsLeft === 1 ? "seat" : "seats"} left` : "Subject is full"}
       </span>
       {seatsLeft > 0 && (
         <Link to={`/sections/enroll?offering=${offering.id}`} className="btn btn-secondary btn-sm hidden lg:inline-flex">

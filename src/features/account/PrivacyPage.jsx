@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       body: (
         <ul className="list-disc space-y-1 pl-5">
           <li>Name, student ID, email, program, year level and student type</li>
-          <li>Section, enrolled classes, schedules and rooms</li>
+          <li>Section, enrolled subjects, schedules and rooms</li>
           <li>Midterm and final grades, and their status</li>
           <li>Your profile picture, if you add one</li>
         </ul>

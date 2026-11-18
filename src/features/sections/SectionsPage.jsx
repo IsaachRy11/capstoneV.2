@@ -152,12 +152,12 @@ export default function Sections() {
                             <StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} />
                             <span className="mt-0.5 block text-[12px] text-ink-3">{studentTypeLabel(r)}</span>
                           </td>
-                          <td className="hidden text-right lg:table-cell"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this class`}><Trash2 size={16} /></button></td>
+                          <td className="hidden text-right lg:table-cell"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this subject`}><Trash2 size={16} /></button></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {roster.data.length === 0 && <EmptyState>No students in this class yet.</EmptyState>}
+                  {roster.data.length === 0 && <EmptyState>No students in this subject yet.</EmptyState>}
                 </div>
               )}
             </section>
@@ -168,9 +168,9 @@ export default function Sections() {
       {editingSeats && offering && <SubjectCapacityModal section={section} offering={offering} onClose={() => setEditingSeats(false)} onSaved={() => { setEditingSeats(false); refresh(); }} />}
       {editingCap && section && <CapacityModal section={section} onClose={() => setEditingCap(false)} onSaved={() => { setEditingCap(false); refresh(); }} />}
       {confirmRemove && (
-        <Modal title="Remove from class?" onClose={() => setConfirmRemove(null)}
+        <Modal title="Remove from subject?" onClose={() => setConfirmRemove(null)}
           footer={<><button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button><button className="btn btn-danger" onClick={doRemove}>Remove</button></>}>
-          <p className="text-[14px] text-ink-2">{confirmRemove.name} will be removed from {offering.curriculum_subjects.code}. If the class already has grades, they are removed with it, and the removal is saved in the grade change history on the student&apos;s record.</p>
+          <p className="text-[14px] text-ink-2">{confirmRemove.name} will be removed from {offering.curriculum_subjects.code}. If the subject already has grades, they are removed with it, and the removal is saved in the grade change history on the student&apos;s record.</p>
           <div className="mt-3"><FormError error={actionError} /></div>
         </Modal>
       )}
