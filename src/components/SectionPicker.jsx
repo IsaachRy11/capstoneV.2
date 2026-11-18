@@ -1,9 +1,10 @@
 import { sectionLetter, yearLabel } from "../lib/format";
 
 // Program + year level (+ section letter) buttons. `picker` comes from useSectionPicker(); `onChange` runs after any pick.
+// In a summer term the years are greyed out and "Summer" is the one section to look at.
 // Phones: one full-width switcher per row (program, year, section), like an app; wider screens keep them inline.
 export default function SectionPicker({ picker, onChange }) {
-  const { programs, program, year, years, section, sectionsHere = [], pickProgram, pickYear, pickSection } = picker;
+  const { programs, program, year, summer, section, sectionsHere = [], pickProgram, pickYear, pickSection } = picker;
   if (!program) return null;
   return (
     <div className="no-print flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
@@ -13,11 +14,13 @@ export default function SectionPicker({ picker, onChange }) {
         ))}
       </div>
       <div className="seg seg-fill" role="group" aria-label="Year level">
-        {(years?.length ? years : Array.from({ length: program.duration_years }, (_, i) => i + 1)).map((y) => (
-          <button key={y} aria-pressed={y === year} onClick={() => { pickYear(y); onChange?.(); }}>{yearLabel(y)}</button>
+        {Array.from({ length: program.duration_years }, (_, i) => i + 1).map((y) => (
+          <button key={y} aria-pressed={y === year} disabled={summer} title={summer ? "Not offered in the summer: see Summer" : undefined}
+            onClick={() => { pickYear(y); onChange?.(); }}>{yearLabel(y)}</button>
         ))}
+        {summer && <button aria-pressed="true">Summer</button>}
       </div>
-      {sectionsHere.length > 1 && (
+      {sectionsHere.length > 1 && !summer && (
         <div className="flex items-center gap-2">
           <span className="shrink-0 text-[13px] font-semibold text-ink-3">Section</span>
           <div className="seg seg-fill" role="group" aria-label="Section">

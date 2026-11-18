@@ -14,7 +14,7 @@ import WeekTimetable from "./WeekTimetable";
 // (Schedules > Edit class times), so this one is only for looking and printing.
 export default function SectionSchedules() {
   const picker = useSectionPicker();
-  const { program, year, section } = picker;
+  const { program, year, summer, section } = picker;
   const status = useClassStatus();
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
@@ -42,7 +42,7 @@ export default function SectionSchedules() {
       <SectionPicker picker={picker} />
 
       {!section ? (
-        <div className="card"><EmptyState>No {program.code} {yearLabel(year)} section this semester.</EmptyState></div>
+        <div className="card"><EmptyState>No {program.code} {summer ? "Summer" : yearLabel(year)} section this semester.</EmptyState></div>
       ) : offerings.loading ? (
         <LoadingState />
       ) : offerings.error ? (

@@ -12,7 +12,7 @@ import ClassTimes from "./ClassTimes";
 // Desktop only, like every edit: phones and tablets get a note and a way back to the timetable.
 export default function ClassTimesPage() {
   const picker = useSectionPicker();
-  const { program, year, section } = picker;
+  const { program, year, summer, section } = picker;
   const rooms = useAsync(getRooms, [], "rooms");
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "schedule-offerings");
 
@@ -34,7 +34,7 @@ export default function ClassTimesPage() {
       <div className="hidden flex-col gap-4 lg:flex">
         <SectionPicker picker={picker} />
         {!section ? (
-          <div className="card"><EmptyState>No {program.code} {yearLabel(year)} section this semester.</EmptyState></div>
+          <div className="card"><EmptyState>No {program.code} {summer ? "Summer" : yearLabel(year)} section this semester.</EmptyState></div>
         ) : offerings.loading ? (
           <LoadingState />
         ) : offerings.error ? (

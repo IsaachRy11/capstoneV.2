@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { useSectionPicker } from "../../hooks/useSectionPicker";
 import SectionPicker from "../../components/SectionPicker";
-import { getRoster, getSectionOfferings, removeEnrollment } from "../../services/sections";
+import { getRoster, getSectionOfferings, removeEnrollment, removeSummerSubject } from "../../services/sections";
 import WeekStrip from "../schedules/WeekStrip";
 import { Avatar, EmptyState, ErrorState, FormError, LoadingState, Modal, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { studentTypeLabel, yearLabel } from "../../lib/format";
@@ -12,14 +12,16 @@ import { meetingDays } from "../../lib/schedule";
 import EnrollBox from "./EnrollBox";
 import CapacityModal from "./CapacityModal";
 import SubjectCapacityModal from "./SubjectCapacityModal";
+import SummerSubjectModal from "./SummerSubjectModal";
 
 export default function Sections() {
   const picker = useSectionPicker();
-  const { program, year, section } = picker;
+  const { program, year, summer, section } = picker;
   const [offeringId, setOfferingId] = useState(null);
   const [editingCap, setEditingCap] = useState(false);
   const [editingSeats, setEditingSeats] = useState(false); // one subject's own seats
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [addingSubject, setAddingSubject] = useState(false); // summer: open another subject for retakes
   const [actionError, setActionError] = useState("");
 
   const offerings = useAsync(() => (section ? getSectionOfferings(section.id) : Promise.resolve([])), [section?.id], "section-offerings");
@@ -48,7 +50,7 @@ export default function Sections() {
       <SectionPicker picker={picker} onChange={() => setOfferingId(null)} />
 
       {!section ? (
-        <div className="card"><EmptyState>No {program.code} {yearLabel(year)} section this semester.</EmptyState></div>
+        <div className="card"><EmptyState>No {program.code} {summer ? "Summer" : yearLabel(year)} section this semester.</EmptyState></div>
       ) : (
         <div className="flex flex-wrap items-start gap-4 sm:gap-5">
           {/* Phones: the section summary and its subjects as a sideways row of chips, so the chosen class sits right below. */}
@@ -80,6 +82,11 @@ export default function Sections() {
                 <button className="hidden shrink-0 text-[13px] font-semibold text-accent lg:inline-flex" onClick={() => setEditingCap(true)} title="Sets the seats for every subject without its own number">Change</button>
               </div>
             </div>
+            {summer && (
+              <div className="hidden border-b border-line px-4 py-3 lg:block">
+                <button className="btn btn-secondary btn-sm w-full" onClick={() => setAddingSubject(true)}>Add a subject for failed students</button>
+              </div>
+            )}
             {offerings.loading && <LoadingState />}
             {offerings.error && <ErrorState error={offerings.error} onRetry={offerings.reload} />}
             <ul className="flex flex-col gap-2 p-3">
@@ -157,7 +164,16 @@ export default function Sections() {
                       ))}
                     </tbody>
                   </table>
-                  {roster.data.length === 0 && <EmptyState>No students in this subject yet.</EmptyState>}
+                  {roster.data.length === 0 && (
+                    <EmptyState>
+                      No students in this subject yet.
+                      {summer && (
+                        <button className="mt-2 hidden text-[13px] font-semibold text-accent lg:block" onClick={async () => { setActionError(""); try { await removeSummerSubject(offering.id); setOfferingId(null); refresh(); } catch (err) { setActionError(err.message); } }}>
+                          Take this subject out of the summer
+                        </button>
+                      )}
+                    </EmptyState>
+                  )}
                 </div>
               )}
             </section>
@@ -166,6 +182,7 @@ export default function Sections() {
       )}
 
       {editingSeats && offering && <SubjectCapacityModal section={section} offering={offering} onClose={() => setEditingSeats(false)} onSaved={() => { setEditingSeats(false); refresh(); }} />}
+      {addingSubject && section && <SummerSubjectModal section={section} onClose={() => setAddingSubject(false)} onAdded={() => { setAddingSubject(false); refresh(); }} />}
       {editingCap && section && <CapacityModal section={section} onClose={() => setEditingCap(false)} onSaved={() => { setEditingCap(false); refresh(); }} />}
       {confirmRemove && (
         <Modal title="Remove from subject?" onClose={() => setConfirmRemove(null)}

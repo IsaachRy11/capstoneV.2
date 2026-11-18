@@ -44,6 +44,11 @@ export function searchStudents(query) {
 export const getSubjectPlan = (offeringId, studentIds = null) =>
   unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
 
+// Summer: subjects the secretary can still add to the summer section (with how many students owe each), add one, take back an empty one.
+export const getSummerCandidates = (sectionId) => unwrap(supabase.rpc("summer_candidates", { p_section: sectionId }));
+export const addSummerSubject = (sectionId, subjectId) => unwrap(supabase.rpc("add_summer_subject", { p_section: sectionId, p_subject: subjectId }));
+export const removeSummerSubject = (offeringId) => unwrap(supabase.rpc("remove_summer_subject", { p_offering: offeringId }));
+
 export const enrollInSubject = (offeringId, studentIds) =>
   unwrap(supabase.rpc("enroll_in_subject", { p_offering: offeringId, p_students: studentIds }));
 

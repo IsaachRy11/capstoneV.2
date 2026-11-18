@@ -24,7 +24,7 @@ function nextChoices(cur) {
     what: "A new school year, with a fresh calendar.",
   };
   if (cur.semester === 1) return [{ school_year: cur.school_year, semester: 2, icon: ArrowRight, title: `2nd Sem · S.Y ${short(cur.school_year)}`, label: "2nd Semester", what: "Same sections, the 2nd semester subjects." }];
-  const summer = { school_year: cur.school_year, semester: 3, icon: Sun, title: `Summer · S.Y ${short(cur.school_year)}`, label: "Summer", what: "The summer subjects (3rd year BSIT and BSCS) and retakes of subjects students failed. It comes before the next 1st semester." };
+  const summer = { school_year: cur.school_year, semester: 3, icon: Sun, title: `Summer · S.Y ${short(cur.school_year)}`, label: "Summer", what: "One Summer section per program with the summer subjects (3rd year BSIT and BSCS). You can add other subjects for students who failed them. It comes before the next 1st semester." };
   if (cur.semester === 2) return [newYear, summer];
   return [newYear];
 }

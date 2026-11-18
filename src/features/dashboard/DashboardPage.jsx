@@ -41,7 +41,8 @@ export default function Dashboard() {
   const seats = sections.reduce((t, s) => t + s.capacity, 0);
   const filled = sections.reduce((t, s) => t + s.enrolled, 0);
   const maxYears = Math.max(...programs.map((p) => p.duration_years), 4);
-  const sectionsFor = (code, y) => sections.filter((s) => s.program_code === code && s.year_level === y);
+  // In a summer term the one Summer section per program belongs to no year, so the year cells show none.
+  const sectionsFor = (code, y) => (term?.semester === 3 ? [] : sections.filter((s) => s.program_code === code && s.year_level === y));
 
   return (
     <>

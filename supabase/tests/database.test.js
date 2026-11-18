@@ -672,20 +672,38 @@ describe("starting a term and enrolling sections", () => {
     expect(await yearOf(who)).toBe(base);
   });
 
-  it("a summer term also offers the subjects students failed and have not passed since", async () => {
+  it("a summer term is one section per program with the summer subjects; the secretary adds the others", async () => {
     await rpc(`public.prepare_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
     const t3 = await term("2026-2027", 3);
-    const extra = (await db.query(`select o.curriculum_subject_id id, s.program_id, cs.curriculum_id
-      from class_offerings o join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
-      where s.school_term_id = ${t3.id} and cs.semester <> 3`)).rows;
-    expect(extra.length).toBeGreaterThan(0); // retake subjects are offered next to the summer subjects
-    for (const x of extra) {
-      const owed = await one(`select private.needs_retake(${x.curriculum_id}, ${x.id}) n`);
-      expect(owed.n).toBe(true); // ... and each one is owed by at least one active student
-    }
-    // The curriculum's own summer subjects are still there.
-    expect((await one(`select count(*)::int n from class_offerings o join sections s on s.id = o.section_id join curriculum_subjects cs on cs.id = o.curriculum_subject_id
-      where s.school_term_id = ${t3.id} and cs.semester = 3`)).n).toBeGreaterThan(0);
+    const secs = (await db.query(`select s.id, s.name, p.code from sections s join programs p on p.id = s.program_id where s.school_term_id = ${t3.id} order by p.code`)).rows;
+    expect(secs.map((s) => s.name)).toEqual(["ACT Summer", "BSCS Summer", "BSIT Summer"]); // one per program, no year
+    // Only the curriculum's own summer subjects are offered at first (ACT has none).
+    const offered = (await db.query(`select s.name, cs.semester from class_offerings o join sections s on s.id = o.section_id
+      join curriculum_subjects cs on cs.id = o.curriculum_subject_id where s.school_term_id = ${t3.id}`)).rows;
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((o) => o.semester === 3)).toBe(true);
+    expect(offered.some((o) => o.name === "ACT Summer")).toBe(false);
+
+    // Candidates: subjects not offered yet, with how many students still owe each one.
+    const bsit = secs.find((s) => s.code === "BSIT");
+    const cands = await rpc(`public.summer_candidates(${bsit.id})`);
+    expect(cands.length).toBeGreaterThan(0);
+    const owed = cands.find((c) => c.owing > 0);
+    expect(owed).toBeTruthy();
+    expect(cands.every((c) => c.owing <= owed.owing)).toBe(true); // the most owed subject comes first
+    // Adding a subject opens it; adding it twice is refused; an empty one can be taken back.
+    const offId = await rpc(`public.add_summer_subject(${bsit.id}, ${owed.subject_id})`);
+    expect((await asSec(`select public.add_summer_subject(${bsit.id}, ${owed.subject_id})`)).error).toMatch(/already offered/);
+    expect((await rpc(`public.summer_candidates(${bsit.id})`)).some((c) => c.subject_id === owed.subject_id)).toBe(false);
+    // The subject page lists the students who failed it, as retakes.
+    const plan = await rpc(`public.subject_enroll_plan(${offId})`);
+    expect(plan.students.some((s) => s.retake)).toBe(true);
+    await rpc(`public.remove_summer_subject(${offId})`);
+    expect((await one(`select count(*)::int n from class_offerings where id = ${offId}`)).n).toBe(0);
+    // Not for a regular semester, and not for students.
+    const regular = await one(`select s.id from sections s where s.school_term_id = (select id from school_terms where is_current) limit 1`);
+    expect((await asSec(`select public.summer_candidates(${regular.id})`)).error).toMatch(/summer section/);
+    expect((await as("authenticated", STU, `select public.summer_candidates(${bsit.id})`)).error).toMatch(/Only the secretary/);
   }, 120_000);
 
   it("a new school year: nobody moves up until enrolled; the next year's block raises the year", async () => {
