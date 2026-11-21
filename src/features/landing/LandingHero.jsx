@@ -6,7 +6,7 @@ import Reveal from "./Reveal";
 
 // The top of the public landing page: a full-width orange banner that fills the first screen, like the college's own
 // CCS poster (title, motto, the three programs, where to inquire). The four students on the right are a flat vector
-// re-trace of the poster (public/art/ccs-students.svg, a drawing, not the photo). The floating nav sits over the top.
+// re-trace of the poster (public/art/ccs-students.svg, a drawing, not the photo; it inks itself in when the page opens). The floating nav sits over the top.
 const PROGRAMS = ["Bachelor of Science in Information Technology", "Bachelor of Science in Computer Science", "Associate in Computer Technology"];
 
 export default function LandingHero() {
