@@ -4,7 +4,7 @@
 
 /* ─── Theme tokens ──────────────────────────────────────────────────────────
    Light: warm neutrals, SJC orange as the signal color.
-   Dark ("ink-navy"): no orange anywhere; periwinkle-blue accent.          */
+   Dark ("warm night", Nov 21 2026): charcoal ground, brown frame, coral accent.  */
 :root,
 [data-theme="light"] {
   color-scheme: light;
@@ -50,41 +50,42 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --ground: #0e1320;
-  --surface: #151b2b;
-  --surface-2: #1a2133;
-  --line: #263049;
-  --line-2: #1f2740;
-  --grid-line: #34415f;
-  --dot: #2a3550;
-  --chrome: #18223f; --chrome-2: #1f2b50; --chrome-line: #2d3b62;
-  --chrome-ink: #e6eaf2; --chrome-ink-2: #b4bccd; --chrome-ink-3: #97a1b6;
-  --chrome-accent: #8fa8ff; --chrome-tint: rgba(143, 168, 255, 0.16); --chrome-tint-ink: #c3d0ff; --chrome-hover: rgba(255, 255, 255, 0.07);
-  --chrome-field: #11172a; --chrome-field-line: #34415f; --chrome-focus: rgba(143, 168, 255, 0.35);
-  --art-a: #2c3b78; --art-b: #2a4a74; --art-c: #36307a; --art-g: #1b2a55; --art-gold: #c3d0ff;
-  --ink: #e6eaf2;
-  --ink-2: #b4bccd;
-  --ink-3: #97a1b6;
-  --accent: #8fa8ff;
-  --btn: #4361d8;
-  --btn-hover: #3651c0;
-  --tint: rgba(143, 168, 255, 0.14);
-  --tint-ink: #c3d0ff;
-  --track: #232c44;
-  --hover: #1c2438;
-  --row-hover: #1a2235;
-  --field-bg: #11172a;
-  --field-line: #2e3854;
-  --focus: rgba(143, 168, 255, 0.35);
-  --panel: #1b2440;
-  --panel-ink: #e6eaf2;
-  --panel-soft: #b4bccd;
+  --ground: #1c1917;
+  --surface: #26211e;
+  --surface-2: #2e2824;
+  --line: #443f3a;
+  --line-2: #38332f;
+  --grid-line: #453f39;
+  --dot: #3b3631;
+  /* Night look: warm charcoal ground, deep brown frame, coral accent */
+  --chrome: #7a2322; --chrome-2: #8f2b28; --chrome-line: #9b3a36;
+  --chrome-ink: #fff1ee; --chrome-ink-2: #f5cfc8; --chrome-ink-3: #e8b3aa;
+  --chrome-accent: #ffb4a8; --chrome-tint: rgba(255, 255, 255, 0.16); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.08);
+  --chrome-field: rgba(0, 0, 0, 0.25); --chrome-field-line: rgba(255, 255, 255, 0.28); --chrome-focus: rgba(255, 255, 255, 0.45);
+  --art-a: #c7322b; --art-b: #7a2322; --art-c: #443f3a; --art-g: #5a1a19; --art-gold: #ffd0c8;
+  --ink: #f5efeb;
+  --ink-2: #d1c7c0;
+  --ink-3: #a89d95;
+  --accent: #fc5f52;
+  --btn: #d93a30;
+  --btn-hover: #bf2f26;
+  --tint: rgba(252, 95, 82, 0.16);
+  --tint-ink: #ffb4a8;
+  --track: #3a3430;
+  --hover: #302a27;
+  --row-hover: #2b2522;
+  --field-bg: #1c1917;
+  --field-line: #4d4640;
+  --focus: rgba(252, 95, 82, 0.4);
+  --panel: #7a2322;
+  --panel-ink: #fff1ee;
+  --panel-soft: #f5cfc8;
   --ok: #6ee7a8;     --ok-bg: rgba(16, 185, 129, 0.14);  --ok-line: rgba(16, 185, 129, 0.3);
   --warn: #fcd34d;   --warn-bg: rgba(245, 158, 11, 0.14);
   --bad: #fca5a5;    --bad-bg: rgba(239, 68, 68, 0.14);  --bad-line: rgba(239, 68, 68, 0.35);
   --info: #a5c4ff;   --info-bg: rgba(96, 140, 255, 0.16);
-  --neutral: #b4bccd; --neutral-bg: rgba(148, 163, 184, 0.14);
-  --mark-ok: #4ade80; --mark-bad: #f87171; --mark-none: #7c869c;
+  --neutral: #d1c7c0; --neutral-bg: rgba(168, 157, 149, 0.16);
+  --mark-ok: #4ade80; --mark-bad: #f87171; --mark-none: #8c8c74;
 }
 
 @layer base {

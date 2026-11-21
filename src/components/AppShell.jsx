@@ -190,7 +190,7 @@ export default function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Phones: the bar stays at the top while the page scrolls; the seal stands in for the sidebar brand. */}
-        <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:relative lg:min-h-16 lg:py-3 isolate">
+        <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:min-h-16 lg:py-3 isolate">
           <ChromeArt variant="bar" />
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>

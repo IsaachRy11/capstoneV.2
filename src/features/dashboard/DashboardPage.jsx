@@ -57,7 +57,7 @@ export default function Dashboard() {
         </>}
       />
 
-      <WelcomeBanner tone="a" seed={0} name={user?.name} line="Here is the CCS office at a glance."
+      <WelcomeBanner tone="a" seed={0} name={user?.name} line="Students, sections and seats for this term."
         facts={[["This term", term ? termLabel(term) : "No current term"], ["Students", `${students.length} students`], ["Sections", `${sections.length} sections`], ["Subjects offered", `${offerings} subjects`]]} />
 
 

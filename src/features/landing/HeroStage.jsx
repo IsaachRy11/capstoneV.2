@@ -112,7 +112,7 @@ export default function HeroStage() {
     <div className="relative" aria-hidden="true">
       <div className="mx-auto flex max-w-[900px] items-center justify-center">
         <div className="hidden min-w-0 flex-1 sm:block"><OfficePanel /></div>
-        <div className="sm:-ml-16 sm:mt-16"><StudentPhone /></div>
+        <div className="sm:ml-6 sm:mt-10"><StudentPhone /></div>
       </div>
     </div>
   );
