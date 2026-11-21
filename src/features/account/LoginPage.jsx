@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -6,9 +6,11 @@ import { useTheme } from "../../context/ThemeContext";
 import { FormError, SealLogo } from "../../components/ui";
 import Backdrop from "../../components/Backdrop";
 
+// Demo passwords only exist in the rehearsal/test build (VITE_DEMO_* env vars, a fake database). The live build
+// never sets them, so there the demo buttons only fill in the ID and no password is shipped in the page.
 const DEMO_ACCOUNTS = [
-  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001" },
-  { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001" },
+  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
+  { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001", password: import.meta.env.VITE_DEMO_STUDENT_PASSWORD },
 ];
 
 export default function Login() {
@@ -20,7 +22,29 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const passwordRef = useRef(null);
+  const submitRef = useRef(null);
   const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+
+  // A demo button fills in the ID, then types the password one character at a time (when the build has one). It
+  // never presses Sign in: the person does that.
+  const typing = useRef(null);
+  useEffect(() => () => clearInterval(typing.current), []);
+  const fillDemo = (account) => {
+    clearInterval(typing.current);
+    setIdentifier(account.id);
+    setPassword("");
+    setError("");
+    if (!account.password) { passwordRef.current?.focus(); return; }
+    let n = 0;
+    typing.current = setInterval(() => {
+      n += 1;
+      setPassword(account.password.slice(0, n));
+      if (n >= account.password.length) {
+        clearInterval(typing.current);
+        submitRef.current?.focus();
+      }
+    }, 45);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -119,7 +143,7 @@ export default function Login() {
               </div>
             </div>
             <FormError error={error} />
-            <button type="submit" className="btn btn-primary mt-1 h-11" disabled={busy}>
+            <button type="submit" ref={submitRef} className="btn btn-primary mt-1 h-11" disabled={busy}>
               {busy ? "Signing in…" : <>Sign in <ArrowRight size={17} aria-hidden="true" /></>}
             </button>
             <p className="text-[13px] text-ink-3">Forgot your password? Ask the CCS office to reset it.</p>
@@ -131,7 +155,7 @@ export default function Login() {
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               {DEMO_ACCOUNTS.map((a) => (
-                <button key={a.id} type="button" onClick={() => { setIdentifier(a.id); passwordRef.current?.focus(); }}
+                <button key={a.id} type="button" onClick={() => fillDemo(a)}
                   className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-left hover:border-accent">
                   <div className="text-[14px] font-semibold text-ink">{a.label}</div>
                   <div className="truncate text-[12px] text-ink-3">{a.hint}</div>
