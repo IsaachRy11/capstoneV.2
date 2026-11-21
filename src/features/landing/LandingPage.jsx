@@ -4,7 +4,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { SealLogo } from "../../components/ui";
 import ArtHero from "../../components/ArtHero";
 import Backdrop from "../../components/Backdrop";
-import HeroStage from "./HeroStage";
+import LandingHero from "./LandingHero";
 import FeatureBento from "./FeatureBento";
 import Reveal from "./Reveal";
 
@@ -55,33 +55,7 @@ export default function LandingPage() {
       </header>
 
       <main id="main" className="flex-1">
-        {/* Hero: a big photo card with the headline on it, and the two sides of the system overlapping its bottom edge */}
-        <section className="mx-auto max-w-[1180px] px-3 pb-16 pt-6 sm:px-6 sm:pt-8 lg:pb-24">
-          <ArtHero tone="g" seed={2} className="rounded-[28px] sm:rounded-[36px]">
-            <Reveal className="flex max-w-[880px] flex-col gap-6 px-6 pb-32 pt-14 sm:px-12 sm:pb-44 sm:pt-20">
-              <span className="glass inline-flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-white" aria-hidden="true" />College of Computer Studies<span className="hidden sm:inline"> · Saint Joseph College</span>
-              </span>
-              <h1 className="text-balance font-display text-[42px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[64px] lg:text-[80px]">
-                Every subject, section and standing <span style={{ color: "var(--art-gold)" }}>in one place.</span>
-              </h1>
-              <p className="max-w-[600px] text-pretty text-[17px] leading-relaxed opacity-95 sm:text-[19px]">
-                Track enrollment, grades and academic standing for BSIT, BSCS and ACT students, from first year to graduation.
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link to="/signin" className="btn btn-primary h-12 rounded-full px-7 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
-                <a href="#features" className="btn glass h-12 rounded-full px-7 text-[15px]">See what it does</a>
-              </div>
-              <div className="flex flex-wrap items-center gap-2" aria-label="Programs">
-                {["BSIT", "BSCS", "ACT"].map((p) => (
-                  <span key={p} className="glass rounded-full px-3 py-1 font-mono text-[12px] font-semibold">{p}</span>
-                ))}
-                <span className="text-[13px] opacity-90">One sign-in for students and staff</span>
-              </div>
-            </Reveal>
-          </ArtHero>
-          <Reveal delay={120} className="relative z-10 -mt-24 px-1 sm:-mt-32 sm:px-6"><HeroStage /></Reveal>
-        </section>
+        <LandingHero />
 
         {/* What it does */}
         <section id="features" className="scroll-mt-24 border-y border-line bg-surface">
@@ -101,9 +75,9 @@ export default function LandingPage() {
           <div className="grid gap-4 md:grid-cols-3">
             {MOMENTS.map((m, i) => (
               <Reveal key={m.title} delay={i * 90}>
-                <ArtHero tone={m.tone} seed={m.seed} className="h-full min-h-[300px] rounded-[24px] sm:min-h-[380px]">
-                  <div className="flex h-full min-h-[300px] flex-col justify-end gap-2 p-6 sm:min-h-[380px] sm:p-7">
-                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] ${m.quote ? "text-[28px] sm:text-[32px]" : "text-[22px] sm:text-[24px]"}`}>{m.title}</p>
+                <ArtHero tone={m.tone} seed={m.seed} className="h-full min-h-[170px] rounded-[20px] sm:min-h-[200px]">
+                  <div className="flex h-full min-h-[170px] flex-col justify-end gap-1.5 p-5 sm:min-h-[200px] sm:p-6">
+                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] ${m.quote ? "text-[22px] sm:text-[24px]" : "text-[19px] sm:text-[20px]"}`}>{m.title}</p>
                     <p className="text-[14px] opacity-90">{m.text}</p>
                   </div>
                 </ArtHero>

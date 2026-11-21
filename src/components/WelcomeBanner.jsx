@@ -13,14 +13,14 @@ export default function WelcomeBanner({ tone = "a", seed = 0, name, line, facts,
   const today = new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" });
   return (
     <ArtHero tone={tone} seed={seed} className="rounded-[24px]">
-      <div className={`flex ${facts ? "min-h-[280px] sm:min-h-[320px]" : "min-h-[150px] sm:min-h-[170px]"} flex-col justify-between gap-8 p-6 sm:p-9`}>
+      <div className={`flex ${facts ? "min-h-[190px] sm:min-h-[210px]" : "min-h-[110px] sm:min-h-[120px]"} flex-col justify-between gap-5 p-5 sm:p-7`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-[12px] font-semibold uppercase tracking-[0.1em] opacity-90">{today}</span>
-            <h2 className="text-balance font-display text-[34px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[52px]">
+            <h2 className="text-balance font-display text-[26px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[34px]">
               {hello()}{first ? <>, {first}</> : null}
             </h2>
-            {line && <p className="max-w-[560px] text-[15px] leading-relaxed opacity-95 sm:text-[17px]">{line}</p>}
+            {line && <p className="max-w-[560px] text-[14px] leading-relaxed opacity-95 sm:text-[15px]">{line}</p>}
             {children && <div className="mt-2 flex flex-wrap items-center gap-2.5">{children}</div>}
           </div>
           {badge}

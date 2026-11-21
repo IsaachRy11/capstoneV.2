@@ -23,6 +23,9 @@
   /* Illustrated banners: shades of the brand orange */
   --art-a: #c2410c; --art-b: #a3380f; --art-c: #7c2d12; --art-g: #9a3412; --art-gold: #ffe4d4;
   --ink: #1a1714;
+  /* Drawn students on the landing hero (same in both themes) */
+  --fig-skin-1: #f2c8a2; --fig-skin-2: #e0a97c; --fig-skin-3: #c68a5f; --fig-skin-4: #a76d49; --fig-hair: #2b1d17;
+  --fig-shirt: #eef5ea; --fig-collar: #dbe8d6; --fig-trousers: #3b3a36; --fig-lanyard: #2f7a46; --fig-card: #ffffff; --fig-device: #e7e4df; --fig-device-2: #cfcac3;
   --ink-2: #57534e;
   --ink-3: #6b6560;
   --accent: #c2410c;

@@ -1,23 +1,23 @@
 import { useState } from "react";
 import { Badge } from "../../components/ui";
-import { PathTiles } from "./HeroStage";
+import { PathTiles } from "./PathTiles";
 import Reveal from "./Reveal";
 
 // "One record for students and the CCS office": a bento grid of small abstract screens, one set per audience.
 // Every picture is made of shapes and plain words, never real names, codes or numbers.
 
-const Bar = ({ w, tone = "bg-line" }) => <span className={`block h-2 rounded-full ${tone}`} style={{ width: w }} />;
+const Bar = ({ w, tone = "bg-[var(--grid-line)]" }) => <span className={`block h-2 rounded-full ${tone}`} style={{ width: w }} />;
 
 function Failed() {
   return (
     <ul className="flex flex-col gap-2">
       {[["Failed", "bad"], ["INC", "neutral"]].map(([label, tone]) => (
-        <li key={label} className="flex items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2.5">
-          <span className="flex flex-1 flex-col gap-1.5"><Bar w="58%" /><Bar w="30%" tone="bg-line-2" /></span>
+        <li key={label} className="flex items-center gap-3 rounded-lg border border-[var(--grid-line)] bg-surface px-3 py-2.5">
+          <span className="flex flex-1 flex-col gap-1.5"><Bar w="58%" /><Bar w="30%" tone="bg-line" /></span>
           <Badge tone={tone} dot>{label}</Badge>
         </li>
       ))}
-      <li className="rounded-lg border border-dashed border-line px-3 py-2 text-[12px] text-ink-3">Shows when it is offered again</li>
+      <li className="rounded-lg border border-dashed border-[var(--grid-line)] px-3 py-2 text-[12px] text-ink-2">Shows when it is offered again</li>
     </ul>
   );
 }
@@ -28,9 +28,9 @@ function Week() {
     <div className="grid grid-cols-5 gap-1.5">
       {["M", "T", "W", "T", "F"].map((d, i) => (
         <div key={i} className="flex flex-col gap-1.5">
-          <span className="text-center text-[11px] font-semibold text-ink-3">{d}</span>
+          <span className="text-center text-[11px] font-semibold text-ink-2">{d}</span>
           <span className="h-7 rounded-md border" style={i % 2 === 0 ? { background: "var(--tint)", borderColor: "var(--accent)" } : { background: "var(--info-bg)", borderColor: "var(--line)" }} />
-          {blocks[i][1] > 1 && <span className="h-5 rounded-md border border-line bg-surface" />}
+          {blocks[i][1] > 1 && <span className="h-5 rounded-md border border-[var(--grid-line)] bg-surface" />}
           {blocks[i][1] > 2 && <span className="h-7 rounded-md border" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }} />}
         </div>
       ))}
@@ -41,11 +41,11 @@ function Week() {
 function Record() {
   return (
     <ul className="flex flex-col">
-      <li className="grid grid-cols-[1fr_52px_52px] gap-2 pb-2 text-[11px] font-semibold text-ink-3"><span>Subject</span><span className="text-center">Midterm</span><span className="text-center">Final</span></li>
+      <li className="grid grid-cols-[1fr_52px_52px] gap-2 pb-2 text-[11px] font-semibold text-ink-2"><span>Subject</span><span className="text-center">Midterm</span><span className="text-center">Final</span></li>
       {[["ok", "Passed"], ["ok", "Passed"], ["bad", "Failed"], ["neutral", "INC"]].map(([tone, label], i) => (
-        <li key={i} className="grid grid-cols-[1fr_52px_52px] items-center gap-2 border-t border-line-2 py-2">
+        <li key={i} className="grid grid-cols-[1fr_52px_52px] items-center gap-2 border-t border-line py-2">
           <Bar w={`${70 - i * 9}%`} />
-          <span className="mx-auto h-2 w-6 rounded-full bg-line" />
+          <span className="mx-auto h-2 w-6 rounded-full bg-[var(--grid-line)]" />
           <span className="mx-auto"><Badge tone={tone}>{label}</Badge></span>
         </li>
       ))}
@@ -56,12 +56,12 @@ function Record() {
 function Registry() {
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="h-8 rounded-full border border-line bg-surface px-4 text-[12px] leading-8 text-ink-3">Search by name, ID or section</span>
+      <span className="h-8 rounded-full border border-[var(--grid-line)] bg-surface px-4 text-[12px] leading-8 text-ink-2">Search by name, ID or section</span>
       <ul className="flex flex-col">
         {[["Regular", "ok"], ["Irregular", "warn"], ["Regular", "ok"]].map(([label, tone], i) => (
-          <li key={i} className="flex items-center gap-3 border-t border-line-2 py-2.5">
+          <li key={i} className="flex items-center gap-3 border-t border-line py-2.5">
             <span className="h-7 w-7 rounded-full bg-tint" />
-            <span className="flex flex-1 flex-col gap-1.5"><Bar w={`${64 - i * 10}%`} /><Bar w="28%" tone="bg-line-2" /></span>
+            <span className="flex flex-1 flex-col gap-1.5"><Bar w={`${64 - i * 10}%`} /><Bar w="28%" tone="bg-line" /></span>
             <Badge tone={tone} dot>{label}</Badge>
           </li>
         ))}
@@ -75,7 +75,7 @@ function Seats() {
     <div className="flex flex-col gap-3.5">
       {[["Section S", 84], ["Section T", 58], ["Section U", 100]].map(([name, p]) => (
         <div key={name} className="flex flex-col gap-1.5">
-          <span className="flex items-center justify-between text-[12px]"><span className="font-semibold text-ink-2">{name}</span><span className="text-ink-3">{p === 100 ? "Full" : "Seats left"}</span></span>
+          <span className="flex items-center justify-between text-[12px]"><span className="font-semibold text-ink-2">{name}</span><span className="text-ink-2">{p === 100 ? "Full" : "Seats left"}</span></span>
           <span className="bar block" aria-hidden="true"><span style={{ width: `${p}%` }} /></span>
         </div>
       ))}
@@ -97,10 +97,10 @@ function Log() {
   return (
     <ul className="flex flex-col gap-2">
       {[["Grade saved", "ok"], ["Grade corrected", "info"], ["Subject removed", "neutral"]].map(([t, tone]) => (
-        <li key={t} className="flex items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2">
+        <li key={t} className="flex items-center gap-3 rounded-lg border border-[var(--grid-line)] bg-surface px-3 py-2">
           <Badge tone={tone}>{t}</Badge>
-          <span className="flex flex-1 flex-col gap-1.5"><Bar w="70%" tone="bg-line-2" /></span>
-          <span className="text-[11px] text-ink-3">logged</span>
+          <span className="flex flex-1 flex-col gap-1.5"><Bar w="70%" tone="bg-line" /></span>
+          <span className="text-[11px] text-ink-2">logged</span>
         </li>
       ))}
     </ul>
@@ -141,7 +141,7 @@ export default function FeatureBento() {
       <div key={who} className="mt-6 grid gap-4 md:grid-cols-6">
         {set.cards.map((c, i) => (
           <Reveal key={c.title} delay={i * 70} className={`lift card flex flex-col gap-5 p-5 sm:p-6 ${c.span}`}>
-            <div className="flex min-h-[132px] flex-1 flex-col justify-center rounded-xl border border-line-2 bg-surface-2 p-4" aria-hidden="true">{c.visual}</div>
+            <div className="flex min-h-[132px] flex-1 flex-col justify-center rounded-xl border border-line bg-surface-2 p-4" aria-hidden="true">{c.visual}</div>
             <div>
               <h3 className="font-display text-[18px] font-bold text-ink">{c.title}</h3>
               <p className="mt-1 text-[14px] leading-relaxed text-ink-2">{c.text}</p>
