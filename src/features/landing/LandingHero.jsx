@@ -5,8 +5,8 @@ import { SealLogo } from "../../components/ui";
 import Reveal from "./Reveal";
 
 // The top of the public landing page: a full-width orange banner that fills the first screen, like the college's own
-// CCS poster (title, motto, the three programs, where to inquire). The four students on the right are the poster's photo cut out and blurred
-// until nobody can be recognized. Behind the text, students walk away from the camera. The floating nav sits over the top.
+// CCS poster (title, motto, the three programs, where to inquire). The four students on the right are the poster's photo, softened, tinted into the orange
+// and blurred until nobody can be recognized. Behind the text, students walk away from the camera. The floating nav sits over the top.
 const PROGRAMS = ["Bachelor of Science in Information Technology", "Bachelor of Science in Computer Science", "Associate in Computer Technology"];
 
 export default function LandingHero() {
@@ -40,8 +40,12 @@ export default function LandingHero() {
           </div>
         </Reveal>
       </div>
-      <img src="/photos/ccs-students.webp" alt="Four CCS students standing together" width="1100" height="616" decoding="async"
-        className="mt-6 h-auto w-full max-w-[560px] self-end md:pointer-events-none md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[52%] md:max-w-[800px]" />
+      {/* Faded on the left edge (wrapper) and on the top edge (image), so no hard line shows */}
+      <div className="pointer-events-none mt-6 w-full self-end md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[58%] md:max-w-[860px] md:[-webkit-mask-image:linear-gradient(to_left,#000_55%,transparent)] md:[mask-image:linear-gradient(to_left,#000_55%,transparent)]">
+        <img src="/photos/ccs-students.jpg" alt="Four CCS students standing together" width="1100" height="717" decoding="async"
+          className="block h-auto w-full opacity-80 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_35%)] [mask-image:linear-gradient(to_bottom,transparent,#000_35%)]"
+          style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.1)" }} />
+      </div>
     </ArtHero>
   );
 }
