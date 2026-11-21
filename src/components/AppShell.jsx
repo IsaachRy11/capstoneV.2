@@ -8,6 +8,7 @@ import UserMenu from "./UserMenu";
 import TermCalendar from "./TermCalendar";
 import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
+import Backdrop from "./Backdrop";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -178,7 +179,8 @@ export default function AppShell() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-ground">
+    <div className="relative isolate flex min-h-screen flex-col bg-ground">
+    <Backdrop />
     <div className="flex flex-1">
       <div className="no-print sticky top-0 hidden h-screen lg:block">
         <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
@@ -214,7 +216,9 @@ export default function AppShell() {
             </p>
           )}
           <ErrorBoundary key={location.pathname}>
-            <Outlet context={{ term: term.data, termLoading: term.loading }} />
+            <div className="page-in flex flex-1 flex-col gap-4 sm:gap-6">
+              <Outlet context={{ term: term.data, termLoading: term.loading }} />
+            </div>
           </ErrorBoundary>
         </main>
       </div>

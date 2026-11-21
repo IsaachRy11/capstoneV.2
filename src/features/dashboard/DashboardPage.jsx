@@ -6,11 +6,13 @@ import { listStudents } from "../../services/students";
 import { listCurrentSections } from "../../services/sections";
 import { countOfferings, getCurriculum, getPrograms } from "../../services/catalog";
 import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
-import { sectionLetter, shortProgramName, sumUnits, yearLabel } from "../../lib/format";
+import WelcomeBanner from "../../components/WelcomeBanner";
+import { useAuth } from "../../context/AuthContext";
+import { sectionLetter, shortProgramName, sumUnits, termLabel, yearLabel } from "../../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (
-    <Link to={to} className="card flex flex-col gap-2 p-4 text-ink hover:border-accent sm:gap-2.5 sm:p-5">
+    <Link to={to} className="card hover-lift flex flex-col gap-2 p-4 text-ink sm:gap-2.5 sm:p-5">
       <span className="text-[13px] font-semibold text-ink-2">{label}</span>
       <span className="font-display text-[28px] font-bold tracking-tight text-ink sm:text-[34px]">{value}</span>
       {sub && <span className="text-[13px] text-ink-3">{sub}</span>}
@@ -21,6 +23,7 @@ function Kpi({ to, label, value, sub, children }) {
 
 export default function Dashboard() {
   const { term, termLoading } = useOutletContext();
+  const { user } = useAuth();
   const [allSections, setAllSections] = useState(false); // the list starts with the first 10
   const { data, error, loading, reload } = useAsync(async () => {
     if (termLoading) return null; // wait for the semester instead of loading everything twice
@@ -53,6 +56,8 @@ export default function Dashboard() {
           <Link className="btn btn-primary no-print hidden lg:inline-flex" to="/students?add=1"><Plus size={16} aria-hidden="true" />Create student</Link>
         </>}
       />
+
+      <WelcomeBanner name={user?.name} line={`The CCS office at a glance${term ? ` · ${termLabel(term)}` : ""}.`} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
         <Kpi to="/students" label="Students" value={students.length} sub={programs.map((p) => `${p.code} ${byProgram(p.code).length}`).join(" · ") + (graduated ? ` · ${graduated} graduated` : "")} />

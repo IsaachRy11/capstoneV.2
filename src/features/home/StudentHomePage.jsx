@@ -41,16 +41,18 @@ export default function StudentHome() {
 
   return (
     <>
-      <section className="card flex flex-col gap-6 p-7" style={{ borderTop: "4px solid var(--accent)" }}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="card relative flex flex-col gap-6 overflow-hidden p-7" style={{ borderTop: "4px solid var(--accent)" }}>
+        <span className="bd-shape pointer-events-none absolute -right-16 -top-24 h-64 w-64" aria-hidden="true" style={{ animationDuration: "34s" }} />
+        <span className="bd-ring pointer-events-none absolute right-24 top-8 hidden h-24 w-24 sm:block" aria-hidden="true" style={{ animationDuration: "40s" }} />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[14px] text-ink-2">Welcome back,</span>
+            <span className="text-[14px] text-ink-2">{new Date().getHours() < 12 ? "Good morning," : new Date().getHours() < 18 ? "Good afternoon," : "Good evening,"}</span>
             <h1 className="text-[30px] font-bold tracking-tight">{student.full_name}</h1>
             <span className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name}</span>
           </div>
           <StudentStatusBadge student={student} />
         </div>
-        <dl className="stat-grid border-t border-line-2 pt-5">
+        <dl className="stat-grid relative border-t border-line-2 pt-5">
           {[
             ["Year level", yearLabel(student.year_level)],
             ["Section", student.section_name || "Not yet enrolled"],

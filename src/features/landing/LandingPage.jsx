@@ -5,6 +5,23 @@ import { SealLogo } from "../../components/ui";
 import HeroStage from "./HeroStage";
 import FeatureBento from "./FeatureBento";
 import Reveal from "./Reveal";
+import Backdrop from "../../components/Backdrop";
+
+const TICKER = ["Subjects", "Sections", "Grades", "Schedules", "Prerequisites", "Academic standing", "Failed subjects", "Seats", "Roadmap to graduation"];
+
+// A slow, decorative strip of what the system keeps track of (the same words appear in plain text further down).
+function Ticker() {
+  const row = [...TICKER, ...TICKER];
+  return (
+    <div className="ticker overflow-hidden border-y border-line bg-surface py-4" aria-hidden="true">
+      <div className="ticker-track flex w-max items-center gap-10 whitespace-nowrap pr-10">
+        {row.concat(row).map((w, i) => (
+          <span key={i} className="flex items-center gap-10 font-display text-[22px] font-extrabold tracking-tight text-ink-3 sm:text-[28px]">{w}<span className="h-2 w-2 rounded-full bg-accent" /></span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Public landing page (signed out). It explains the system in the project's own words and leads to
 // sign-in. No numbers or records appear here: signed-out visitors can't read the database, and
@@ -20,7 +37,8 @@ export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex min-h-screen flex-col bg-ground">
+    <div className="relative isolate flex min-h-screen flex-col bg-ground">
+      <Backdrop />
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2">Skip to content</a>
 
       {/* A floating bar that stays in reach while you scroll */}
@@ -68,6 +86,8 @@ export default function LandingPage() {
           </Reveal>
           <Reveal delay={120} className="mt-12 sm:mt-16"><HeroStage /></Reveal>
         </section>
+
+        <Ticker />
 
         {/* What it does */}
         <section id="features" className="scroll-mt-24 border-y border-line bg-surface">

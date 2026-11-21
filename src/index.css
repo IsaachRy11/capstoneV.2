@@ -14,6 +14,7 @@
   --line: #e7e5e0;
   --line-2: #f0eeea;
   --grid-line: #d3d0c9;
+  --dot: #cdc9c0;
   --ink: #1a1714;
   --ink-2: #57534e;
   --ink-3: #6b6560;
@@ -48,6 +49,7 @@
   --line: #263049;
   --line-2: #1f2740;
   --grid-line: #34415f;
+  --dot: #2a3550;
   --ink: #e6eaf2;
   --ink-2: #b4bccd;
   --ink-3: #97a1b6;
@@ -95,7 +97,9 @@
 }
 
 @layer components {
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(20, 16, 10, 0.04); }
+  .hover-lift { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -18px rgba(20, 16, 10, 0.35); border-color: var(--ink-3); }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -154,7 +158,8 @@
   .data-table .num { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
 
   .bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
-  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transform-origin: left; animation: bar-in .9s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes bar-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
   .nav-link {
     display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 14px;
@@ -172,6 +177,23 @@
   .path-tile { animation: path-in .45s ease-out both; }
   @keyframes path-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .path-tile { animation: none; } }
+  /* Living background (components/Backdrop.jsx): a dot grid with slow drifting shapes and rings */
+  .bd-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.7px); background-size: 26px 26px; -webkit-mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); }
+  .bd-shape { position: absolute; border-radius: 42%; background: var(--tint); animation: bd-drift 38s ease-in-out infinite alternate; }
+  .bd-ring { position: absolute; border-radius: 50%; border: 2px solid var(--grid-line); animation: bd-drift 52s ease-in-out infinite alternate-reverse; }
+  .bd-a { width: 460px; height: 460px; right: -140px; top: -170px; }
+  .bd-b { width: 300px; height: 300px; left: 20%; bottom: -150px; border-radius: 50%; animation-duration: 46s; }
+  .bd-c { width: 360px; height: 360px; right: 4%; top: 20%; }
+  .bd-d { width: 190px; height: 190px; left: -70px; top: 42%; }
+  .bd-e { width: 120px; height: 120px; left: 46%; top: 8%; animation-duration: 60s; }
+  @keyframes bd-drift { from { transform: translate3d(0, 0, 0) rotate(0deg); } to { transform: translate3d(-40px, 34px, 0) rotate(20deg); } }
+  /* Each page eases in when you open it; the landing ticker scrolls slowly */
+  .page-in { animation: page-in .35s ease-out both; }
+  @keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .ticker-track { animation: ticker 42s linear infinite; }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .ticker-track, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
   /* Landing page: sections fade up once when they scroll into view, cards lift a little on hover, the phone floats */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
   .reveal.is-in { opacity: 1; transform: none; }

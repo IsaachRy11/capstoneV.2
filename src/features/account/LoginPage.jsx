@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { FormError, SealLogo } from "../../components/ui";
+import Backdrop from "../../components/Backdrop";
 
 const DEMO_ACCOUNTS = [
   { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001" },
@@ -35,10 +36,13 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen flex-wrap bg-ground">
+    <div className="relative isolate flex min-h-screen flex-wrap bg-ground">
+      <Backdrop />
       {/* Brand panel (PC only): the college's own words, set large */}
-      <section className="hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 p-14 lg:flex"
+      <section className="relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
+        <span className="bd-ring pointer-events-none absolute -right-24 top-24 -z-10 h-[420px] w-[420px]" style={{ borderColor: "rgba(255,255,255,.16)", animationDuration: "48s" }} aria-hidden="true" />
+        <span className="bd-ring pointer-events-none absolute -left-16 bottom-16 -z-10 h-[240px] w-[240px]" style={{ borderColor: "rgba(255,255,255,.12)", animationDuration: "58s" }} aria-hidden="true" />
         <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
           <span className="min-w-0">
@@ -84,7 +88,7 @@ export default function Login() {
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <div className="flex flex-1 justify-center px-5 pb-10 pt-7 sm:px-6 lg:items-center lg:py-12">
-        <div className="flex w-full max-w-[400px] flex-col gap-6 lg:gap-7">
+        <div className="flex w-full max-w-[420px] flex-col gap-6 rounded-[20px] border border-line bg-surface p-6 shadow-[0_24px_60px_-36px_rgba(20,16,10,0.4)] sm:p-8 lg:gap-7 lg:self-center">
           <div className="flex flex-col gap-1.5 lg:gap-2">
             <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
             <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your staff ID.</p>
