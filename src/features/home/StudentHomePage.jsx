@@ -43,7 +43,7 @@ export default function StudentHome() {
 
   return (
     <>
-      <WelcomeBanner photo="/photos/p54.jpg" name={student.full_name}
+      <WelcomeBanner tone="c" seed={4} name={student.full_name}
         line={`${student.full_name} · ${student.id} · ${student.program_name}`}
         badge={<StudentStatusBadge student={student} />}
         facts={[

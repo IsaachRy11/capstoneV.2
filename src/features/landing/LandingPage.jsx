@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { SealLogo } from "../../components/ui";
-import PhotoHero from "../../components/PhotoHero";
+import ArtHero from "../../components/ArtHero";
 import Backdrop from "../../components/Backdrop";
 import HeroStage from "./HeroStage";
 import FeatureBento from "./FeatureBento";
@@ -11,7 +11,7 @@ import Reveal from "./Reveal";
 // Public landing page (signed out). It explains the system in the project's own words and leads to
 // sign-in. No numbers or records appear here: signed-out visitors can't read the database, and
 // CLAUDE.md forbids hard-coded figures. Every screen picture on this page is abstract (shapes and plain words);
-// the photos are decoration (Unsplash, credited in the footer).
+// the banners are illustrated with line-art school things (see ArtHero).
 
 const STEPS = [
   { title: "Sign in", text: "Students use their student ID. Staff use their staff ID, such as CCS-001." },
@@ -20,12 +20,12 @@ const STEPS = [
 ];
 
 const MOMENTS = [
-  { photo: "/photos/p1.jpg", title: "Check your subjects any time", text: "No queue, no waiting for the office to open." },
-  { photo: "/photos/p78.jpg", title: "An open door to the limitless horizon.", text: "The College of Computer Studies, Saint Joseph College.", quote: true },
-  { photo: "/photos/p20.jpg", title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS office." },
+  { tone: "a", seed: 1, title: "Check your subjects any time", text: "No queue, no waiting for the office to open." },
+  { tone: "g", seed: 5, title: "An open door to the limitless horizon.", text: "The College of Computer Studies, Saint Joseph College.", quote: true },
+  { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS office." },
 ];
 
-const CREDITS = "May Pamintuan, Nicholas Swanson, Daniel Genser, Paul Evans, Alejandro Escamilla, Aleks Dorohovich";
+const CREDITS = "Jon Eckert (the sign-in page)";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
@@ -57,13 +57,13 @@ export default function LandingPage() {
       <main id="main" className="flex-1">
         {/* Hero: a big photo card with the headline on it, and the two sides of the system overlapping its bottom edge */}
         <section className="mx-auto max-w-[1180px] px-3 pb-16 pt-6 sm:px-6 sm:pt-8 lg:pb-24">
-          <PhotoHero src="/photos/p62.jpg" position="center 70%" className="rounded-[28px] sm:rounded-[36px]">
+          <ArtHero tone="g" seed={2} className="rounded-[28px] sm:rounded-[36px]">
             <Reveal className="flex max-w-[880px] flex-col gap-6 px-6 pb-32 pt-14 sm:px-12 sm:pb-44 sm:pt-20">
               <span className="glass inline-flex w-fit items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-white" aria-hidden="true" />College of Computer Studies<span className="hidden sm:inline"> · Saint Joseph College</span>
               </span>
               <h1 className="text-balance font-display text-[42px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[64px] lg:text-[80px]">
-                Every subject, section and standing <span className="opacity-70">in one place.</span>
+                Every subject, section and standing <span style={{ color: "var(--art-gold)" }}>in one place.</span>
               </h1>
               <p className="max-w-[600px] text-pretty text-[17px] leading-relaxed opacity-95 sm:text-[19px]">
                 Track enrollment, grades and academic standing for BSIT, BSCS and ACT students, from first year to graduation.
@@ -79,7 +79,7 @@ export default function LandingPage() {
                 <span className="text-[13px] opacity-90">One sign-in for students and staff</span>
               </div>
             </Reveal>
-          </PhotoHero>
+          </ArtHero>
           <Reveal delay={120} className="relative z-10 -mt-24 px-1 sm:-mt-32 sm:px-6"><HeroStage /></Reveal>
         </section>
 
@@ -101,12 +101,12 @@ export default function LandingPage() {
           <div className="grid gap-4 md:grid-cols-3">
             {MOMENTS.map((m, i) => (
               <Reveal key={m.title} delay={i * 90}>
-                <PhotoHero src={m.photo} className="h-full min-h-[300px] rounded-[24px] sm:min-h-[380px]">
+                <ArtHero tone={m.tone} seed={m.seed} className="h-full min-h-[300px] rounded-[24px] sm:min-h-[380px]">
                   <div className="flex h-full min-h-[300px] flex-col justify-end gap-2 p-6 sm:min-h-[380px] sm:p-7">
                     <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] ${m.quote ? "text-[28px] sm:text-[32px]" : "text-[22px] sm:text-[24px]"}`}>{m.title}</p>
                     <p className="text-[14px] opacity-90">{m.text}</p>
                   </div>
-                </PhotoHero>
+                </ArtHero>
               </Reveal>
             ))}
           </div>
@@ -132,7 +132,7 @@ export default function LandingPage() {
           <Reveal className="mt-14 overflow-hidden rounded-[32px] p-8 sm:p-12" style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div className="max-w-[560px]">
-                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">Know where you stand before you visit the office.</h2>
+                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Know where you stand before you visit the office.</h2>
                 <p className="mt-3 text-[15px]" style={{ color: "var(--panel-soft)" }}>Forgot your password? The CCS office can reset it.</p>
               </div>
               <Link to="/signin" className="btn btn-secondary h-12 rounded-full px-8 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
@@ -147,7 +147,7 @@ export default function LandingPage() {
           <div>
             <div className="font-display text-[16px] font-bold text-ink" translate="no">CCS Subject Monitoring System</div>
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
-            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photos on Unsplash by {CREDITS}.</p>
+            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photo on Unsplash by {CREDITS}.</p>
           </div>
           <span className="font-mono text-[12px] tracking-wide text-ink-3">CODE · INNOVATE · TRANSFORM</span>
         </div>

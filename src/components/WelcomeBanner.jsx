@@ -1,4 +1,5 @@
-import PhotoHero, { GlassFacts } from "./PhotoHero";
+import ArtHero from "./ArtHero";
+import { GlassFacts } from "./PhotoHero";
 
 // The first card of each role's home screen: a photo, a time-of-day hello, today's date, one line of context
 // and a frosted row of facts (like the weather row of a phone app). `badge` sits at the top right.
@@ -7,11 +8,11 @@ const hello = () => {
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 };
 
-export default function WelcomeBanner({ photo, name, line, facts, badge, children }) {
+export default function WelcomeBanner({ tone = "a", seed = 0, name, line, facts, badge, children }) {
   const first = String(name || "").trim().split(/\s+/)[0];
   const today = new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" });
   return (
-    <PhotoHero src={photo} position="center 60%" className="rounded-[24px]">
+    <ArtHero tone={tone} seed={seed} className="rounded-[24px]">
       <div className="flex min-h-[280px] flex-col justify-between gap-8 p-6 sm:min-h-[320px] sm:p-9">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-2">
@@ -26,6 +27,6 @@ export default function WelcomeBanner({ photo, name, line, facts, badge, childre
         </div>
         {facts && <GlassFacts items={facts} />}
       </div>
-    </PhotoHero>
+    </ArtHero>
   );
 }

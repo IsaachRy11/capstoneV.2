@@ -80,7 +80,7 @@ const NAV = {
 function BottomTabs() {
   const { user } = useAuth();
   return (
-    <nav aria-label="Main" className="tabbar no-print lg:hidden">
+    <nav aria-label="Main" className="tabbar chrome no-print lg:hidden">
       {NAV[user.role].filter((item) => !item.noTab).map(({ to, end, icon: Icon, label, tab }) => (
         <NavLink key={to} to={to} end={end} aria-label={label} className={({ isActive }) => `tab ${isActive ? "active" : ""}`}>
           <span className="tab-icon"><Icon size={21} aria-hidden="true" /></span>
@@ -129,7 +129,7 @@ function Sidebar({ collapsed = false, onToggle }) {
   const { user } = useAuth();
 
   return (
-    <aside className={`flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
+    <aside className={`chrome flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
       <Brand />
       <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 py-3">
         {NAV[user.role].map((item) => (
@@ -190,7 +190,7 @@ export default function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Phones: the bar stays at the top while the page scrolls; the seal stands in for the sidebar brand. */}
-        <header className="no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:static lg:min-h-16 lg:py-3">
+        <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:static lg:min-h-16 lg:py-3">
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (

@@ -15,6 +15,13 @@
   --line-2: #f0eeea;
   --grid-line: #d3d0c9;
   --dot: #cdc9c0;
+  /* The frame of the app (sidebar, top bar, phone tab bar): deep school green with a gold accent. Orange stays the action color. */
+  --chrome: #0f3d2f; --chrome-2: #15513e; --chrome-line: #276650;
+  --chrome-ink: #f3f8f4; --chrome-ink-2: #c3d9cc; --chrome-ink-3: #93b5a2;
+  --chrome-accent: #f6c453; --chrome-tint: rgba(255, 255, 255, 0.12); --chrome-tint-ink: #ffe29a; --chrome-hover: rgba(255, 255, 255, 0.09);
+  --chrome-field: rgba(255, 255, 255, 0.1); --chrome-field-line: rgba(255, 255, 255, 0.24); --chrome-focus: rgba(246, 196, 83, 0.45);
+  /* Illustrated banners: three colors that sit well next to the green frame (orange across from it, amber and teal beside it) */
+  --art-a: #c2410c; --art-b: #a16207; --art-c: #0f766e; --art-g: #0f3d2f; --art-gold: #f6c453;
   --ink: #1a1714;
   --ink-2: #57534e;
   --ink-3: #6b6560;
@@ -50,6 +57,11 @@
   --line-2: #1f2740;
   --grid-line: #34415f;
   --dot: #2a3550;
+  --chrome: #18223f; --chrome-2: #1f2b50; --chrome-line: #2d3b62;
+  --chrome-ink: #e6eaf2; --chrome-ink-2: #b4bccd; --chrome-ink-3: #97a1b6;
+  --chrome-accent: #8fa8ff; --chrome-tint: rgba(143, 168, 255, 0.16); --chrome-tint-ink: #c3d0ff; --chrome-hover: rgba(255, 255, 255, 0.07);
+  --chrome-field: #11172a; --chrome-field-line: #34415f; --chrome-focus: rgba(143, 168, 255, 0.35);
+  --art-a: #2c3b78; --art-b: #2a4a74; --art-c: #36307a; --art-g: #1b2a55; --art-gold: #c3d0ff;
   --ink: #e6eaf2;
   --ink-2: #b4bccd;
   --ink-3: #97a1b6;
@@ -178,7 +190,9 @@
   @keyframes path-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .path-tile { animation: none; } }
   /* Photo cards: a flat dark layer over the picture keeps light text readable; .glass is frosted glass on top of it */
-  .photo-hero :where(h1, h2, h3, h4, p, span, dt, dd) { color: inherit; }
+  .photo-hero :where(h1, h2, h3, h4, p, dt, dd), .art-hero :where(h1, h2, h3, h4, p, dt, dd) { color: inherit; }
+  /* The app's frame: everything inside re-reads the theme tokens in the frame's colors, so buttons, fields and links just work */
+  .chrome { --surface: var(--chrome); --surface-2: var(--chrome-2); --line: var(--chrome-line); --line-2: var(--chrome-line); --ink: var(--chrome-ink); --ink-2: var(--chrome-ink-2); --ink-3: var(--chrome-ink-3); --accent: var(--chrome-accent); --tint: var(--chrome-tint); --tint-ink: var(--chrome-tint-ink); --hover: var(--chrome-hover); --field-bg: var(--chrome-field); --field-line: var(--chrome-field-line); --focus: var(--chrome-focus); --track: rgba(255, 255, 255, 0.14); color: var(--ink); }
   .photo-scrim { background: rgba(10, 14, 26, 0.42); }
   [data-theme="dark"] .photo-scrim { background: rgba(8, 11, 22, 0.58); }
   .glass { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; }
