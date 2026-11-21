@@ -8,7 +8,7 @@ import { countOfferings, getCurriculum, getPrograms } from "../../services/catal
 import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
 import WelcomeBanner from "../../components/WelcomeBanner";
 import { useAuth } from "../../context/AuthContext";
-import { sectionLetter, shortProgramName, sumUnits, termLabel, yearLabel } from "../../lib/format";
+import { sectionLetter, shortProgramName, sumUnits, yearLabel } from "../../lib/format";
 
 function Kpi({ to, label, value, sub, children }) {
   return (
@@ -57,8 +57,7 @@ export default function Dashboard() {
         </>}
       />
 
-      <WelcomeBanner tone="a" seed={0} name={user?.name} line="Students, sections and seats for this term."
-        facts={[["This term", term ? termLabel(term) : "No current term"], ["Students", `${students.length} students`], ["Sections", `${sections.length} sections`], ["Subjects offered", `${offerings} subjects`]]} />
+      <WelcomeBanner tone="a" seed={0} name={user?.name} />
 
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">

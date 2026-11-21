@@ -172,9 +172,21 @@ export default function AppShell() {
   const [q, setQ] = useState("");
   const term = useAsync(getCurrentTerm, [], "term");
 
-  const title = location.pathname === "/"
+  // Pages that live under a dropdown show "Group / Page" (Subject tracker / This semester).
+  const path = location.pathname;
+  const list = new URLSearchParams(location.search).get("list");
+  const crumb = () => {
+    if (path === "/progress") return "Subject tracker / This semester";
+    if (path === "/progress/roadmap") return "Subject tracker / Roadmap";
+    if (path === "/curriculum" && user.role === "student") return "Subject tracker / Curriculum";
+    if (path === "/students") return `Students / ${{ graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out" }[list] || "Enrolled"}`;
+    if (path === "/schedules") return "Schedules / Timetables";
+    if (path === "/schedules/edit") return "Schedules / Edit class times";
+    return null;
+  };
+  const title = path === "/"
     ? (user.role === "secretary" ? "Dashboard" : "Home")
-    : PAGE_TITLES.find(([re]) => re.test(location.pathname))?.[1] || "";
+    : crumb() || PAGE_TITLES.find(([re]) => re.test(path))?.[1] || "";
   const search = (e) => {
     e.preventDefault();
     if (q.trim()) navigate(`/students?q=${encodeURIComponent(q.trim())}`);

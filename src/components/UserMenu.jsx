@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { CalendarDays, ChevronDown, ChevronRight, CircleHelp, LogOut, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
+import { CalendarDays, ChevronRight, CircleHelp, LogOut, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { Avatar } from "./ui";
@@ -62,10 +62,6 @@ export default function UserMenu() {
         className="relative rounded-full hover:ring-2 hover:ring-line"
       >
         <Avatar name={user.name} url={user.avatarUrl} size={40} />
-        {/* small down arrow, like Facebook's account button */}
-        <span className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface bg-hover text-ink-2" aria-hidden="true">
-          <ChevronDown size={12} strokeWidth={2.5} className={`transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-180" : ""}`} />
-        </span>
       </button>
 
       {open && (

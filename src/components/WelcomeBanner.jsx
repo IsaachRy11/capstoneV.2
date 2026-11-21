@@ -13,7 +13,7 @@ export default function WelcomeBanner({ tone = "a", seed = 0, name, line, facts,
   const today = new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" });
   return (
     <ArtHero tone={tone} seed={seed} className="rounded-[24px]">
-      <div className="flex min-h-[280px] flex-col justify-between gap-8 p-6 sm:min-h-[320px] sm:p-9">
+      <div className={`flex ${facts ? "min-h-[280px] sm:min-h-[320px]" : "min-h-[150px] sm:min-h-[170px]"} flex-col justify-between gap-8 p-6 sm:p-9`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-[12px] font-semibold uppercase tracking-[0.1em] opacity-90">{today}</span>

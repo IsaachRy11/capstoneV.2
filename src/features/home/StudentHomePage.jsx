@@ -1,5 +1,5 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, FileText, ListChecks, Route } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
@@ -11,7 +11,6 @@ import { useClassStatus } from "../../hooks/useCalendar";
 import TodayCard from "./TodayCard";
 import ProgressCard from "./ProgressCard";
 import WelcomeBanner from "../../components/WelcomeBanner";
-import Shortcuts from "../../components/Shortcuts";
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -52,14 +51,6 @@ export default function StudentHome() {
           ["Subjects this term", `${active.length} subjects`],
           ["Units this term", `${units} units`],
         ]} />
-
-      <Shortcuts items={[
-        { to: "/schedule", icon: CalendarClock, label: "Schedule" },
-        { to: "/progress", icon: ListChecks, label: "Tracker" },
-        { to: "/progress/roadmap", icon: Route, label: "Roadmap" },
-        { to: "/record", icon: FileText, label: "Grades" },
-        { to: "/curriculum", icon: BookOpen, label: "Curriculum" },
-      ]} />
 
       {/* Failed-subject status first: it is what the student most needs to know. */}
       {deficiencies.length === 0 ? (
