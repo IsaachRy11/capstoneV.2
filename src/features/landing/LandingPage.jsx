@@ -57,23 +57,20 @@ export default function LandingPage() {
       <main id="main" className="flex-1">
         <LandingHero />
 
-        {/* What it does: an orange band with students walking away (same blend as the hero), then the feature pictures */}
-        <section id="features" className="scroll-mt-24">
-          <ArtHero tone="h" seed={6} as="div">
-            <img src="/photos/walk2.jpg" alt="" aria-hidden="true" width="900" height="756" decoding="async"
-              className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-full object-cover opacity-[0.42] md:w-[62%]"
-              style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.1)", WebkitMaskImage: "linear-gradient(to left, #000 35%, transparent)", maskImage: "linear-gradient(to left, #000 35%, transparent)" }} />
-            <Reveal className="mx-auto max-w-[1180px] px-4 py-14 sm:px-6 sm:py-20">
-              <h2 className="max-w-[720px] text-balance font-display text-[34px] font-extrabold leading-[1.06] tracking-[-0.02em] sm:text-[52px]">
+        {/* What it does: the heading and the feature pictures sit on a light section with the walking students laid into it */}
+        <section id="features" className="relative isolate scroll-mt-24 overflow-hidden border-b border-line bg-surface">
+          <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-full md:w-[64%] [-webkit-mask-image:linear-gradient(to_left,#000_30%,transparent)] [mask-image:linear-gradient(to_left,#000_30%,transparent)]" aria-hidden="true">
+            <img src="/photos/walk2.jpg" alt="" width="900" height="756" decoding="async"
+              className="mesh-photo h-full w-full object-cover [-webkit-mask-image:linear-gradient(to_bottom,#000_55%,transparent)] [mask-image:linear-gradient(to_bottom,#000_55%,transparent)]" />
+          </div>
+          <div className="mx-auto max-w-[1180px] px-4 py-14 sm:px-6 sm:py-20">
+            <Reveal>
+              <h2 className="max-w-[720px] text-balance font-display text-[34px] font-extrabold leading-[1.06] tracking-[-0.02em] text-ink sm:text-[52px]">
                 One record for students and the CCS office.
               </h2>
-              <p className="mt-4 max-w-[620px] text-[17px] leading-relaxed sm:text-[19px]">Both sides work from the same data, so a grade saved by the office is the grade the student sees.</p>
+              <p className="mt-4 max-w-[620px] text-[17px] leading-relaxed text-ink sm:text-[19px]">Both sides work from the same data, so a grade saved by the office is the grade the student sees.</p>
             </Reveal>
-          </ArtHero>
-          <div className="border-b border-line bg-surface">
-            <div className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
-              <FeatureBento />
-            </div>
+            <div className="mt-10"><FeatureBento /></div>
           </div>
         </section>
 

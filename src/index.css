@@ -375,3 +375,8 @@ main table:not(.no-grid) tfoot td { background: var(--surface-2); font-weight: 6
 }
 .toggle-btn:hover { background: var(--hover); color: var(--ink); }
 .toggle-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); color: var(--tint-ink); }
+
+/* Photo laid into a light section (landing features): gray, multiplied into the ground so it reads as a soft shadow
+   picture; in the dark theme it is screened in at low strength instead. */
+.mesh-photo { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.05); opacity: 0.32; }
+[data-theme="dark"] .mesh-photo { mix-blend-mode: screen; opacity: 0.16; }
