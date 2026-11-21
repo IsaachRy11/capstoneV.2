@@ -37,7 +37,7 @@ export default function LandingPage() {
 
       {/* A floating bar that stays in reach while you scroll */}
       <header className="sticky top-0 z-40 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
-        <div className="mx-auto flex max-w-[1180px] items-center gap-3 rounded-full border border-line bg-surface/85 py-2 pl-3 pr-2 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1180px] items-center gap-3 rounded-full border border-line bg-surface py-2 pl-3 pr-2 backdrop-blur-md">
           <SealLogo size={36} />
           <div className="min-w-0 flex-1">
             <div className="truncate font-display text-[14px] font-bold leading-tight text-ink sm:text-[15px]" translate="no">CCS Subject Monitoring System</div>

@@ -21,7 +21,7 @@
   --chrome-accent: #ffd9b8; --chrome-tint: rgba(255, 255, 255, 0.2); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.09);
   --chrome-field: rgba(255, 255, 255, 0.1); --chrome-field-line: rgba(255, 255, 255, 0.24); --chrome-focus: rgba(255, 255, 255, 0.5);
   /* Illustrated banners: shades of the brand orange */
-  --art-a: #c2410c; --art-b: #a3380f; --art-c: #7c2d12; --art-g: #9a3412; --art-gold: #ffe4d4;
+  --art-h: #c2410c; --art-a: #c2410c; --art-b: #a3380f; --art-c: #7c2d12; --art-g: #9a3412; --art-gold: #ffe4d4;
   --ink: #1a1714;
   /* Drawn students on the landing hero (same in both themes) */
   --fig-skin-1: #f2c8a2; --fig-skin-2: #e0a97c; --fig-skin-3: #c68a5f; --fig-skin-4: #a76d49; --fig-hair: #2b1d17;
@@ -65,7 +65,7 @@
   --chrome-ink: #fff1ee; --chrome-ink-2: #f5cfc8; --chrome-ink-3: #e8b3aa;
   --chrome-accent: #ffb4a8; --chrome-tint: rgba(255, 255, 255, 0.16); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.08);
   --chrome-field: rgba(0, 0, 0, 0.25); --chrome-field-line: rgba(255, 255, 255, 0.28); --chrome-focus: rgba(255, 255, 255, 0.45);
-  --art-a: #c7322b; --art-b: #7a2322; --art-c: #443f3a; --art-g: #5a1a19; --art-gold: #ffd0c8;
+  --art-h: #8f2b28; --art-a: #c7322b; --art-b: #7a2322; --art-c: #443f3a; --art-g: #5a1a19; --art-gold: #ffd0c8;
   --ink: #f5efeb;
   --ink-2: #d1c7c0;
   --ink-3: #a89d95;
