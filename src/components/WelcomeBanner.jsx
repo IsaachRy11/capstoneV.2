@@ -1,26 +1,31 @@
-// A greeting card for the first screen of each role: time-of-day hello, today's date and one line of context.
-// The rings and the tint circle are decoration only.
+import PhotoHero, { GlassFacts } from "./PhotoHero";
+
+// The first card of each role's home screen: a photo, a time-of-day hello, today's date, one line of context
+// and a frosted row of facts (like the weather row of a phone app). `badge` sits at the top right.
 const hello = () => {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 };
 
-export default function WelcomeBanner({ name, line, children }) {
+export default function WelcomeBanner({ photo, name, line, facts, badge, children }) {
   const first = String(name || "").trim().split(/\s+/)[0];
   const today = new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" });
   return (
-    <section className="relative overflow-hidden rounded-[20px] border border-line bg-surface p-6 sm:p-8">
-      <span className="bd-shape pointer-events-none absolute -right-14 -top-24 h-64 w-64 sm:h-80 sm:w-80" aria-hidden="true" style={{ animationDuration: "34s" }} />
-      <span className="bd-ring pointer-events-none absolute right-20 top-10 hidden h-28 w-28 sm:block" aria-hidden="true" style={{ animationDuration: "40s" }} />
-      <span className="bd-ring pointer-events-none absolute -bottom-10 right-1/3 hidden h-24 w-24 md:block" aria-hidden="true" style={{ animationDuration: "46s" }} />
-      <div className="relative flex flex-col gap-2">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">{today}</span>
-        <h2 className="text-balance font-display text-[30px] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink sm:text-[42px]">
-          {hello()}{first ? <>, <span className="text-accent">{first}</span></> : null}
-        </h2>
-        {line && <p className="max-w-[560px] text-[15px] leading-relaxed text-ink-2 sm:text-[16px]">{line}</p>}
-        {children && <div className="mt-3 flex flex-wrap items-center gap-2.5">{children}</div>}
+    <PhotoHero src={photo} position="center 60%" className="rounded-[24px]">
+      <div className="flex min-h-[280px] flex-col justify-between gap-8 p-6 sm:min-h-[320px] sm:p-9">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.1em] opacity-90">{today}</span>
+            <h2 className="text-balance font-display text-[34px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[52px]">
+              {hello()}{first ? <>, {first}</> : null}
+            </h2>
+            {line && <p className="max-w-[560px] text-[15px] leading-relaxed opacity-95 sm:text-[17px]">{line}</p>}
+            {children && <div className="mt-2 flex flex-wrap items-center gap-2.5">{children}</div>}
+          </div>
+          {badge}
+        </div>
+        {facts && <GlassFacts items={facts} />}
       </div>
-    </section>
+    </PhotoHero>
   );
 }

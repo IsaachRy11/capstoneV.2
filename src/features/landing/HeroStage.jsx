@@ -77,7 +77,7 @@ function OfficePanel() {
 
 function StudentPhone() {
   return (
-    <div className="stage-float w-[236px] shrink-0 rounded-[34px] border border-line bg-surface p-2.5 shadow-[0_30px_70px_-26px_rgba(0,0,0,0.45)]">
+    <div className="w-[236px] shrink-0 rounded-[34px] border border-line bg-surface p-2.5 shadow-[0_30px_70px_-26px_rgba(0,0,0,0.45)]">
       <div className="overflow-hidden rounded-[26px] border border-line-2 bg-ground">
         <div className="mx-auto mt-2 h-1.5 w-14 rounded-full bg-line" />
         <div className="flex flex-col gap-3 p-3.5">
@@ -109,10 +109,10 @@ function StudentPhone() {
 
 export default function HeroStage() {
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-line bg-surface-2 px-4 py-8 sm:px-8 sm:py-12" aria-hidden="true">
-      <div className="mx-auto flex max-w-[860px] items-center justify-center">
+    <div className="relative" aria-hidden="true">
+      <div className="mx-auto flex max-w-[900px] items-center justify-center">
         <div className="hidden min-w-0 flex-1 sm:block"><OfficePanel /></div>
-        <div className="sm:-ml-16 sm:mt-24"><StudentPhone /></div>
+        <div className="sm:-ml-16 sm:mt-16"><StudentPhone /></div>
       </div>
     </div>
   );

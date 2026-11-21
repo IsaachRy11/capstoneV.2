@@ -177,6 +177,11 @@
   .path-tile { animation: path-in .45s ease-out both; }
   @keyframes path-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .path-tile { animation: none; } }
+  /* Photo cards: a flat dark layer over the picture keeps light text readable; .glass is frosted glass on top of it */
+  .photo-hero :where(h1, h2, h3, h4, p, span, dt, dd) { color: inherit; }
+  .photo-scrim { background: rgba(10, 14, 26, 0.42); }
+  [data-theme="dark"] .photo-scrim { background: rgba(8, 11, 22, 0.58); }
+  .glass { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; }
   /* Living background (components/Backdrop.jsx): a dot grid with slow drifting shapes and rings */
   .bd-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.7px); background-size: 26px 26px; -webkit-mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); }
   .bd-shape { position: absolute; border-radius: 42%; background: var(--tint); animation: bd-drift 38s ease-in-out infinite alternate; }
@@ -190,10 +195,8 @@
   /* Each page eases in when you open it; the landing ticker scrolls slowly */
   .page-in { animation: page-in .35s ease-out both; }
   @keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  .ticker-track { animation: ticker 42s linear infinite; }
-  .ticker:hover .ticker-track { animation-play-state: paused; }
-  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-  @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .ticker-track, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
+  .backdrop-still * { animation: none !important; }
+  @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
   /* Landing page: sections fade up once when they scroll into view, cards lift a little on hover, the phone floats */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
   .reveal.is-in { opacity: 1; transform: none; }

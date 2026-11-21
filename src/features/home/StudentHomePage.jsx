@@ -1,5 +1,5 @@
 import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarClock, CheckCircle2, FileText, ListChecks, Route } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
@@ -10,6 +10,8 @@ import { buildProgress, nextTermFor } from "../../lib/progress";
 import { useClassStatus } from "../../hooks/useCalendar";
 import TodayCard from "./TodayCard";
 import ProgressCard from "./ProgressCard";
+import WelcomeBanner from "../../components/WelcomeBanner";
+import Shortcuts from "../../components/Shortcuts";
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -41,28 +43,23 @@ export default function StudentHome() {
 
   return (
     <>
-      <section className="card relative flex flex-col gap-6 overflow-hidden p-7" style={{ borderTop: "4px solid var(--accent)" }}>
-        <span className="bd-shape pointer-events-none absolute -right-16 -top-24 h-64 w-64" aria-hidden="true" style={{ animationDuration: "34s" }} />
-        <span className="bd-ring pointer-events-none absolute right-24 top-8 hidden h-24 w-24 sm:block" aria-hidden="true" style={{ animationDuration: "40s" }} />
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[14px] text-ink-2">{new Date().getHours() < 12 ? "Good morning," : new Date().getHours() < 18 ? "Good afternoon," : "Good evening,"}</span>
-            <h1 className="text-[30px] font-bold tracking-tight">{student.full_name}</h1>
-            <span className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · {student.program_name}</span>
-          </div>
-          <StudentStatusBadge student={student} />
-        </div>
-        <dl className="stat-grid relative border-t border-line-2 pt-5">
-          {[
-            ["Year level", yearLabel(student.year_level)],
-            ["Section", student.section_name || "Not yet enrolled"],
-            ["Subjects this term", `${active.length} subjects`],
-            ["Units this term", `${units} units`],
-          ].map(([k, v]) => (
-            <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
-          ))}
-        </dl>
-      </section>
+      <WelcomeBanner photo="/photos/p54.jpg" name={student.full_name}
+        line={`${student.full_name} · ${student.id} · ${student.program_name}`}
+        badge={<StudentStatusBadge student={student} />}
+        facts={[
+          ["Year level", yearLabel(student.year_level)],
+          ["Section", student.section_name || "Not yet enrolled"],
+          ["Subjects this term", `${active.length} subjects`],
+          ["Units this term", `${units} units`],
+        ]} />
+
+      <Shortcuts items={[
+        { to: "/schedule", icon: CalendarClock, label: "Schedule" },
+        { to: "/progress", icon: ListChecks, label: "Tracker" },
+        { to: "/progress/roadmap", icon: Route, label: "Roadmap" },
+        { to: "/record", icon: FileText, label: "Grades" },
+        { to: "/curriculum", icon: BookOpen, label: "Curriculum" },
+      ]} />
 
       {/* Failed-subject status first: it is what the student most needs to know. */}
       {deficiencies.length === 0 ? (

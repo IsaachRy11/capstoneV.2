@@ -9,6 +9,8 @@ import TermCalendar from "./TermCalendar";
 import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 import Backdrop from "./Backdrop";
+import RouteBanner from "./RouteBanner";
+import { termLabel } from "../lib/format";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -217,6 +219,7 @@ export default function AppShell() {
           )}
           <ErrorBoundary key={location.pathname}>
             <div className="page-in flex flex-1 flex-col gap-4 sm:gap-6">
+              <RouteBanner pathname={location.pathname} termText={termLabel(term.data)} />
               <Outlet context={{ term: term.data, termLoading: term.loading }} />
             </div>
           </ErrorBoundary>

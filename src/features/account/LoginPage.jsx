@@ -41,6 +41,7 @@ export default function Login() {
       {/* Brand panel (PC only): the college's own words, set large */}
       <section className="relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
+        <img src="/photos/p71.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-45" />
         <span className="bd-ring pointer-events-none absolute -right-24 top-24 -z-10 h-[420px] w-[420px]" style={{ borderColor: "rgba(255,255,255,.16)", animationDuration: "48s" }} aria-hidden="true" />
         <span className="bd-ring pointer-events-none absolute -left-16 bottom-16 -z-10 h-[240px] w-[240px]" style={{ borderColor: "rgba(255,255,255,.12)", animationDuration: "58s" }} aria-hidden="true" />
         <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">

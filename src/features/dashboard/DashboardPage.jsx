@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { Plus, Printer } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarRange, Layers, Plus, Printer, Users } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { listCurrentSections } from "../../services/sections";
 import { countOfferings, getCurriculum, getPrograms } from "../../services/catalog";
 import { ErrorState, LoadingState, PageHeader, SectionHeader } from "../../components/ui";
 import WelcomeBanner from "../../components/WelcomeBanner";
+import Shortcuts from "../../components/Shortcuts";
 import { useAuth } from "../../context/AuthContext";
 import { sectionLetter, shortProgramName, sumUnits, termLabel, yearLabel } from "../../lib/format";
 
@@ -57,7 +58,16 @@ export default function Dashboard() {
         </>}
       />
 
-      <WelcomeBanner name={user?.name} line={`The CCS office at a glance${term ? ` · ${termLabel(term)}` : ""}.`} />
+      <WelcomeBanner photo="/photos/p77.jpg" name={user?.name} line="Here is the CCS office at a glance."
+        facts={[["This term", term ? termLabel(term) : "No current term"], ["Students", `${students.length} students`], ["Sections", `${sections.length} sections`], ["Subjects offered", `${offerings} subjects`]]} />
+
+      <Shortcuts items={[
+        { to: "/students", icon: Users, label: "Students" },
+        { to: "/sections", icon: Layers, label: "Sections" },
+        { to: "/schedules", icon: CalendarClock, label: "Schedules" },
+        { to: "/curriculum", icon: BookOpen, label: "Curriculum" },
+        { to: "/school-year", icon: CalendarRange, label: "New term" },
+      ]} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
         <Kpi to="/students" label="Students" value={students.length} sub={programs.map((p) => `${p.code} ${byProgram(p.code).length}`).join(" · ") + (graduated ? ` · ${graduated} graduated` : "")} />
