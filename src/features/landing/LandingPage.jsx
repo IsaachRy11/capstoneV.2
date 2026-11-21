@@ -25,7 +25,7 @@ const MOMENTS = [
   { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS office." },
 ];
 
-const CREDITS = "Jon Eckert (the sign-in page) and Bo Peng (the landing page)";
+const CREDITS = "Jon Eckert (the sign-in page), Bo Peng and Yanhao Fang (the landing page)";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
@@ -57,16 +57,23 @@ export default function LandingPage() {
       <main id="main" className="flex-1">
         <LandingHero />
 
-        {/* What it does */}
-        <section id="features" className="scroll-mt-24 border-y border-line bg-surface">
-          <div className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6 sm:py-20">
-            <Reveal className="max-w-[640px]">
-              <h2 className="text-balance font-display text-[30px] font-extrabold leading-[1.08] tracking-[-0.02em] text-ink sm:text-[42px]">
-                One record for students <span className="text-ink-3">and the CCS office.</span>
+        {/* What it does: an orange band with students walking away (same blend as the hero), then the feature pictures */}
+        <section id="features" className="scroll-mt-24">
+          <ArtHero tone="h" seed={6} as="div">
+            <img src="/photos/walk2.jpg" alt="" aria-hidden="true" width="900" height="756" decoding="async"
+              className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-full object-cover opacity-[0.42] md:w-[62%]"
+              style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.1)", WebkitMaskImage: "linear-gradient(to left, #000 35%, transparent)", maskImage: "linear-gradient(to left, #000 35%, transparent)" }} />
+            <Reveal className="mx-auto max-w-[1180px] px-4 py-14 sm:px-6 sm:py-20">
+              <h2 className="max-w-[720px] text-balance font-display text-[34px] font-extrabold leading-[1.06] tracking-[-0.02em] sm:text-[52px]">
+                One record for students and the CCS office.
               </h2>
-              <p className="mt-3 text-[16px] leading-relaxed text-ink-2">Both sides work from the same data, so a grade saved by the office is the grade the student sees.</p>
+              <p className="mt-4 max-w-[620px] text-[17px] leading-relaxed sm:text-[19px]">Both sides work from the same data, so a grade saved by the office is the grade the student sees.</p>
             </Reveal>
-            <div className="mt-8"><FeatureBento /></div>
+          </ArtHero>
+          <div className="border-b border-line bg-surface">
+            <div className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
+              <FeatureBento />
+            </div>
           </div>
         </section>
 
@@ -94,10 +101,10 @@ export default function LandingPage() {
           <ol className="relative mt-10 grid gap-5 md:grid-cols-3">
             {STEPS.map((s, i) => (
               <Reveal as="li" key={s.title} delay={i * 90} className="lift card relative flex flex-col gap-4 p-6 sm:p-7">
-                <span className="font-mono text-[44px] font-bold leading-none text-[var(--grid-line)]" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-mono text-[44px] font-bold leading-none text-[var(--accent)]" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
                 <span className="sr-only">Step {i + 1}: </span>
                 <span className="font-display text-[19px] font-bold text-ink">{s.title}</span>
-                <span className="text-[14px] leading-relaxed text-ink-2">{s.text}</span>
+                <span className="text-[15.5px] leading-relaxed text-ink">{s.text}</span>
               </Reveal>
             ))}
           </ol>

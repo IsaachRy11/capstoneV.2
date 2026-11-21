@@ -143,8 +143,8 @@ export default function FeatureBento() {
           <Reveal key={c.title} delay={i * 70} className={`lift card flex flex-col gap-5 p-5 sm:p-6 ${c.span}`}>
             <div className="flex min-h-[132px] flex-1 flex-col justify-center rounded-xl border border-line bg-surface-2 p-4" aria-hidden="true">{c.visual}</div>
             <div>
-              <h3 className="font-display text-[18px] font-bold text-ink">{c.title}</h3>
-              <p className="mt-1 text-[14px] leading-relaxed text-ink-2">{c.text}</p>
+              <h3 className="font-display text-[21px] font-bold text-ink">{c.title}</h3>
+              <p className="mt-1.5 text-[15.5px] leading-relaxed text-ink">{c.text}</p>
             </div>
           </Reveal>
         ))}
