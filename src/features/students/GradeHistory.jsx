@@ -13,7 +13,7 @@ export default function GradeHistory({ changes }) {
   const shown = all ? changes : changes.slice(0, FIRST);
   return (
     <section className="card no-print overflow-hidden">
-      <div className="border-b border-line px-5 py-4">
+      <div className="card-head px-5 py-4">
         <h2 className="text-[17px] font-bold">Grade change history</h2>
         <p className="mt-1 text-[13px] text-ink-3">Newest first. Recorded automatically whenever a grade is saved or a graded subject is removed. Entries can't be edited or deleted.</p>
       </div>

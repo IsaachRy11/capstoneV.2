@@ -149,7 +149,7 @@ export default function CalendarPage() {
             </section>
           )}
           <section className="card overflow-hidden">
-            <h2 className="border-b border-line px-5 py-3.5 text-[15px] font-bold text-ink">Coming up</h2>
+            <h2 className="card-head px-5 py-3.5 text-[15px] font-bold text-ink">Coming up</h2>
             {next.length === 0 ? <EmptyState>No upcoming dates on the school calendar.</EmptyState> : (
               <ul className="flex flex-col p-2">
                 {next.map((e) => (
@@ -167,7 +167,7 @@ export default function CalendarPage() {
             )}
           </section>
           <section className="card overflow-hidden">
-            <h2 className="border-b border-line px-5 py-3.5 text-[15px] font-bold text-ink">All terms</h2>
+            <h2 className="card-head px-5 py-3.5 text-[15px] font-bold text-ink">All terms</h2>
             {ranges.length === 0 ? <EmptyState>No term dates have been set yet.</EmptyState> : (
               <ul className="flex flex-col p-2">
                 {[...ranges].reverse().map((r) => (

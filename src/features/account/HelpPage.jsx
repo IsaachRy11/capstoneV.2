@@ -97,7 +97,7 @@ export default function HelpPage() {
       <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
-        <div className="flex items-center gap-2.5 border-b border-line px-5 py-3.5">
+        <div className="card-head flex items-center gap-2.5 px-5 py-3.5">
           <CircleHelp size={18} className="text-accent" aria-hidden="true" />
           <h2 className="text-[15px] font-bold text-ink">Common questions</h2>
           <span className="ml-auto text-[13px] text-ink-3">{list.length} questions</span>

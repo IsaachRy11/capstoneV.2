@@ -15,13 +15,13 @@
   --line-2: #f0eeea;
   --grid-line: #d3d0c9;
   --dot: #cdc9c0;
-  /* The frame of the app (sidebar, top bar, phone tab bar): deep school green with a gold accent. Orange stays the action color. */
-  --chrome: #0f3d2f; --chrome-2: #15513e; --chrome-line: #276650;
-  --chrome-ink: #f3f8f4; --chrome-ink-2: #c3d9cc; --chrome-ink-3: #93b5a2;
-  --chrome-accent: #f6c453; --chrome-tint: rgba(255, 255, 255, 0.12); --chrome-tint-ink: #ffe29a; --chrome-hover: rgba(255, 255, 255, 0.09);
-  --chrome-field: rgba(255, 255, 255, 0.1); --chrome-field-line: rgba(255, 255, 255, 0.24); --chrome-focus: rgba(246, 196, 83, 0.45);
-  /* Illustrated banners: three colors that sit well next to the green frame (orange across from it, amber and teal beside it) */
-  --art-a: #c2410c; --art-b: #a16207; --art-c: #0f766e; --art-g: #0f3d2f; --art-gold: #f6c453;
+  /* The frame of the app (sidebar, top bar, phone tab bar): the brand orange (deeper shade), with cream accents. */
+  --chrome: #9a3412; --chrome-2: #b23d10; --chrome-line: #c2551f;
+  --chrome-ink: #fff7f1; --chrome-ink-2: #ffe0cf; --chrome-ink-3: #fbc9ad;
+  --chrome-accent: #ffd9b8; --chrome-tint: rgba(255, 255, 255, 0.2); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.09);
+  --chrome-field: rgba(255, 255, 255, 0.1); --chrome-field-line: rgba(255, 255, 255, 0.24); --chrome-focus: rgba(255, 255, 255, 0.5);
+  /* Illustrated banners: shades of the brand orange */
+  --art-a: #c2410c; --art-b: #a3380f; --art-c: #7c2d12; --art-g: #9a3412; --art-gold: #ffe4d4;
   --ink: #1a1714;
   --ink-2: #57534e;
   --ink-3: #6b6560;
@@ -109,7 +109,8 @@
 }
 
 @layer components {
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(20, 16, 10, 0.04); }
+  .card-head { background: color-mix(in srgb, var(--tint) 60%, var(--surface)); border-bottom: 1px solid var(--line); border-radius: 13px 13px 0 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(20, 16, 10, 0.05), 0 6px 18px -10px rgba(154, 52, 18, 0.18); }
   .hover-lift { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
   .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -18px rgba(20, 16, 10, 0.35); border-color: var(--ink-3); }
 

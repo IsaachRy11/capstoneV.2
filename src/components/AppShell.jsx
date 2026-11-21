@@ -9,8 +9,7 @@ import TermCalendar from "./TermCalendar";
 import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 import Backdrop from "./Backdrop";
-import RouteBanner from "./RouteBanner";
-import { termLabel } from "../lib/format";
+import ChromeArt from "./ChromeArt";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -129,7 +128,8 @@ function Sidebar({ collapsed = false, onToggle }) {
   const { user } = useAuth();
 
   return (
-    <aside className={`chrome flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
+    <aside className={`chrome relative isolate flex h-full flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-200 ease-out motion-reduce:transition-none ${collapsed ? "sidebar-collapsed w-[76px]" : "w-[280px]"}`}>
+      {!collapsed && <ChromeArt variant="side" />}
       <Brand />
       <nav aria-label="Main" className="flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden px-3 py-3">
         {NAV[user.role].map((item) => (
@@ -190,7 +190,8 @@ export default function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Phones: the bar stays at the top while the page scrolls; the seal stands in for the sidebar brand. */}
-        <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:static lg:min-h-16 lg:py-3">
+        <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:relative lg:min-h-16 lg:py-3 isolate">
+          <ChromeArt variant="bar" />
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
@@ -219,7 +220,6 @@ export default function AppShell() {
           )}
           <ErrorBoundary key={location.pathname}>
             <div className="page-in flex flex-1 flex-col gap-4 sm:gap-6">
-              <RouteBanner pathname={location.pathname} termText={termLabel(term.data)} />
               <Outlet context={{ term: term.data, termLoading: term.loading }} />
             </div>
           </ErrorBoundary>

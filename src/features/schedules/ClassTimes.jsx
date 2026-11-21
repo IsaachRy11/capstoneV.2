@@ -23,7 +23,7 @@ export default function ClassTimes({ offerings, rooms, onChanged }) {
 
   return (
     <section className="card no-print overflow-hidden">
-      <div className="border-b border-line px-5 py-4">
+      <div className="card-head px-5 py-4">
         <h2 className="text-[17px] font-bold">Class times</h2>
         <p className="mt-1 text-[13px] text-ink-3">Add, change or remove when and where each subject meets. Clashes are blocked automatically.</p>
       </div>

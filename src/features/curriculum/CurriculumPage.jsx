@@ -45,7 +45,7 @@ export default function Curriculum() {
   // The columns are fixed-width so the description keeps the room; phones fold code and prerequisite under the title.
   const semesterCard = (sem, rows) => (
     <div key={sem} className="card overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+      <div className="card-head flex items-center justify-between gap-3 px-5 py-3.5">
         <h3 className="text-[15px] font-bold">{semesterLabel(sem)}</h3>
         <span className="font-mono text-[13px] text-ink-2">{count(rows)} · {sumUnits(rows)} units</span>
       </div>

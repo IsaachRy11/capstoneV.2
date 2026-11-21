@@ -105,7 +105,7 @@ export function PageHeader({ title, subtitle, actions, showTitle = false }) {
 
 export function SectionHeader({ title, subtitle, action }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+    <div className="card-head flex items-start justify-between gap-3 px-5 py-4">
       <div>
         <h2 className="text-[17px] font-bold">{title}</h2>
         {subtitle && <p className="mt-1 text-[13px] text-ink-3">{subtitle}</p>}
@@ -154,7 +154,7 @@ export function Modal({ title, onClose, children, footer, width = "max-w-md" }) 
       {/* Phones: a bottom sheet (thumb-reachable, full-width buttons). PC: a centered dialog. See .sheet in index.css. */}
       <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`card sheet w-full ${width === "max-w-lg" ? "sm:max-w-lg" : "sm:max-w-md"} flex flex-col overflow-hidden shadow-xl`}>
         <span className="sheet-grip" aria-hidden="true" />
-        <div className="flex items-center justify-between border-b border-line px-5 py-3 sm:py-4">
+        <div className="card-head flex items-center justify-between px-5 py-3 sm:py-4">
           <h2 id="modal-title" className="text-[17px] font-bold">{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
