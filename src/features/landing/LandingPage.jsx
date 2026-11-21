@@ -25,7 +25,7 @@ const MOMENTS = [
   { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS office." },
 ];
 
-const CREDITS = "Jon Eckert (the sign-in page)";
+const CREDITS = "Jon Eckert (the sign-in page) and Bo Peng (the landing page)";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
@@ -121,7 +121,7 @@ export default function LandingPage() {
           <div>
             <div className="font-display text-[16px] font-bold text-ink" translate="no">CCS Subject Monitoring System</div>
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
-            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photo on Unsplash by {CREDITS}.</p>
+            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photos on Unsplash by {CREDITS}.</p>
           </div>
           <span className="font-mono text-[12px] tracking-wide text-ink-3">CODE · INNOVATE · TRANSFORM</span>
         </div>
