@@ -14,7 +14,7 @@ const CELLS = Array.from({ length: COLS * ROWS }, (_, i) => {
 
 export default function Backdrop() {
   return (
-    <div aria-hidden="true" className="backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden="true" className="backdrop no-print pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div className="grid h-full w-full" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)`, color: "var(--grid-line)", opacity: 0.5 }}>
         {CELLS.map((cell, i) => (
           <span key={i} className="flex items-center justify-center">
