@@ -89,7 +89,7 @@ export default function Progress() {
       <section aria-labelledby="taking-title" className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="taking-title" className="flex items-center gap-2 text-[19px] font-bold"><Layers size={18} className="text-accent" aria-hidden="true" />What you're taking</h2>
-          <Link to="/schedule" className="text-[13px] font-semibold">See your week</Link>
+          <Link to="/schedule" className="inline-flex min-h-10 items-center text-[13px] font-semibold">See your week</Link>
         </div>
         {taking.length === 0 ? (
           <div className="card px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any subjects this semester.</div>
