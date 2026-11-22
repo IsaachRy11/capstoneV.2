@@ -78,6 +78,11 @@ describe("seed data", () => {
     expect([count("BSIT"), count("BSCS"), count("ACT")]).toEqual([65, 65, 29]);
     // The old website curricula stay (inactive) so older records keep pointing at real subjects.
     expect(await one(`select count(*)::int n from curricula where not is_active`)).toEqual({ n: 3 });
+    // BSCS 4th year uses CS 401 / CS 402 (migration 0023); BSIT keeps IT 401 / IT 402.
+    const codes = (await db.query(`select p.code prog, s.code from curriculum_subjects s
+      join curricula c on c.id = s.curriculum_id and c.is_active join programs p on p.id = c.program_id
+      where s.code in ('IT 401','IT 402','CS 401','CS 402') order by 1, 2`)).rows.map((r) => `${r.prog} ${r.code}`);
+    expect(codes).toEqual(["BSCS CS 401", "BSCS CS 402", "BSIT IT 401", "BSIT IT 402"]);
   });
 
   it("has the official prerequisites and year-standing rules", async () => {
