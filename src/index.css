@@ -212,8 +212,8 @@
   .bd-e { width: 120px; height: 120px; left: 46%; top: 8%; animation-duration: 60s; }
   @keyframes bd-drift { from { transform: translate3d(0, 0, 0) rotate(0deg); } to { transform: translate3d(-40px, 34px, 0) rotate(20deg); } }
   /* Each page eases in when you open it; the landing ticker scrolls slowly */
-  .page-in { animation: page-in .35s ease-out both; }
-  @keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .page-in { animation: page-in .35s ease-out backwards; } /* opacity only: a transform here would trap fixed dialogs inside the page */
+  @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
   .backdrop-still * { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
   /* Landing page: sections fade up once when they scroll into view, cards lift a little on hover, the phone floats */
