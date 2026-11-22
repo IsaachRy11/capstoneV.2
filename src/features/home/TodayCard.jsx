@@ -48,7 +48,7 @@ export default function TodayCard({ classes, status, className = "" }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th className="w-[112px]">Time</th><th className="w-[124px]">Course No.</th><th>Description</th><th className="hidden sm:table-cell">Room</th><th className="w-px !text-center">Status</th>
+                <th className="w-[112px]">Time</th><th className="hidden w-[124px] sm:table-cell">Course No.</th><th>Description</th><th className="hidden sm:table-cell">Room</th><th className="w-px !text-center">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -62,8 +62,10 @@ export default function TodayCard({ classes, status, className = "" }) {
                       {e.time.split(" – ")[0]}
                       <span className="block text-[11px] font-normal text-ink-3">to {e.time.split(" – ")[1]}</span>
                     </td>
-                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{e.code}</td>
+                    <td className="hidden whitespace-nowrap align-top font-mono text-[13px] text-accent sm:table-cell">{e.code}</td>
                     <td className="min-w-0 align-top">
+                      {/* phones: the course number folds above the title instead of taking its own column */}
+                      <span className="block font-mono text-[12px] text-accent sm:hidden">{e.code}</span>
                       <span className={`block font-medium ${past ? "text-ink-3" : "text-ink"}`}>{e.title}</span>
                       <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{e.room}</span>
                     </td>
