@@ -43,6 +43,13 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
   });
 
   const byId = new Map(subjects.map((s) => [s.id, s]));
+  // What passing a subject opens up: the subjects that list it as a prerequisite.
+  for (const s of subjects) { s.unlocks = []; s.prereqs = []; }
+  for (const p of prerequisites) {
+    const pre = byId.get(p.prerequisite_id);
+    const opens = byId.get(p.subject_id);
+    if (pre && opens) { pre.unlocks.push(opens); opens.prereqs.push(pre); }
+  }
   for (const s of subjects) {
     s.missingPrereqs = prerequisites
       .filter((p) => p.subject_id === s.id)
@@ -65,9 +72,61 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
 }
 
 // The semester after `term` for a student in `yearLevel`, or null if they finish this term.
-export function nextTermFor(term, yearLevel, durationYears) {
+// hasSummer(year): whether the curriculum has summer subjects after that year (BSIT/BSCS: after 3rd year).
+export function nextTermFor(term, yearLevel, durationYears, hasSummer = () => false) {
   if (!term) return null;
-  const next = term.semester === 1 ? { year: yearLevel, semester: 2 } : { year: yearLevel + 1, semester: 1 };
+  const next =
+    term.semester === 1 ? { year: yearLevel, semester: 2 }
+    : term.semester === 2 && hasSummer(yearLevel) ? { year: yearLevel, semester: 3 }
+    : { year: yearLevel + 1, semester: 1 };
   return next.year > durationYears ? null : next;
 }
 
+// What a subject still needs before it can be taken: unpassed prerequisites and/or a year standing.
+// e.g. "Needs IT 201, IT 202 first" · "Needs 4th year standing"
+export function requirementText(subject, yearLevel) {
+  const parts = [];
+  if (subject.missingPrereqs?.length) parts.push(`${subject.missingPrereqs.map((p) => p.code).join(", ")} first`);
+  if (subject.standing_required && yearLevel < subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
+  return parts.length ? `Needs ${parts.join(" and ")}` : "";
+}
+const ordinal = (n) => ({ 1: "1st", 2: "2nd", 3: "3rd" })[n] || `${n}th`;
+
+
+// The semesters still ahead of a student standing at (year, semester): every curriculum term after it that still
+// has subjects to take (not passed, not being taken now), in order. Summer (3) falls after the 2nd semester.
+// Returns [{ year, semester, subjects }].
+export function futureTerms(subjects, year, semester) {
+  const groups = new Map();
+  for (const s of subjects) {
+    if (s.year_level < year || (s.year_level === year && s.semester <= semester)) continue;
+    if (s.state === "passed" || s.state === "in_progress") continue;
+    const key = `${s.year_level}-${s.semester}`;
+    if (!groups.has(key)) groups.set(key, { year: s.year_level, semester: s.semester, subjects: [] });
+    groups.get(key).subjects.push(s);
+  }
+  return [...groups.values()].sort((a, b) => a.year - b.year || a.semester - b.semester);
+}
+
+// Where a subject stands against its prerequisites, for a student at pos = { year, semester }:
+//   "blocked" — a prerequisite was failed (INC / dropped too), or it should already have been taken and wasn't
+//   "waiting" — the only missing prerequisites are subjects being taken right now
+//   null      — nothing in the way (prerequisites still ahead in the curriculum are normal, not a problem)
+export function prerequisiteStatus(subject, pos) {
+  let waiting = false;
+  for (const pre of subject.missingPrereqs || []) {
+    if (pre.state === "back") return "blocked";
+    if (pre.state === "in_progress") { waiting = true; continue; }
+    const behind = pre.year_level < pos.year || (pre.year_level === pos.year && pre.semester <= pos.semester);
+    if (pre.state === "not_taken" && behind) return "blocked";
+  }
+  return waiting ? "waiting" : null;
+}
+
+// A subject's prerequisites written like the curriculum's Prerequisite column: course numbers, then a year standing.
+// e.g. "IT 201, IT 202" · "4th year standing" · "" when it has none.
+export function prerequisiteText(subject) {
+  const parts = (subject.prereqs || []).map((p) => p.code);
+  if (subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
+  return parts.join(", ");
+}

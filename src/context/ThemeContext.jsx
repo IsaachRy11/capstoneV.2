@@ -10,7 +10,6 @@ const readTheme = () => {
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(readTheme);
-
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {

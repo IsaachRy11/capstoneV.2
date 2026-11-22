@@ -5,6 +5,7 @@ import AppShell from "./components/AppShell";
 import { LoadingState } from "./components/ui";
 
 const Login = lazy(() => import("./features/account/LoginPage"));
+const FirstSignIn = lazy(() => import("./features/account/FirstSignInPage"));
 const Landing = lazy(() => import("./features/landing/LandingPage"));
 const Dashboard = lazy(() => import("./features/dashboard/DashboardPage"));
 const StudentHome = lazy(() => import("./features/home/StudentHomePage"));
@@ -14,12 +15,16 @@ const Sections = lazy(() => import("./features/sections/SectionsPage"));
 const Curriculum = lazy(() => import("./features/curriculum/CurriculumPage"));
 const Profile = lazy(() => import("./features/account/ProfilePage"));
 const Progress = lazy(() => import("./features/progress/ProgressPage"));
+const Roadmap = lazy(() => import("./features/progress/RoadmapPage"));
 const Schedule = lazy(() => import("./features/schedules/StudentSchedulePage"));
 const SectionSchedules = lazy(() => import("./features/schedules/SectionSchedulesPage"));
+const ClassTimesPage = lazy(() => import("./features/schedules/ClassTimesPage"));
 const Settings = lazy(() => import("./features/account/SettingsPage"));
 const Help = lazy(() => import("./features/account/HelpPage"));
 const Privacy = lazy(() => import("./features/account/PrivacyPage"));
 const CalendarPage = lazy(() => import("./features/calendar/CalendarPage"));
+const SchoolYearPage = lazy(() => import("./features/terms/SchoolYearPage"));
+const EnrollSectionPage = lazy(() => import("./features/sections/EnrollSectionPage"));
 
 function SecretaryOnly({ children }) {
   const { user } = useAuth();
@@ -27,9 +32,11 @@ function SecretaryOnly({ children }) {
 }
 
 export default function App() {
-  const { status, user } = useAuth();
+  const { status, user, mustChangePassword } = useAuth();
 
   if (status === "loading") return <LoadingState label="Signing in…" />;
+  // A reset or brand-new account must pick its own password before using the app.
+  if (mustChangePassword) return <Suspense fallback={<LoadingState />}><FirstSignIn /></Suspense>;
 
   return (
     <Suspense fallback={<LoadingState />}>
@@ -49,10 +56,15 @@ export default function App() {
             <Route path="students" element={<SecretaryOnly><Students /></SecretaryOnly>} />
             <Route path="students/:id" element={<SecretaryOnly><StudentRecord /></SecretaryOnly>} />
             <Route path="sections" element={<SecretaryOnly><Sections /></SecretaryOnly>} />
+            <Route path="sections/enroll" element={<SecretaryOnly><EnrollSectionPage /></SecretaryOnly>} />
             <Route path="schedules" element={<SecretaryOnly><SectionSchedules /></SecretaryOnly>} />
+            <Route path="schedules/edit" element={<SecretaryOnly><ClassTimesPage /></SecretaryOnly>} />
+            <Route path="school-year" element={<SecretaryOnly><SchoolYearPage /></SecretaryOnly>} />
             <Route path="record" element={user.role === "secretary" ? <Navigate to="/students" replace /> : <StudentRecord />} />
             <Route path="progress" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Progress />} />
+            <Route path="progress/roadmap" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Roadmap />} />
             <Route path="schedule" element={user.role === "secretary" ? <Navigate to="/" replace /> : <Schedule />} />
+            {/* Students reach the curriculum from the end of the Subject tracker pages (it is not in their menu). */}
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

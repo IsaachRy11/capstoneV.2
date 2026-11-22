@@ -13,13 +13,18 @@ select setseed(0.4217);
 -- ─── School terms (SY 2023-2024 → 2026-2027; current = 2026-2027 1st semester) ──
 insert into public.school_terms (school_year, semester, starts_on, ends_on, is_current)
 select sy, sem,
-       case sem when 1 then make_date(y, 8, 4)  else make_date(y + 1, 1, 6)  end,
-       case sem when 1 then make_date(y, 12, 19) else make_date(y + 1, 5, 22) end,
+       case sem when 1 then make_date(y, 8, 4)   when 2 then make_date(y + 1, 1, 6)  else make_date(y + 1, 6, 1)  end,
+       case sem when 1 then make_date(y, 12, 19) when 2 then make_date(y + 1, 5, 22) else make_date(y + 1, 7, 17) end,
        (y = 2026 and sem = 1)
 from generate_series(2023, 2026) as y,
      lateral (select y || '-' || (y + 1) as sy) s,
-     generate_series(1, 2) as sem
+     generate_series(1, 3) as sem   -- 3 = summer (BSIT Capstone 1 / BSCS Thesis 1 after 3rd year)
 on conflict do nothing;
+
+-- SY 2026-2027 follows the official academic calendar (migration 0013); the other years keep generic dates.
+update public.school_terms set starts_on = date '2026-07-06', ends_on = date '2026-11-07' where school_year = '2026-2027' and semester = 1;
+update public.school_terms set starts_on = date '2026-11-23', ends_on = date '2027-04-23' where school_year = '2026-2027' and semester = 2;
+update public.school_terms set starts_on = date '2027-05-03', ends_on = date '2027-06-11' where school_year = '2026-2027' and semester = 3;
 
 -- ─── Rooms (made up) ──────────────────────────────────────────────────────
 insert into public.rooms (name, kind, capacity) values
@@ -37,6 +42,12 @@ insert into public.rooms (name, kind, capacity) values
   ('Room 307',  'lecture',    45), ('Room 308',  'lecture',    45),
   ('Room 309',  'lecture',    45), ('Room 310',  'lecture',    45),
   ('Room 311',  'lecture',    45), ('Room 312',  'lecture',    45),
+  ('CCS Lab 17', 'laboratory', 40), ('CCS Lab 18', 'laboratory', 40),
+  ('CCS Lab 19', 'laboratory', 40), ('CCS Lab 20', 'laboratory', 40),
+  ('CCS Lab 21', 'laboratory', 40), ('CCS Lab 22', 'laboratory', 40),
+  ('Room 313',  'lecture',    45), ('Room 314',  'lecture',    45),
+  ('Room 315',  'lecture',    45), ('Room 316',  'lecture',    45),
+  ('Room 317',  'lecture',    45), ('Room 318',  'lecture',    45),
   ('Gymnasium', 'lecture',   120)
 on conflict do nothing;
 -- The gym hosts several PATHFIT classes at once, so it's exempt from the room double-booking rule.
@@ -44,7 +55,7 @@ update public.rooms set is_shared = true where name = 'Gymnasium';
 
 -- ─── Demo login (link it by creating an Auth user with this email) ────────
 insert into public.secretaries (full_name, email) values
-  ('Demo Secretary', 'demo.secretary@ccs-monitor.test')
+  ('Demo Secretary', 'ccs-001@staff.ccs-monitor.test')
 on conflict do nothing;
 
 -- ─── Students, sections, registrations, offerings, schedules, grades ──────
@@ -125,8 +136,12 @@ begin
         for k in 1..(pc->>'per_section')::int loop
           counters[entry_year - 2022] := counters[entry_year - 2022] + 1;
           sid   := entry_year || '-' || lpad(counters[entry_year - 2022]::text, 4, '0');
-          fname := first_names[1 + floor(random() * array_length(first_names, 1))::int];
-          lname := last_names[1 + floor(random() * array_length(last_names, 1))::int];
+          -- Every demo student gets a full name nobody else has (40 first x 30 last names = 1,200 combinations).
+          loop
+            fname := first_names[1 + floor(random() * array_length(first_names, 1))::int];
+            lname := last_names[1 + floor(random() * array_length(last_names, 1))::int];
+            exit when not exists (select 1 from public.students x where lower(x.first_name) = lower(fname) and lower(x.last_name) = lower(lname));
+          end loop;
           bias  := random() * 2 - 1;   -- -1 strong … +1 struggling
           -- Examples of every kind of student in each section.
           adm := (case k when 1 then 'shiftee' when 2 then 'transferee' when 3 then 'returnee' else 'new' end)::public.admission_type;
@@ -147,8 +162,15 @@ begin
               and (school_year, semester) <= (cur_term.school_year, cur_term.semester)
             order by school_year, semester
           loop
-            level := term_index / 2 + 1;
-            term_index := term_index + 1;
+            -- Summer belongs to the year that just ended and only counts when the curriculum has summer subjects.
+            if term.semester = 3 then
+              level := (term_index - 1) / 2 + 1;
+              continue when term_index = 0 or not exists (
+                select 1 from public.curriculum_subjects where curriculum_id = cur_curriculum and year_level = level and semester = 3);
+            else
+              level := term_index / 2 + 1;
+              term_index := term_index + 1;
+            end if;
             exit when level > prog.duration_years;
 
             -- Block section for this term (created once, shared by classmates)

@@ -16,14 +16,14 @@ export const VIEWS = {
     title: "Subjects passed",
     pick: (p) => p.subjects.filter((s) => s.state === "passed"),
     headline: (rows, p) => `${p.passedCount} of ${p.total} subjects`,
-    text: "Every subject you've passed, with your grades.",
+    text: "Every subject you've passed. Your grades are on the Academic record.",
     empty: "You haven't passed any subjects yet.",
   },
   enrolled: {
     title: "This semester",
     pick: (p) => p.inProgress,
     headline: (rows) => `${plural(rows.length, "subject", "subjects")} · ${sumUnits(rows)} units`,
-    text: "The subjects you're enrolled in now. Final grades come at the end of the term.",
+    text: "The subjects you're enrolled in now. Grades are on the Academic record.",
     empty: "You're not enrolled in any subjects this semester.",
   },
   failed: {

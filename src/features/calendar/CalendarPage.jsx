@@ -1,37 +1,52 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, Pencil, Plus } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useAsync } from "../../hooks/useAsync";
-import { getTerms } from "../../services/catalog";
+import { getCalendarEvents, getTerms } from "../../services/catalog";
 import { semesterLabel, termLabel } from "../../lib/format";
-import { WEEKDAYS, addMonths, daysLeft, monthCells, sameDay, startOfMonth, termOn, termRanges } from "../../lib/calendar";
+import { useAuth } from "../../context/AuthContext";
+import CalendarEventModal from "./CalendarEventModal";
+import { EVENT_KINDS, classStatus, edgeShort, edgeText, edgesOn, resumeText, termEdges, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
 import { BackButton, EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 
-// Full-page academic calendar. Shows only real term dates from school_terms (start, end, the days
-// in between) and today. No invented events.
+// Full-page academic calendar: the official school calendar (exams, holidays, breaks, activities) on top of the
+// term dates from school_terms, and today. Nothing here is invented: every entry comes from the database.
 const fmt = (d, opts) => d.toLocaleDateString("en-PH", opts);
+
+// Where the current semester stands today, in words.
+function semesterStatus(range, today) {
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (day < range.start) return `Starts ${fmt(range.start, { month: "long", day: "numeric" })}`;
+  if (day > range.end) return `Ended ${fmt(range.end, { month: "long", day: "numeric" })}`;
+  const n = daysLeft(range, today);
+  return n === 0 ? "Ends today" : `${n} ${n === 1 ? "day" : "days"} left`;
+}
 
 export default function CalendarPage() {
   const { term } = useOutletContext();
+  const { user } = useAuth();
+  const isSecretary = user.role === "secretary";
+  const [editing, setEditing] = useState(undefined); // undefined = closed, null = adding, an event = changing it
   const today = useMemo(() => new Date(), []);
   const [month, setMonth] = useState(() => startOfMonth(today));
-  const { data, error, loading, reload } = useAsync(getTerms, []);
+  const { data, error, loading, reload } = useAsync(async () => {
+    const [terms, events] = await Promise.all([getTerms(), getCalendarEvents()]);
+    return { terms, events };
+  }, [], "calendar");
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const ranges = termRanges(data);
+  const ranges = termRanges(data.terms);
+  const events = eventRanges(data.events);
+  // Every semester's first and last day of classes gets a flag (they replace the plain "classes" entries on that day).
+  const edges = termEdges(data.terms);
   const cells = monthCells(month);
   const current = ranges.find((r) => r.is_current);
   const isThisMonth = month.getMonth() === today.getMonth() && month.getFullYear() === today.getFullYear();
-  const marks = (d) => ranges.flatMap((r) => [
-    ...(sameDay(d, r.start) ? [{ r, text: `${semesterLabel(r.semester)} starts` }] : []),
-    ...(sameDay(d, r.end) ? [{ r, text: `${semesterLabel(r.semester)} ends` }] : []),
-  ]);
-  const monthEvents = ranges
-    .flatMap((r) => [{ d: r.start, r, text: "starts" }, { d: r.end, r, text: "ends" }])
-    .filter((e) => e.d.getMonth() === month.getMonth() && e.d.getFullYear() === month.getFullYear())
-    .sort((a, b) => a.d - b.d);
+  const inMonth = eventsInMonth(events, month);
+  const status = classStatus(today, data.terms, data.events);
+  const next = upcoming(events, today, 5);
 
   return (
     <>
@@ -42,6 +57,7 @@ export default function CalendarPage() {
         <section className="card min-w-0 flex-[999_1_640px] overflow-hidden" aria-label="Month calendar">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 sm:px-5">
             <h2 className="mr-auto font-display text-[20px] font-bold text-ink">{fmt(month, { month: "long", year: "numeric" })}</h2>
+            {isSecretary && <button className="btn btn-primary btn-sm hidden lg:inline-flex" onClick={() => setEditing(null)}><Plus size={16} aria-hidden="true" />Add date</button>}
             {!isThisMonth && <button className="btn btn-secondary btn-sm" onClick={() => setMonth(startOfMonth(today))}>Today</button>}
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, -1))} aria-label="Previous month"><ChevronLeft size={18} /></button>
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month"><ChevronRight size={18} /></button>
@@ -52,45 +68,68 @@ export default function CalendarPage() {
           </div>
           <div className="grid grid-cols-7" role="grid">
             {cells.map((d, i) => {
-              const inMonth = d.getMonth() === month.getMonth();
+              const here = d.getMonth() === month.getMonth();
               const t = termOn(ranges, d);
               const isToday = sameDay(d, today);
-              const m = marks(d);
+              const marks = edgesOn(edges, d);
+              const dayEvents = eventsOn(events, d).filter((e) => !(marks.length && e.kind === "classes"));
+              const shown = dayEvents.slice(0, 2);
+              const more = dayEvents.length - shown.length;
               return (
                 <div key={d.toISOString()} role="gridcell"
-                  aria-label={`${fmt(d, { weekday: "long", month: "long", day: "numeric" })}${t ? `, ${semesterLabel(t.semester)}` : ""}${m.map((x) => `, ${x.text}`).join("")}${isToday ? ", today" : ""}`}
-                  className={`flex min-h-[56px] flex-col gap-1 border-line p-1.5 sm:min-h-[104px] sm:p-2 ${i % 7 ? "border-l" : ""} ${i >= 7 ? "border-t" : ""} ${t && inMonth ? "bg-tint" : ""} ${inMonth ? "" : "opacity-45"}`}>
+                  aria-label={`${fmt(d, { weekday: "long", month: "long", day: "numeric" })}${t ? `, ${semesterLabel(t.semester)}` : ""}${dayEvents.map((e) => `, ${e.title}`).join("")}${marks.map((m) => `, ${edgeText(m)}`).join("")}${isToday ? ", today" : ""}`}
+                  className={`flex min-h-[56px] flex-col gap-1 border-line p-1.5 sm:min-h-[112px] sm:p-2 ${i % 7 ? "border-l" : ""} ${i >= 7 ? "border-t" : ""} ${t && here ? "bg-tint" : ""} ${here ? "" : "opacity-45"}`}>
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] ${isToday ? "font-bold text-white" : t ? "font-semibold text-ink" : "text-ink-2"}`}
                     style={isToday ? { background: "var(--btn)" } : undefined}>
                     {d.getDate()}
                   </span>
-                  {inMonth && m.map((x) => (
-                    <span key={x.text} className="hidden truncate rounded-md px-1.5 py-0.5 text-[12px] font-semibold sm:block" style={{ background: "var(--btn)", color: "#fff" }}>{x.text}</span>
+                  {here && shown.map((e) => (
+                    <span key={e.id} title={e.title} className={`hidden truncate rounded-md px-1.5 py-0.5 text-[11px] font-semibold sm:block tone-${EVENT_KINDS[e.kind].tone}`}>{e.title}</span>
                   ))}
-                  {inMonth && m.length > 0 && <span className="mx-auto h-1.5 w-1.5 rounded-full sm:hidden" style={{ background: "var(--btn)" }} aria-hidden="true" />}
+                  {here && more > 0 && <span className="hidden px-1 text-[11px] font-semibold text-ink-3 sm:block">+{more} more</span>}
+                  {here && marks.map((m) => (
+                    <span key={m.edge + m.term.id} title={edgeText(m)} className={`hidden items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-bold sm:flex ${m.edge === "start" ? "tone-ok" : "tone-info"}`}>
+                      <Flag size={11} className="shrink-0" aria-hidden="true" />{edgeShort(m)}
+                    </span>
+                  ))}
+                  {here && (dayEvents.length > 0 || marks.length > 0) && (
+                    <span className="mx-auto flex gap-0.5 sm:hidden" aria-hidden="true">
+                      {dayEvents.slice(0, 3).map((e) => <span key={e.id} className={`h-1.5 w-1.5 rounded-full tone-${EVENT_KINDS[e.kind].tone}`} style={{ background: "currentColor" }} />)}
+                      {marks.map((m) => <span key={m.edge} className={`h-1.5 w-1.5 rounded-full ${m.edge === "start" ? "tone-ok" : "tone-info"}`} style={{ background: "currentColor" }} />)}
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line px-4 py-3 text-[12px] text-ink-3 sm:px-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-[12px] text-ink-3 sm:px-5" aria-label="Legend">
+            <span className="font-semibold uppercase tracking-[0.08em]">Legend</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-tint ring-1 ring-line" />Semester days</span>
-            <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded" style={{ background: "var(--btn)" }} />Start or end</span>
+            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-ok"><Flag size={11} aria-hidden="true" /></span>First day of classes</span>
+            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-info"><Flag size={11} aria-hidden="true" /></span>Last day of classes</span>
+            {Object.entries(EVENT_KINDS).filter(([k]) => data.events.some((e) => e.kind === k)).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={`h-3 w-5 rounded tone-${v.tone}`} style={{ background: "currentColor" }} />{v.label}</span>)}
             <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: "var(--btn)" }} />Today</span>
           </div>
 
-          {/* Phones: the cells are too small for labels, so list this month's dates below */}
-          {monthEvents.length > 0 && (
-            <ul className="flex flex-col gap-1 border-t border-line px-4 py-3 sm:hidden">
-              {monthEvents.map((e) => (
-                <li key={e.d.toISOString() + e.text} className="flex items-center gap-2 text-[13px] text-ink">
-                  <Flag size={14} className="text-accent" aria-hidden="true" />
-                  <span className="font-semibold">{fmt(e.d, { month: "short", day: "numeric" })}</span>
-                  <span className="text-ink-2">{termLabel(e.r)} {e.text}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* The month's entries as a list: the cells are small, and phones can't show labels in them at all. */}
+          <div className="border-t border-line">
+            <h3 className="px-4 pt-3 text-[13px] font-semibold text-ink-3 sm:px-5">In {fmt(month, { month: "long", year: "numeric" })}</h3>
+            {inMonth.length === 0 ? (
+              <p className="px-4 pb-4 pt-1 text-[13px] text-ink-3 sm:px-5">Nothing on the school calendar this month.</p>
+            ) : (
+              <ul className="flex flex-col px-2 pb-2 pt-1">
+                {inMonth.map((e) => (
+                  <li key={e.id} className="flex items-center gap-3 rounded-lg px-3 py-2 text-[14px]">
+                    <span className="w-[88px] shrink-0 font-mono text-[12px] font-semibold text-ink-2">{dateSpan(e)}</span>
+                    <span className="min-w-0 flex-1 font-medium text-ink">{e.title}</span>
+                    <span className={`badge tone-${EVENT_KINDS[e.kind].tone} hidden sm:inline-flex`}>{EVENT_KINDS[e.kind].label}</span>
+                    {isSecretary && <button className="icon-btn hidden lg:inline-flex" onClick={() => setEditing(e)} aria-label={`Edit ${e.title}`}><Pencil size={15} /></button>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
 
         <aside className="flex flex-[1_1_280px] flex-col gap-5">
@@ -99,13 +138,36 @@ export default function CalendarPage() {
               <h2 className="text-[13px] font-semibold text-ink-3">This semester</h2>
               <p className="mt-1 font-display text-[18px] font-bold text-ink">{termLabel(current)}</p>
               <p className="mt-1 text-[14px] text-ink-2">{fmt(current.start, { month: "long", day: "numeric" })} – {fmt(current.end, { month: "long", day: "numeric", year: "numeric" })}</p>
-              <p className="mt-3 text-[14px] font-semibold text-ink">
-                {daysLeft(current, today) === 0 ? "Ends today" : `${daysLeft(current, today)} days left`}
-              </p>
+              <p className="mt-3 text-[14px] font-semibold text-ink">{semesterStatus(current, today)}</p>
+              {/* What today is on the official calendar: a break, a holiday or an exam week. */}
+              {status.kind !== "classes" && (
+                <p className="mt-2 rounded-lg px-3 py-2 text-[13px] tone-info">
+                  <span className="font-semibold">{status.kind === "exam" ? `Exam week · ${status.title}` : `No classes · ${status.title}`}</span>
+                  {status.kind === "none" && resumeText(status) && <span className="block">{resumeText(status)}</span>}
+                </p>
+              )}
             </section>
           )}
           <section className="card overflow-hidden">
-            <h2 className="border-b border-line px-5 py-3.5 text-[15px] font-bold text-ink">All terms</h2>
+            <h2 className="card-head px-5 py-3.5 text-[15px] font-bold text-ink">Coming up</h2>
+            {next.length === 0 ? <EmptyState>No upcoming dates on the school calendar.</EmptyState> : (
+              <ul className="flex flex-col p-2">
+                {next.map((e) => (
+                  <li key={e.id}>
+                    <button onClick={() => setMonth(startOfMonth(e.start))} className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-hover">
+                      <Flag size={14} className="mt-1 shrink-0 text-accent" aria-hidden="true" />
+                      <span className="min-w-0">
+                        <span className="block text-[14px] font-medium text-ink">{e.title}</span>
+                        <span className="block text-[12px] text-ink-3">{dateSpan(e)}{e.start.getFullYear() !== today.getFullYear() ? `, ${e.start.getFullYear()}` : ""}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="card overflow-hidden">
+            <h2 className="card-head px-5 py-3.5 text-[15px] font-bold text-ink">All terms</h2>
             {ranges.length === 0 ? <EmptyState>No term dates have been set yet.</EmptyState> : (
               <ul className="flex flex-col p-2">
                 {[...ranges].reverse().map((r) => (
@@ -122,6 +184,7 @@ export default function CalendarPage() {
           </section>
         </aside>
       </div>
+      {editing !== undefined && <CalendarEventModal event={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); reload(); }} />}
     </>
   );
 }

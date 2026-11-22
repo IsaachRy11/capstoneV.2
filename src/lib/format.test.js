@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { formatGrade, inferSubjectKind, initials, normKey, shortProgramName, sumUnits, termLabel } from "./format";
+import { ADMISSION_FOR_TYPE, formatGrade, inferSubjectKind, initials, normKey, shortProgramName, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, sumUnits, termLabel } from "./format";
 import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
-import { isStudentId, loginEmail } from "./login";
+import { isStaffId, isStudentId, loginEmail } from "./login";
 import { toCsv } from "./csv";
 
 describe("grades and labels", () => {
@@ -36,6 +36,11 @@ describe("grades and labels", () => {
     expect(inferSubjectKind("IT Elective 1")).toBe("elective");
     expect(inferSubjectKind("IT 403", "IT Internship / On-the-Job Training")).toBe("internship");
     expect(inferSubjectKind("IT 101")).toBe("major");
+    expect(inferSubjectKind("IT EL 1", "IT Elective 1")).toBe("elective");
+    expect(inferSubjectKind("GE EL 2", "Gender and Society")).toBe("general_education");
+    expect(inferSubjectKind("THEO 1A", "Old Testament")).toBe("general_education");
+    expect(inferSubjectKind("PRAC", "Practicum/Analytics Internship")).toBe("internship");
+    expect(inferSubjectKind("CAPSTONE 1", "Capstone Project 1")).toBe("major");
   });
 
   it("adds up units", () => {
@@ -76,14 +81,20 @@ describe("login", () => {
     expect(loginEmail(" 2025-0001 ")).toBe("2025-0001@students.ccs-monitor.test");
   });
 
-  it("leaves staff emails alone (lower-cased)", () => {
+  it("turns a staff ID into the secretary's login address", () => {
+    expect(loginEmail(" CCS-001 ")).toBe("ccs-001@staff.ccs-monitor.test");
+    expect(isStaffId("CCS-001")).toBe(true);
+    expect(isStaffId("2025-0001")).toBe(false);
+  });
+
+  it("leaves other emails alone (lower-cased)", () => {
     expect(loginEmail("Demo.Secretary@ccs-monitor.test")).toBe("demo.secretary@ccs-monitor.test");
   });
 
   it("only treats the ####-#### pattern as a student ID", () => {
     expect(isStudentId("2025-0001")).toBe(true);
     expect(isStudentId("2025-001")).toBe(false);
-    expect(isStudentId("SEC-001")).toBe(false);
+    expect(isStudentId("CCS-001")).toBe(false);
   });
 });
 
@@ -94,5 +105,31 @@ describe("CSV export", () => {
       { label: "ID", value: (r) => r.id },
     ]);
     expect(csv).toBe('"Name","ID"\n"Ana ""AJ"" Cruz","2025-0001"');
+  });
+});
+
+describe("student type and status", () => {
+  it("shows Freshman only for a first-time 1st year student, Continuing after that", () => {
+    expect(studentTypeLabel({ admission_type: "new", year_level: 1 })).toBe("Freshman");
+    expect(studentTypeLabel({ admission_type: "new", year_level: 3 })).toBe("Continuing");
+    expect(studentTypeLabel({ admission_type: "returnee", year_level: 1 })).toBe("Continuing");
+  });
+
+  it("keeps Transferee and Shiftee whatever the year", () => {
+    expect(studentTypeKey({ admission_type: "transferee", year_level: 1 })).toBe("transferee");
+    expect(studentTypeKey({ admission_type: "shiftee", year_level: 4 })).toBe("shiftee");
+  });
+
+  it("stores the type the secretary picked as an admission type", () => {
+    expect(ADMISSION_FOR_TYPE).toEqual({ freshman: "new", continuing: "returnee", transferee: "transferee", shiftee: "shiftee" });
+  });
+
+  it("shows Regular or Irregular while active, otherwise Graduated or Dropped", () => {
+    expect(studentStatusLabel({ status: "active", standing: "regular" })).toBe("Regular");
+    expect(studentStatusLabel({ status: "active", standing: "irregular" })).toBe("Irregular");
+    expect(studentStatusKey({ status: "graduated", standing: "irregular" })).toBe("graduated");
+    expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Dropped");
+    expect(studentStatusLabel({ status: "shifted_out", standing: "regular" })).toBe("Shifted out");
+    expect(studentStatusLabel({ standing: "irregular" })).toBe("Irregular");
   });
 });

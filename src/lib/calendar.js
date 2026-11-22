@@ -1,5 +1,5 @@
 // Calendar helpers shared by the top-bar term calendar and the full Calendar page.
-// Dates come only from school_terms (starts_on / ends_on); nothing here invents events.
+// Dates come only from school_terms (starts_on / ends_on) and the official school_calendar_events; nothing here invents events.
 
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -26,5 +26,84 @@ export const termRanges = (terms = []) =>
 
 export const termOn = (ranges, d) => ranges.find((r) => d >= r.start && d <= r.end);
 
+// Each semester's first and last day of classes ("flags"): [{ date, edge: "start" | "end", term }].
+export const termEdges = (terms = []) =>
+  termRanges(terms).flatMap((r) => [{ date: r.start, edge: "start", term: r }, { date: r.end, edge: "end", term: r }]);
+export const edgesOn = (edges, d) => edges.filter((x) => sameDay(x.date, d));
+// "2nd Semester starts" · "Summer ends"
+export const edgeText = (x) => `${semesterWord(x.term.semester)} ${x.edge === "start" ? "starts" : "ends"}`;
+// The same, short enough for a calendar day box: "2nd Sem starts" · "Summer ends"
+export const edgeShort = (x) => `${x.term.semester === 3 ? "Summer" : `${x.term.semester === 1 ? "1st" : "2nd"} Sem`} ${x.edge === "start" ? "starts" : "ends"}`;
+
 // Whole days from `today` to the end of a range (0 on the last day, never negative).
 export const daysLeft = (range, today) => Math.max(0, Math.ceil((range.end - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000));
+
+// What each kind of calendar entry is called and how it is drawn. Colors are the status variables, so both themes work.
+export const EVENT_KINDS = {
+  classes:      { label: "Classes start or end", tone: "info" },
+  exam:         { label: "Exams",                tone: "bad" },
+  holiday:      { label: "Holiday",              tone: "warn" },
+  break:        { label: "Break",                tone: "ok" },
+  registration: { label: "Registration",         tone: "neutral" },
+  school:       { label: "School activity",      tone: "neutral" },
+};
+
+// calendar_events rows -> entries with Date objects.
+export const eventRanges = (events = []) => events.map((e) => ({ ...e, start: parseDate(e.starts_on), end: parseDate(e.ends_on) }));
+
+export const eventsOn = (ranges, d) => ranges.filter((e) => d >= e.start && d <= e.end);
+export const eventsInMonth = (ranges, month) => {
+  const first = startOfMonth(month);
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  return ranges.filter((e) => e.end >= first && e.start <= last).sort((a, b) => a.start - b.start || a.end - b.end);
+};
+
+// The next few things still to happen (or happening today), soonest first.
+export const upcoming = (ranges, today, n = 3) => {
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return ranges.filter((e) => e.end >= day).sort((a, b) => a.start - b.start || a.end - b.end).slice(0, n);
+};
+
+// "Nov 9 – 21", "Nov 7", "Jul 30 – Aug 1"
+export function dateSpan(e) {
+  const f = (d, o) => d.toLocaleDateString("en-PH", o);
+  if (sameDay(e.start, e.end)) return f(e.start, { month: "short", day: "numeric" });
+  return e.start.getMonth() === e.end.getMonth()
+    ? `${f(e.start, { month: "short", day: "numeric" })} – ${e.end.getDate()}`
+    : `${f(e.start, { month: "short", day: "numeric" })} – ${f(e.end, { month: "short", day: "numeric" })}`;
+}
+
+// Whether today is a class day, from the official calendar. Returns one of
+//   { kind: "classes" }                                   normal school day (or no calendar to say otherwise)
+//   { kind: "exam", title, span }                         an exam week is on
+//   { kind: "none", title, span, resumes, resumesLabel }  no classes: a break, a holiday, or between semesters
+// terms: school_terms rows; events: school_calendar_events rows.
+export function classStatus(today, terms = [], events = []) {
+  const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const evs = eventRanges(events);
+  const here = eventsOn(evs, day);
+
+  const off = here.find((e) => e.kind === "break") || here.find((e) => e.kind === "holiday");
+  const ranges = termRanges(terms);
+  const inTerm = termOn(ranges, day);
+  const nextTerm = ranges.filter((t) => t.start > day).sort((a, b) => a.start - b.start)[0];
+
+  if (off || (!inTerm && nextTerm && ranges.some((t) => t.end < day))) {
+    const resumes = nextTerm && (!off || off.end < nextTerm.start) ? nextTerm.start : off ? new Date(off.end.getFullYear(), off.end.getMonth(), off.end.getDate() + 1) : null;
+    return {
+      kind: "none",
+      title: off ? off.title : "Between semesters",
+      span: off ? dateSpan(off) : null,
+      resumes,
+      resumesLabel: nextTerm && resumes && sameDay(resumes, nextTerm.start) ? `${semesterWord(nextTerm.semester)} starts` : "Classes resume",
+    };
+  }
+  const exam = here.find((e) => e.kind === "exam");
+  if (exam) return { kind: "exam", title: exam.title, span: dateSpan(exam) };
+  return { kind: "classes" };
+}
+const semesterWord = (n) => (n === 1 ? "1st Semester" : n === 2 ? "2nd Semester" : "Summer");
+
+// "2nd Semester starts Monday, November 23" · "Classes resume Tuesday, December 1" (empty when unknown)
+export const resumeText = (status) =>
+  status?.resumes ? `${status.resumesLabel} ${status.resumes.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" })}` : "";

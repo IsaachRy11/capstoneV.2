@@ -8,7 +8,7 @@ import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
 const COMMON = [
   {
     q: "How do I sign in?",
-    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their email. Forgot your password? The CCS office can reset it.</>,
+    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their staff ID, such as CCS-001. Forgot your password? The CCS office can reset it.</>,
   },
   {
     q: "How do I change my password or theme?",
@@ -24,6 +24,10 @@ const COMMON = [
     ),
   },
   {
+    q: "What are Student type and Status?",
+    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated or Dropped.</>,
+  },
+  {
     q: "What do Regular and Irregular mean?",
     a: <>Regular: no failed subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
@@ -32,7 +36,7 @@ const COMMON = [
 const STUDENT = [
   {
     q: "Where do I see what I still need to take?",
-    a: <>The <Link to="/progress">Subject tracker</Link> lists every subject in your curriculum: passed, current and remaining.</>,
+    a: <>The <Link to="/progress">Subject tracker</Link> has two views. <strong>This semester</strong> shows what you're taking now and what passing each subject opens up. <strong>Roadmap</strong> shows what you've completed and every semester still ahead, with anything that's blocking a subject. At the bottom of both there's a button to your full curriculum with its prerequisites. Your Midterm and Final grades are on the <Link to="/record">Academic record</Link>. Subjects you can't take yet say what they need first: a prerequisite subject or a year standing (for example, 4th year standing for the practicum), as on the official CCS curriculum checklist.</>,
   },
   {
     q: "I think my grade or record is wrong.",
@@ -42,20 +46,20 @@ const STUDENT = [
 
 const SECRETARY = [
   {
-    q: "Why can't I enroll a student in a class?",
-    a: <>The class is full, its schedule clashes with another class of that student, or the student's status isn't Active. The message tells you which. Raise the section's capacity, pick another class, or change the status on the student's record.</>,
+    q: "Why can't I add a student to a subject?",
+    a: <>The subject is full, its schedule clashes with another subject of that student, a prerequisite isn't passed yet, the student would go over their unit limit, or the student's status isn't Active. The message tells you which. Change the seats, or fix the student's record, and try again.</>,
   },
   {
-    q: "Why can't I remove a student from a class?",
-    a: <>Once a class has a grade, a status such as INC or Dropped, or any grade history, it can't be removed, so the history is kept. Mark the class as Dropped on the student's record instead. Removing only works for a class added by mistake.</>,
+    q: "Can I remove a student from a subject after grades were entered?",
+    a: <>Yes. You are asked to confirm, the grades go away with the subject, and the removal is saved in the student's grade change history, which can't be edited or deleted.</>,
   },
   {
-    q: "Why can't I put a dropped student back in a class?",
-    a: <>Bringing a student back runs the same checks as a new enrollment: the class must have a free seat and no schedule clash.</>,
+    q: "Why can't I put a dropped student back in a subject?",
+    a: <>Bringing a student back runs the same checks as a new enrollment: the subject must have a free seat and no schedule clash.</>,
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record. Only Active students can be enrolled in classes. Inactive, Graduated and Left the college students can't.</>,
+    a: <>It is set on the student's record: Active, Graduated, Dropped or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated and Dropped students have their own tabs on the Students page.</>,
   },
   {
     q: "Why can't I delete a subject?",
@@ -63,7 +67,7 @@ const SECRETARY = [
   },
   {
     q: "Why was a class time refused?",
-    a: <>It overlaps another class of the same section, a room that is already booked, or an enrolled student's other class. The gymnasium is the only room that can be shared.</>,
+    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The gymnasium is the only room that can be shared.</>,
   },
   {
     q: "Where can I see who changed a grade?",
@@ -93,7 +97,7 @@ export default function HelpPage() {
       <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
-        <div className="flex items-center gap-2.5 border-b border-line px-5 py-3.5">
+        <div className="card-head flex items-center gap-2.5 px-5 py-3.5">
           <CircleHelp size={18} className="text-accent" aria-hidden="true" />
           <h2 className="text-[15px] font-bold text-ink">Common questions</h2>
           <span className="ml-auto text-[13px] text-ink-3">{list.length} questions</span>

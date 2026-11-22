@@ -44,6 +44,31 @@ export const getGradeChanges = (id) =>
 export const updateStudentStatus = (id, status) =>
   unwrap(supabase.from("students").update({ status }).eq("id", id));
 
+// The student's own unit limit (migration 0017). Null while that column doesn't exist yet, so the page still loads.
+export const getUnitLimit = (id) =>
+  unwrap(supabase.from("students").select("max_units").eq("id", id).maybeSingle()).then((r) => r?.max_units ?? null).catch(() => null);
+
+export const updateUnitLimit = (id, units) =>
+  unwrap(supabase.from("students").update({ max_units: units }).eq("id", id));
+
+// Secretary only. Sets a new one-time password (done on the server, which holds the secret key) and
+// returns it once. The student must choose their own password at the next sign-in.
+export async function resetStudentPassword(id) {
+  const { data, error } = await supabase.functions.invoke("reset-student-password", { body: { studentId: id } });
+  if (error) {
+    const body = await error.context?.json?.().catch(() => null);
+    throw new Error(body?.error || "The password could not be reset. Try again.");
+  }
+  return data.tempPassword;
+}
+
+// Secretary only. The database refuses when the student has grades or class history.
+// The sign-in account is removed afterwards on the server (it needs a secret key); a failure there is not fatal.
+export async function deleteStudent(id) {
+  await unwrap(supabase.from("students").delete().eq("id", id));
+  await supabase.functions.invoke("delete-student-login", { body: { studentId: id } });
+}
+
 // Saves several grades in ONE database transaction: all succeed or none do.
 // changes: [{ enrollmentId, midterm, final, status: "auto" | "incomplete" | "dropped" }]
 export const saveGrades = (changes) =>
@@ -53,18 +78,16 @@ export const saveGrades = (changes) =>
     })
   );
 
-// Creates the student, registers them in their block section for the current term and enrolls
-// them in that section's classes, all in one database transaction (public.add_student).
-export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type, sectionId = null }) {
+// Creates the student only (public.add_student). Enrolling happens per subject on Section allocations > Add students.
+export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }) {
   const params = {
     p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
     p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
   };
-  // Sent only when a section was picked, so "Automatic" also works on a database that predates migration 0010.
-  if (sectionId) params.p_section_id = sectionId;
-  const sectionName = await unwrap(supabase.rpc("add_student", params));
+  await unwrap(supabase.rpc("add_student", params));
   // The sign-in account is made on the server (it needs a secret key). If that fails the student still exists.
+  // It returns a one-time password, shown once to the secretary to hand to the student.
   const { data, error } = await supabase.functions.invoke("create-student-login", { body: { studentId: id } });
   const loginCreated = !error && data?.ok === true;
-  return { sectionName, loginCreated };
+  return { loginCreated, tempPassword: data?.tempPassword ?? null };
 }

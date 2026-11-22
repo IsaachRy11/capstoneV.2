@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Loader2, X } from "lucide-react";
-import { STATUS_LABEL, STATUS_TONE, colorIndex, initials } from "../lib/format";
+import { STATUS_LABEL, STATUS_TONE, STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE, colorIndex, initials, studentStatusKey } from "../lib/format";
 
 // "Back" for pages you reach by clicking. With `to` it always goes there (a detail view back to its list).
 // Without it, it steps back in history, or goes to `fallback` when the page was opened directly.
@@ -38,8 +38,12 @@ export function Badge({ tone = "neutral", dot = false, children, className = "" 
   return <span className={`badge tone-${tone} ${dot ? "badge-dot" : ""} ${className}`}>{children}</span>;
 }
 
-export const StandingBadge = ({ standing }) =>
-  standing === "irregular" ? <Badge tone="warn" dot>Irregular</Badge> : <Badge tone="ok" dot>Regular</Badge>;
+// A student's status: Regular or Irregular while active, otherwise Graduated, Dropped or Inactive.
+// student: anything with { status, standing } (v_student_overview rows have both).
+export const StudentStatusBadge = ({ student }) => {
+  const key = studentStatusKey(student);
+  return <Badge tone={STUDENT_STATUS_TONE[key]} dot>{STUDENT_STATUS_LABEL[key]}</Badge>;
+};
 
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
@@ -55,37 +59,32 @@ const LEGEND = {
 // Swatches use the brighter --mark-* colors (distinct at a glance); text keeps the darker readable tones.
 function LegendRow({ color, label, detail }) {
   return (
-    <li className="flex items-start gap-3">
-      <span className="mt-[7px] h-1.5 w-8 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
-      <span className="flex flex-col">
-        <span className="text-[13px] font-semibold text-ink">{label}</span>
+    <li className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3">
+      <span className="h-1.5 w-8 shrink-0 rounded-full sm:mt-[7px]" style={{ background: color }} aria-hidden="true" />
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[13px] font-semibold leading-tight text-ink">{label}</span>
         <span className="text-[12px] text-ink-3">{detail}</span>
       </span>
     </li>
   );
 }
 
-// `compact`: vertical list for side panels.
+// Every legend says it is a legend: a small "Legend" label, then what the colors stand for.
+// One legend for midterm and final grades alike: they use the same scale.
+// Phones: the three entries sit side by side (one short row); wider screens give each more room.
 export function GradeLegend({ className = "", compact = false }) {
-  if (compact) {
-    return (
-      <div className={className}>
-        <div className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">What the colors mean</div>
-        <ul className="flex flex-col gap-2.5">
-          {[LEGEND.passed, LEGEND.failing, LEGEND.other].map((r) => <LegendRow key={r.label} {...r} />)}
-        </ul>
-      </div>
-    );
-  }
-  // One legend for midterm and final grades alike: they use the same scale.
   return (
-    <div className={className} aria-label="What the grade colors mean">
-      <ul className="grid gap-x-8 gap-y-2.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+    <section className={className} aria-labelledby="grade-legend-title">
+      <h2 id="grade-legend-title" className="mb-2.5 flex items-baseline gap-2 text-[12px] font-semibold text-ink-3">
+        <span className="uppercase tracking-[0.08em]">Legend</span>
+        <span className="font-medium normal-case tracking-normal">· grade colors</span>
+      </h2>
+      <ul className={compact ? "flex flex-col gap-2.5" : "grid grid-cols-3 gap-x-3 gap-y-2.5 sm:gap-x-8 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]"}>
         <LegendRow {...LEGEND.passed} />
         <LegendRow {...LEGEND.failing} />
         <LegendRow {...LEGEND.other} />
       </ul>
-    </div>
+    </section>
   );
 }
 
@@ -96,7 +95,7 @@ export function PageHeader({ title, subtitle, actions, showTitle = false }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-col gap-1.5">
-        <h1 className={showTitle ? "text-[28px] font-bold tracking-tight" : "sr-only"}>{title}</h1>
+        <h1 className={showTitle ? "text-[22px] font-bold leading-tight tracking-tight sm:text-[28px]" : "sr-only"}>{title}</h1>
         {subtitle && <p className={showTitle ? "text-[15px] text-ink-2" : "text-[15px] font-medium text-ink-2"}>{subtitle}</p>}
       </div>
       {actions && <div className="ml-auto flex flex-wrap gap-2.5">{actions}</div>}
@@ -106,7 +105,7 @@ export function PageHeader({ title, subtitle, actions, showTitle = false }) {
 
 export function SectionHeader({ title, subtitle, action }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+    <div className="card-head flex items-start justify-between gap-3 px-5 py-4">
       <div>
         <h2 className="text-[17px] font-bold">{title}</h2>
         {subtitle && <p className="mt-1 text-[13px] text-ink-3">{subtitle}</p>}
@@ -151,14 +150,17 @@ export function Modal({ title, onClose, children, footer, width = "max-w-md" }) 
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`card w-full ${width} max-h-[90vh] overflow-auto shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+    <div className="sheet-wrap fixed inset-0 z-50 bg-black/40" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      {/* Phones: a bottom sheet (thumb-reachable, full-width buttons). PC: a centered dialog. See .sheet in index.css. */}
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="modal-title" className={`card sheet w-full ${width === "max-w-lg" ? "sm:max-w-lg" : "sm:max-w-md"} flex flex-col overflow-hidden shadow-xl`}>
+        <span className="sheet-grip" aria-hidden="true" />
+        <div className="card-head flex items-center justify-between px-5 py-3 sm:py-4">
           <h2 id="modal-title" className="text-[17px] font-bold">{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
-        <div className="px-5 py-5">{children}</div>
-        {footer && <div className="flex justify-end gap-2.5 border-t border-line px-5 py-4">{footer}</div>}
+        {/* Only the body scrolls, so the title and the action buttons stay in reach. */}
+        <div className="min-h-0 flex-1 overflow-auto px-5 py-5">{children}</div>
+        {footer && <div className="sheet-footer border-t border-line px-5 pt-4">{footer}</div>}
       </div>
     </div>
   );

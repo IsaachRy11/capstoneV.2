@@ -4,7 +4,8 @@
 |---|---|---|
 | `migrations/…01_core_schema.sql` | Tables, grade rules, read-only views | Structure |
 | `migrations/…02_rls.sql` | Who can read/write what (Row Level Security) + links logins to people by email | Structure |
-| `migrations/…03_sjc_curriculum.sql` | BSIT, BSCS, ACT curricula, verbatim from sjc.edu.ph | **Official** |
+| `migrations/…03_sjc_curriculum.sql` | First BSIT, BSCS, ACT curricula, from sjc.edu.ph (now inactive) | Official (old) |
+| `migrations/…12_curriculum_ay_2024_2025.sql` | Active BSIT, BSCS, ACT (Networking) curricula, effective AY 2024-2025, with prerequisites and year-standing rules, from the printed CCS checklists | **Official** |
 | `seed.sql` | 100 students (10 per program per year level), sections, rooms, weekly schedules, grades, demo logins | **Made up** |
 | `legacy/rename_legacy_tables.sql` | Renames the old prototype tables to `legacy_*` (keeps their data; run by hand) | — |
 
@@ -27,7 +28,7 @@ Regular/irregular is **computed**, never typed in.
 1. Dashboard → SQL Editor → run `legacy/rename_legacy_tables.sql`. This renames, not deletes, so no backup is needed.
 2. Run the three migration files in order, then `seed.sql`.
 4. Dashboard → Authentication → Users → **Add user** for
-   `demo.secretary@ccs-monitor.test` and `demo.student@ccs-monitor.test` (pick passwords).
+   `ccs-001@staff.ccs-monitor.test` (the secretary signs in with staff ID CCS-001) and `demo.student@ccs-monitor.test` (pick passwords).
    They link to their records automatically.
 
 Later changes go in a **new** migration file (never edit an applied one).
@@ -44,4 +45,4 @@ Until then, change an email by hand in Dashboard → Authentication → Users, t
 `secretaries` or `students` table so the account stays linked.
 
 ## Still needed from SJC
-- **Prerequisites**: the public checklist doesn't list them, so `subject_prerequisites` is empty.
+- **Prerequisites**: from the printed AY 2024-2025 checklists (migration 0012). Year-standing rules ("4th yr standing") are in `curriculum_subjects.standing_required`. Two BSCS printing slips are noted in that migration (CS 312 lists a non-existent CS 308; the 3rd-year elective is printed as CS EL 2).

@@ -3,6 +3,8 @@
 
 export const yearLabel = (y) => ["", "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"][y] || `Year ${y}`;
 export const semesterLabel = (s) => (s === 1 ? "1st Semester" : s === 2 ? "2nd Semester" : "Summer");
+// "3rd Year · 1st Semester"; summer is just "Summer" (it also holds retakes from any year).
+export const yearSemesterLabel = (year, sem) => (sem === 3 ? "Summer" : `${yearLabel(year)} · ${semesterLabel(sem)}`);
 export const termLabel = (t) => (t ? `SY ${t.school_year.replace("-", "–")} · ${semesterLabel(t.semester)}` : "");
 
 // "Bachelor of Science in Computer Science" → "BS Computer Science" (display only).
@@ -15,13 +17,27 @@ export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "F
 // INC and Dropped are grey (no final grade).
 export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
-// admission_type values shown as "Student type". "new" is shown as "Regular student" (every year, not just 1st).
 // "BSIT 1-T" -> "T" (the block section letter)
 export const sectionLetter = (name) => String(name).split("-").pop();
 
-// students.status: only "active" students can be enrolled in classes.
-export const STUDENT_STATUS = { active: "Active", inactive: "Inactive", graduated: "Graduated", dropped: "Left the college" };
-export const STUDENT_TYPE = { new: "Regular student", transferee: "Transferee", shiftee: "Shiftee", returnee: "Returnee" };
+// Student TYPE, shown everywhere: Freshman, Continuing, Transferee, Shiftee. The database keeps admission_type
+// (new, returnee, transferee, shiftee); the type shown also follows the year level: a "new" student is a Freshman
+// only in 1st year and Continuing after that, and a returnee is always Continuing.
+export const STUDENT_TYPE = { freshman: "Freshman", continuing: "Continuing", transferee: "Transferee", shiftee: "Shiftee" };
+export const studentTypeKey = (s) =>
+  s.admission_type === "transferee" || s.admission_type === "shiftee" ? s.admission_type
+  : s.admission_type === "returnee" || Number(s.year_level) > 1 ? "continuing" : "freshman";
+export const studentTypeLabel = (s) => STUDENT_TYPE[studentTypeKey(s)];
+// What the secretary picks when creating a student -> the admission_type stored.
+export const ADMISSION_FOR_TYPE = { freshman: "new", continuing: "returnee", transferee: "transferee", shiftee: "shiftee" };
+
+// Student STATUS. students.status is what the secretary sets (only "active" students can be enrolled in classes);
+// while active, the status shown is Regular or Irregular, which the database works out from the grades.
+export const STUDENT_STATUS = { active: "Active (regular or irregular)", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS_TONE = { regular: "ok", irregular: "warn", graduated: "info", dropped: "neutral", shifted_out: "neutral", inactive: "neutral" };
+export const studentStatusKey = (s) => (s.status && s.status !== "active" ? s.status : s.standing === "irregular" ? "irregular" : "regular");
+export const studentStatusLabel = (s) => STUDENT_STATUS_LABEL[studentStatusKey(s)];
 
 export const initials = (name = "") =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
@@ -34,9 +50,9 @@ export const normKey = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
 
 // Subject type is inferred from the code, the same way the curriculum migration does it.
 export function inferSubjectKind(code, title = "") {
-  if (/internship|practicum|on-the-job/i.test(title)) return "internship";
-  if (/elective/i.test(code)) return "elective";
-  if (/^GE\s/i.test(code)) return "general_education";
+  if (/internship|practicum|on-the-job/i.test(title) || /^PRAC$/i.test(code.trim())) return "internship";
+  if (/elective/i.test(code) || /^(IT|CS)\s*EL\s/i.test(code)) return "elective";
+  if (/^(GE|THEO)\s/i.test(code)) return "general_education"; // GE, GE electives (GE EL) and theology
   if (/^PATHFIT/i.test(code)) return "pathfit";
   if (/^NSTP/i.test(code)) return "nstp";
   return "major";

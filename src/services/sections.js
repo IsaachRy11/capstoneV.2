@@ -15,7 +15,7 @@ export const getSectionOfferings = (sectionId) =>
 
 export async function getRoster(offeringId) {
   const rows = await unwrap(
-    supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name)").eq("offering_id", offeringId)
+    supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name, admission_type, status, year_level)").eq("offering_id", offeringId)
   );
   if (!rows.length) return [];
   const standings = await unwrap(
@@ -23,7 +23,10 @@ export async function getRoster(offeringId) {
   );
   const byId = Object.fromEntries(standings.map((s) => [s.id, s.standing]));
   return rows
-    .map((r) => ({ ...r, name: `${r.students.first_name} ${r.students.last_name}`, standing: byId[r.student_id] }))
+    .map((r) => ({
+      ...r, name: `${r.students.first_name} ${r.students.last_name}`, standing: byId[r.student_id],
+      student_status: r.students.status, admission_type: r.students.admission_type, year_level: r.students.year_level,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -36,6 +39,19 @@ export function searchStudents(query) {
       .or(`full_name.ilike.%${q}%,id.ilike.%${q}%`).order("last_name").limit(8)
   );
 }
+
+// Add students to ONE subject: who to list and whether each can be added (migration 0018).
+export const getSubjectPlan = (offeringId, studentIds = null) =>
+  unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
+
+// Summer: subjects the secretary can still add to the summer section (with how many students owe each), add one, take back an empty one.
+export const getSummerCandidates = (sectionId) => unwrap(supabase.rpc("summer_candidates", { p_section: sectionId }));
+export const addSummerSubject = (sectionId, subjectId) => unwrap(supabase.rpc("add_summer_subject", { p_section: sectionId, p_subject: subjectId }));
+export const removeSummerSubject = (offeringId) => unwrap(supabase.rpc("remove_summer_subject", { p_offering: offeringId }));
+
+export const enrollInSubject = (offeringId, studentIds) =>
+  unwrap(supabase.rpc("enroll_in_subject", { p_offering: offeringId, p_students: studentIds }));
+
 
 export const enrollStudent = (studentId, offeringId) =>
   unwrap(supabase.from("enrollments").insert({ student_id: studentId, offering_id: offeringId }));
@@ -55,6 +71,10 @@ export const updateMeeting = (meetingId, fields) =>
 
 export const deleteMeeting = (meetingId) =>
   unwrap(supabase.from("class_meetings").delete().eq("id", meetingId));
+
+// One subject's own seats; null = follow the section's number. The database refuses less than the students already in it.
+export const updateOfferingCapacity = (offeringId, capacity) =>
+  unwrap(supabase.from("class_offerings").update({ capacity }).eq("id", offeringId));
 
 export const updateSectionCapacity = (sectionId, capacity) =>
   unwrap(supabase.from("sections").update({ capacity }).eq("id", sectionId));

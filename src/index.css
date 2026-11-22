@@ -4,7 +4,7 @@
 
 /* ─── Theme tokens ──────────────────────────────────────────────────────────
    Light: warm neutrals, SJC orange as the signal color.
-   Dark ("ink-navy"): no orange anywhere; periwinkle-blue accent.          */
+   Dark ("warm night", Nov 21 2026): charcoal ground, brown frame, coral accent.  */
 :root,
 [data-theme="light"] {
   color-scheme: light;
@@ -13,7 +13,19 @@
   --surface-2: #fafaf9;
   --line: #e7e5e0;
   --line-2: #f0eeea;
+  --grid-line: #d3d0c9;
+  --dot: #cdc9c0;
+  /* The frame of the app (sidebar, top bar, phone tab bar): the brand orange (deeper shade), with cream accents. */
+  --chrome: #9a3412; --chrome-2: #b23d10; --chrome-line: #c2551f;
+  --chrome-ink: #fff7f1; --chrome-ink-2: #ffe0cf; --chrome-ink-3: #fbc9ad;
+  --chrome-accent: #ffd9b8; --chrome-tint: rgba(255, 255, 255, 0.2); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.09);
+  --chrome-field: rgba(255, 255, 255, 0.1); --chrome-field-line: rgba(255, 255, 255, 0.24); --chrome-focus: rgba(255, 255, 255, 0.5);
+  /* Illustrated banners: shades of the brand orange */
+  --art-h: #c2410c; --art-a: #c2410c; --art-b: #a3380f; --art-c: #7c2d12; --art-g: #9a3412; --art-gold: #ffe4d4;
   --ink: #1a1714;
+  /* Drawn students on the landing hero (same in both themes) */
+  --fig-skin-1: #f2c8a2; --fig-skin-2: #e0a97c; --fig-skin-3: #c68a5f; --fig-skin-4: #a76d49; --fig-hair: #2b1d17;
+  --fig-shirt: #eef5ea; --fig-collar: #dbe8d6; --fig-trousers: #3b3a36; --fig-lanyard: #2f7a46; --fig-card: #ffffff; --fig-device: #e7e4df; --fig-device-2: #cfcac3;
   --ink-2: #57534e;
   --ink-3: #6b6560;
   --accent: #c2410c;
@@ -41,34 +53,42 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --ground: #0e1320;
-  --surface: #151b2b;
-  --surface-2: #1a2133;
-  --line: #263049;
-  --line-2: #1f2740;
-  --ink: #e6eaf2;
-  --ink-2: #b4bccd;
-  --ink-3: #97a1b6;
-  --accent: #8fa8ff;
-  --btn: #4361d8;
-  --btn-hover: #3651c0;
-  --tint: rgba(143, 168, 255, 0.14);
-  --tint-ink: #c3d0ff;
-  --track: #232c44;
-  --hover: #1c2438;
-  --row-hover: #1a2235;
-  --field-bg: #11172a;
-  --field-line: #2e3854;
-  --focus: rgba(143, 168, 255, 0.35);
-  --panel: #1b2440;
-  --panel-ink: #e6eaf2;
-  --panel-soft: #b4bccd;
+  --ground: #1c1917;
+  --surface: #26211e;
+  --surface-2: #2e2824;
+  --line: #443f3a;
+  --line-2: #38332f;
+  --grid-line: #453f39;
+  --dot: #3b3631;
+  /* Night look: warm charcoal ground, deep brown frame, coral accent */
+  --chrome: #7a2322; --chrome-2: #8f2b28; --chrome-line: #9b3a36;
+  --chrome-ink: #fff1ee; --chrome-ink-2: #f5cfc8; --chrome-ink-3: #e8b3aa;
+  --chrome-accent: #ffb4a8; --chrome-tint: rgba(255, 255, 255, 0.16); --chrome-tint-ink: #ffffff; --chrome-hover: rgba(255, 255, 255, 0.08);
+  --chrome-field: rgba(0, 0, 0, 0.25); --chrome-field-line: rgba(255, 255, 255, 0.28); --chrome-focus: rgba(255, 255, 255, 0.45);
+  --art-h: #8f2b28; --art-a: #c7322b; --art-b: #7a2322; --art-c: #443f3a; --art-g: #5a1a19; --art-gold: #ffd0c8;
+  --ink: #f5efeb;
+  --ink-2: #d1c7c0;
+  --ink-3: #a89d95;
+  --accent: #fc5f52;
+  --btn: #d93a30;
+  --btn-hover: #bf2f26;
+  --tint: rgba(252, 95, 82, 0.16);
+  --tint-ink: #ffb4a8;
+  --track: #3a3430;
+  --hover: #302a27;
+  --row-hover: #2b2522;
+  --field-bg: #1c1917;
+  --field-line: #4d4640;
+  --focus: rgba(252, 95, 82, 0.4);
+  --panel: #7a2322;
+  --panel-ink: #fff1ee;
+  --panel-soft: #f5cfc8;
   --ok: #6ee7a8;     --ok-bg: rgba(16, 185, 129, 0.14);  --ok-line: rgba(16, 185, 129, 0.3);
   --warn: #fcd34d;   --warn-bg: rgba(245, 158, 11, 0.14);
   --bad: #fca5a5;    --bad-bg: rgba(239, 68, 68, 0.14);  --bad-line: rgba(239, 68, 68, 0.35);
   --info: #a5c4ff;   --info-bg: rgba(96, 140, 255, 0.16);
-  --neutral: #b4bccd; --neutral-bg: rgba(148, 163, 184, 0.14);
-  --mark-ok: #4ade80; --mark-bad: #f87171; --mark-none: #7c869c;
+  --neutral: #d1c7c0; --neutral-bg: rgba(168, 157, 149, 0.16);
+  --mark-ok: #4ade80; --mark-bad: #f87171; --mark-none: #8c8c74;
 }
 
 @layer base {
@@ -93,7 +113,10 @@
 }
 
 @layer components {
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .card-head { background: color-mix(in srgb, var(--tint) 60%, var(--surface)); border-bottom: 1px solid var(--line); border-radius: 13px 13px 0 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(20, 16, 10, 0.05), 0 6px 18px -10px rgba(154, 52, 18, 0.18); }
+  .hover-lift { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -18px rgba(20, 16, 10, 0.35); border-color: var(--ink-3); }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -152,7 +175,8 @@
   .data-table .num { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
 
   .bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
-  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transform-origin: left; animation: bar-in .9s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes bar-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
   .nav-link {
     display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 14px;
@@ -160,6 +184,9 @@
   }
   .nav-link:hover { background: var(--hover); color: var(--ink); }
   .nav-link.active { background: var(--tint); color: var(--tint-ink); font-weight: 600; }
+  .nav-sub { display: flex; align-items: center; min-height: 38px; padding: 0 12px; border-radius: 8px; color: var(--ink-2); font-size: 14px; font-weight: 500; }
+  .nav-sub:hover { background: var(--hover); color: var(--ink); }
+  .nav-sub.active { color: var(--tint-ink); font-weight: 700; background: var(--tint); }
   /* Sidebar labels fade (never rewrap) when the desktop sidebar collapses to an icon rail */
   .nav-label { white-space: nowrap; transition: opacity .16s ease; }
   .sidebar-collapsed .nav-label { opacity: 0; }
@@ -167,6 +194,41 @@
   .path-tile { animation: path-in .45s ease-out both; }
   @keyframes path-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .path-tile { animation: none; } }
+  /* Photo cards: a flat dark layer over the picture keeps light text readable; .glass is frosted glass on top of it */
+  .photo-hero :where(h1, h2, h3, h4, p, dt, dd), .art-hero :where(h1, h2, h3, h4, p, dt, dd) { color: inherit; }
+  /* The app's frame: everything inside re-reads the theme tokens in the frame's colors, so buttons, fields and links just work */
+  .chrome { --surface: var(--chrome); --surface-2: var(--chrome-2); --line: var(--chrome-line); --line-2: var(--chrome-line); --ink: var(--chrome-ink); --ink-2: var(--chrome-ink-2); --ink-3: var(--chrome-ink-3); --accent: var(--chrome-accent); --tint: var(--chrome-tint); --tint-ink: var(--chrome-tint-ink); --hover: var(--chrome-hover); --field-bg: var(--chrome-field); --field-line: var(--chrome-field-line); --focus: var(--chrome-focus); --track: rgba(255, 255, 255, 0.14); color: var(--ink); }
+  .photo-scrim { background: rgba(10, 14, 26, 0.42); }
+  [data-theme="dark"] .photo-scrim { background: rgba(8, 11, 22, 0.58); }
+  .glass { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; }
+  /* Living background (components/Backdrop.jsx): a dot grid with slow drifting shapes and rings */
+  .bd-dots { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.7px); background-size: 26px 26px; -webkit-mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); mask-image: linear-gradient(to bottom, #000, rgba(0,0,0,.35)); }
+  .bd-shape { position: absolute; border-radius: 42%; background: var(--tint); animation: bd-drift 38s ease-in-out infinite alternate; }
+  .bd-ring { position: absolute; border-radius: 50%; border: 2px solid var(--grid-line); animation: bd-drift 52s ease-in-out infinite alternate-reverse; }
+  .bd-a { width: 460px; height: 460px; right: -140px; top: -170px; }
+  .bd-b { width: 300px; height: 300px; left: 20%; bottom: -150px; border-radius: 50%; animation-duration: 46s; }
+  .bd-c { width: 360px; height: 360px; right: 4%; top: 20%; }
+  .bd-d { width: 190px; height: 190px; left: -70px; top: 42%; }
+  .bd-e { width: 120px; height: 120px; left: 46%; top: 8%; animation-duration: 60s; }
+  @keyframes bd-drift { from { transform: translate3d(0, 0, 0) rotate(0deg); } to { transform: translate3d(-40px, 34px, 0) rotate(20deg); } }
+  /* Each page eases in when you open it; the landing ticker scrolls slowly */
+  .page-in { animation: page-in .35s ease-out backwards; } /* opacity only: a transform here would trap fixed dialogs inside the page */
+  @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+  .backdrop-still * { animation: none !important; }
+  @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
+  /* Landing page: sections fade up once when they scroll into view, cards lift a little on hover, the phone floats */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+  .lift { transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1), border-color .2s ease, box-shadow .2s ease; }
+  .lift.is-in:hover { transform: translateY(-3px); border-color: var(--ink-3); }
+  .stage-float { animation: stage-float 6s ease-in-out infinite; }
+  @keyframes stage-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .lift { transition: none; }
+    .lift.is-in:hover { transform: none; }
+    .stage-float { animation: none; }
+  }
   /* Account menu: short fade + lift when it opens */
   .menu-in { animation: menu-in .14s ease-out; transform-origin: top right; }
   @keyframes menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
@@ -178,7 +240,91 @@
     height: 34px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
     color: var(--ink-2); white-space: nowrap;
   }
+  .seg button:disabled { color: var(--ink-3); opacity: 0.45; cursor: not-allowed; }
   .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  /* ── Phone app shell (below lg): bottom tab bar, bottom-sheet dialogs, floating main action ── */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; justify-content: space-around; gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 2px 0; font-size: 12px; font-weight: 500; color: var(--ink-3);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab-icon {
+    display: flex; align-items: center; justify-content: center; width: 56px; height: 30px; border-radius: 999px;
+    transition: background-color .15s ease, transform .1s ease;
+  }
+  .tab:active .tab-icon { transform: scale(.92); }
+  .tab.active { color: var(--tint-ink); font-weight: 700; }
+  .tab.active .tab-icon { background: var(--tint); }
+
+  /* Dialogs: centered box on PC, a sheet that slides up from the bottom edge on phones. */
+  .sheet-wrap { display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { border-radius: 18px 18px 0 0; border-bottom: 0; max-height: 92dvh; animation: sheet-up .22s cubic-bezier(.2,.8,.2,1); }
+  .sheet-grip { display: block; width: 38px; height: 4px; margin: 8px auto 0; border-radius: 999px; background: var(--line); }
+  .sheet-footer { display: flex; flex-direction: column-reverse; gap: 10px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .sheet-footer > .btn { height: 46px; }
+  @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (min-width: 640px) {
+    .sheet-wrap { align-items: center; padding: 16px; }
+    .sheet { border-radius: 12px; border-bottom: 1px solid var(--line); max-height: 90vh; animation: none; }
+    .sheet-grip { display: none; }
+    .sheet-footer { flex-direction: row; justify-content: flex-end; padding-bottom: 16px; }
+    .sheet-footer > .btn { height: 40px; }
+  }
+
+  /* The page's main action floats above the tab bar on phones (PC keeps it in the page header). */
+  .fab {
+    position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 35;
+    display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 20px; border-radius: 999px;
+    background: var(--btn); color: #fff; font-size: 15px; font-weight: 600;
+    box-shadow: 0 6px 18px rgba(0,0,0,.22);
+  }
+  .fab:active { transform: scale(.97); }
+
+  /* Phones: segmented pickers stretch edge to edge with equal buttons, like an app's tab switcher. */
+  @media (max-width: 639px) {
+    .seg-fill { display: flex; width: 100%; }
+    .seg-fill > button { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+  }
+
+  /* A row of choices that scrolls sideways under the thumb (subjects of a section on phones). */
+  .chip-row {
+    display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity;
+    margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none;
+  }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start;
+    max-width: 180px; padding: 9px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); text-align: left;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); }
+
+  /* Touch: buttons and rows answer the finger. */
+  @media (pointer: coarse) {
+    .btn:active:not(:disabled) { transform: scale(.98); }
+    .press:active { background: var(--hover); }
+  }
+  @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tab-icon { transition: none; } }
+
+  /* Label/value facts (student header, home card): two per row on phones, as many as fit on wider screens. */
+  .stat-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+
+  /* Phones: tables get tighter side padding so grade columns fit without sideways scrolling. */
+  @media (max-width: 639px) {
+    .data-table th { padding: 10px 10px; }
+    .data-table td { padding: 12px 10px; }
+    .data-table th:first-child, .data-table td:first-child { padding-left: 16px; }
+    .data-table th:last-child, .data-table td:last-child { padding-right: 16px; }
+  }
 
   /* Touch screens: small controls grow to a finger-sized 40px. Mouse layouts stay compact. */
   @media (pointer: coarse) {
@@ -207,3 +353,30 @@
   body { background: #fff; }
   .card { border-color: #ddd; }
 }
+
+/* Excel-style tables: every cell is boxed. The card already draws the outer frame, so a table keeps only its
+   inner lines. Unlayered on purpose: it must win over the row-only lines in .data-table.
+   A table that is really a picture (the weekly strip) opts out with the "no-grid" class. */
+main table:not(.no-grid) { border-collapse: collapse; }
+main table:not(.no-grid) :is(th, td) { border: 1px solid var(--grid-line); }
+main table:not(.no-grid) thead th { background: var(--surface-2); color: var(--ink-2); font-weight: 700; }
+main table:not(.no-grid) :is(th, td):first-child { border-left: 0; }
+main table:not(.no-grid) :is(th, td):last-child { border-right: 0; }
+main table:not(.no-grid) thead tr:first-child th { border-top: 0; }
+main table:not(.no-grid) tbody tr:last-child td { border-bottom: 0; }
+main table:not(.no-grid) tfoot td { background: var(--surface-2); font-weight: 600; }
+/* Printed copies: darker lines, like the paper forms. */
+@media print { main table:not(.no-grid) :is(th, td) { border-color: #999; } }
+
+/* A small on/off button (the INC and Drop buttons while encoding grades). */
+.toggle-btn {
+  height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: 12px; font-weight: 600;
+}
+.toggle-btn:hover { background: var(--hover); color: var(--ink); }
+.toggle-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); color: var(--tint-ink); }
+
+/* Photo laid into a light section (landing features): gray, multiplied into the ground so it reads as a soft shadow
+   picture; in the dark theme it is screened in at low strength instead. */
+.mesh-photo { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.05); opacity: 0.32; }
+[data-theme="dark"] .mesh-photo { mix-blend-mode: screen; opacity: 0.16; }
