@@ -73,7 +73,7 @@ export default function Progress() {
                 <li key={s.id}><span className="font-mono">{s.code}</span> {s.title} · {s.backReason}{retakeNext.some((x) => x.id === s.id) ? " · offered again next semester" : ""}</li>
               ))}
             </ul>
-            <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS office about retaking them.</p>
+            <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS Secretary's Office about retaking them.</p>
           </div>
         </section>
       ) : (

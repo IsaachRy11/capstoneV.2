@@ -3,7 +3,7 @@ import { Badge } from "../../components/ui";
 import { PathTiles } from "./PathTiles";
 import Reveal from "./Reveal";
 
-// "One record for students and the CCS office": a bento grid of small abstract screens, one set per audience.
+// "One record for students and the CCS Secretary's Office": a bento grid of small abstract screens, one set per audience.
 // Every picture is made of shapes and plain words, never real names, codes or numbers.
 
 const Bar = ({ w, tone = "bg-[var(--grid-line)]" }) => <span className={`block h-2 rounded-full ${tone}`} style={{ width: w }} />;
@@ -118,7 +118,7 @@ const SETS = {
     ],
   },
   office: {
-    label: "For the CCS office",
+    label: "For the CCS Secretary's Office",
     cards: [
       { span: "md:col-span-4", title: "Student registry", text: "Search, filter and export every student. Status is worked out for you.", visual: <Registry /> },
       { span: "md:col-span-2", title: "Sections and seats", text: "Add students to subjects without going over the seats.", visual: <Seats /> },

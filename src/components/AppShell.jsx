@@ -249,7 +249,7 @@ export default function AppShell() {
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
           </div>
           <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
-            <span>Questions about your records? Visit the CCS office.</span>
+            <span>Questions about your records? Visit the CCS Secretary's Office.</span>
             <span>© {new Date().getFullYear()} CCS Subject Monitoring System · Capstone project</span>
           </div>
         </div>

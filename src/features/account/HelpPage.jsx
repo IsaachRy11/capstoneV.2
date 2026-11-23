@@ -4,11 +4,11 @@ import { useAuth } from "../../context/AuthContext";
 import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
 
 // Short answers to the questions people actually have about this system. Facts only; for anything
-// about a real record, the answer is the CCS office.
+// about a real record, the answer is the CCS Secretary's Office.
 const COMMON = [
   {
     q: "How do I sign in?",
-    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their staff ID, such as CCS-001. Forgot your password? The CCS office can reset it.</>,
+    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their staff ID, such as CCS-001. Forgot your password? The CCS Secretary's Office can reset it.</>,
   },
   {
     q: "How do I change my password or theme?",
@@ -40,7 +40,7 @@ const STUDENT = [
   },
   {
     q: "I think my grade or record is wrong.",
-    a: <>Visit the CCS office. Only the secretary can change records, and every grade change is saved with who changed it and when.</>,
+    a: <>Visit the CCS Secretary's Office. Only the secretary can change records, and every grade change is saved with who changed it and when.</>,
   },
 ];
 
@@ -108,7 +108,7 @@ export default function HelpPage() {
         <Building2 size={22} className="shrink-0 text-accent" aria-hidden="true" />
         <div>
           <h2 className="text-[15px] font-bold text-ink">Still need help?</h2>
-          <p className="mt-1 text-[14px] text-ink-2">Visit the CCS office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
+          <p className="mt-1 text-[14px] text-ink-2">Visit the CCS Secretary's Office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
         </div>
       </section>
     </>

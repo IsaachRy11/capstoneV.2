@@ -41,7 +41,7 @@ export default function PrivacyPage() {
     {
       icon: UserCheck,
       title: "Your rights",
-      body: <>Under the Data Privacy Act of 2012 (Republic Act No. 10173), you can ask for your personal information to be corrected. Visit the CCS office.</>,
+      body: <>Under the Data Privacy Act of 2012 (Republic Act No. 10173), you can ask for your personal information to be corrected. Visit the CCS Secretary's Office.</>,
     },
   ];
 

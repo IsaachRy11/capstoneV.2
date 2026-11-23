@@ -42,7 +42,7 @@ export default function ResetPasswordModal({ student, onClose }) {
         </div>
       ) : (
         <>
-          <p className="text-[14px] text-ink-2">This replaces their current password with a new one-time password. The student must choose their own password the next time they sign in. Do this only after checking who they are at the CCS office.</p>
+          <p className="text-[14px] text-ink-2">This replaces their current password with a new one-time password. The student must choose their own password the next time they sign in. Do this only after checking who they are at the CCS Secretary's Office.</p>
           <div className="mt-3"><FormError error={error} /></div>
         </>
       )}
