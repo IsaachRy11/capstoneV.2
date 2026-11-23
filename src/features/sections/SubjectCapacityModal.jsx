@@ -2,10 +2,10 @@ import { useState } from "react";
 import { updateOfferingCapacity } from "../../services/sections";
 import { FormError, Modal } from "../../components/ui";
 
-// Seats for ONE subject of a section. Empty means "same as the section" (the default for every subject).
+// Seats for ONE subject of a section. Saving changes only this subject; there is no section-wide seat change.
+// (A subject without its own number shows the section's starting number until it is changed here.)
 export default function SubjectCapacityModal({ section, offering, onClose, onSaved }) {
-  const own = offering.capacity !== null && offering.capacity !== undefined;
-  const [value, setValue] = useState(own ? offering.capacity : section.capacity);
+  const [value, setValue] = useState(offering.capacity ?? section.capacity);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const subject = offering.curriculum_subjects;
@@ -36,13 +36,7 @@ export default function SubjectCapacityModal({ section, offering, onClose, onSav
         <p className="text-[14px] text-ink-2">{subject.title} · {section.name}. {offering.enrolled} {offering.enrolled === 1 ? "student is" : "students are"} in this class.</p>
         <label className="label" htmlFor="subject-cap">Seats in this subject</label>
         <input id="subject-cap" type="number" min={least} className="field font-mono" value={value} onChange={(e) => setValue(e.target.value)} />
-        {own ? (
-          <button type="button" className="self-start text-[13px] font-semibold text-accent" onClick={() => save(null)} disabled={busy}>
-            Use the section's {section.capacity} seats instead
-          </button>
-        ) : (
-          <p className="text-[13px] text-ink-3">Right now this subject follows the section's {section.capacity} seats. Saving a number gives it its own.</p>
-        )}
+        <p className="text-[13px] text-ink-3">Only {subject.code} changes. The other subjects of {section.name} keep their own seats.</p>
         <FormError error={error} />
       </form>
     </Modal>
