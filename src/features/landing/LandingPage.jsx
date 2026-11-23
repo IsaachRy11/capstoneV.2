@@ -8,6 +8,7 @@ import Backdrop from "../../components/Backdrop";
 import LandingHero from "./LandingHero";
 import FeatureBento from "./FeatureBento";
 import Reveal from "./Reveal";
+import LandingFooter from "./LandingFooter";
 
 // Public landing page (signed out). It explains the system in the project's own words and leads to
 // sign-in. No numbers or records appear here: signed-out visitors can't read the database, and
@@ -26,7 +27,6 @@ const MOMENTS = [
   { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS Secretary's Office." },
 ];
 
-const CREDITS = "Jon Eckert (the sign-in page), Bo Peng and Yanhao Fang (the landing page)";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
@@ -130,19 +130,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* The footer ends in an oversized, cropped wordmark */}
-      <footer className="relative overflow-hidden border-t border-line bg-surface">
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-x-12 gap-y-4 px-4 py-8 sm:px-6">
-          <div>
-            <div className="font-display text-[16px] font-bold text-ink" translate="no">CCS Subject Monitoring System</div>
-            <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
-            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photos on Unsplash by {CREDITS}. Photo of the SJC College Building by RM Reoma.</p>
-          </div>
-          <span className="font-mono text-[12px] tracking-wide text-ink-3">CODE · INNOVATE · TRANSFORM</span>
-        </div>
-        <div className="pointer-events-none select-none px-4 text-center font-display font-extrabold leading-[0.78] tracking-[-0.05em] text-line" aria-hidden="true"
-          style={{ fontSize: "clamp(120px, 27vw, 380px)", marginBottom: "-0.14em" }}>CCS</div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

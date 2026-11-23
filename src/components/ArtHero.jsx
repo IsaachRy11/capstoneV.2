@@ -31,10 +31,11 @@ export function SchoolArt({ seed = 0 }) {
   );
 }
 
-export default function ArtHero({ tone = "a", seed = 0, as: Tag = "section", className = "", children }) {
+// `plain`: just the flat color, without the line-art school things (the landing hero has photos instead).
+export default function ArtHero({ tone = "a", seed = 0, plain = false, as: Tag = "section", className = "", children }) {
   return (
     <Tag className={`art-hero relative isolate overflow-hidden text-white ${className}`} style={{ background: `var(--art-${tone})` }}>
-      <SchoolArt seed={seed} />
+      {!plain && <SchoolArt seed={seed} />}
       {children}
     </Tag>
   );

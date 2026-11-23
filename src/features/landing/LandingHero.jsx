@@ -2,25 +2,17 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Globe } from "lucide-react";
 import ArtHero from "../../components/ArtHero";
 import Reveal from "./Reveal";
+import { FacebookMark } from "./LandingFooter";
 
 // The top of the public landing page, laid out like the college's own CCS poster: "COLLEGE OF" light over a bold
 // "COMPUTER STUDIES", the motto under the title's right edge, the three programs in capitals, where to inquire, and the
 // SJC seal with the college's web and Facebook names. Colors stay the site's own. Behind the text, students walk away
-// from the camera; on the right, the SJC College Building, tinted into the orange but kept sharp.
+// from the camera; on the right, the SJC College Building in the banner's own color (its light and shade over the orange), kept sharp.
 const PROGRAMS = ["Bachelor of Science in Information Technology", "Bachelor of Science in Computer Science", "Associate in Computer Technology"];
-
-function FacebookMark({ size = 17 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
-      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M13.2 18.5v-5.6h1.9l.3-2.2h-2.2V9.3c0-.6.2-1.1 1.1-1.1h1.2V6.3c-.2 0-.9-.1-1.7-.1-1.7 0-2.8 1-2.8 2.9v1.6H9.1v2.2H11v5.6z" fill="currentColor" />
-    </svg>
-  );
-}
 
 export default function LandingHero() {
   return (
-    <ArtHero tone="h" seed={2} className="-mt-[76px] flex min-h-[640px] flex-col md:min-h-[min(100svh,860px)]">
+    <ArtHero tone="h" plain className="-mt-[76px] flex min-h-[640px] flex-col md:min-h-[min(100svh,860px)]">
       {/* Students walking away from the camera (backs only), tinted into the orange like the crowd behind the poster's title */}
       <img src="/photos/walk.jpg" alt="" aria-hidden="true" width="1500" height="1000" decoding="async"
         className="pointer-events-none absolute inset-y-0 left-0 -z-10 h-full w-full object-cover opacity-[0.42] md:w-[72%]"
@@ -60,10 +52,10 @@ export default function LandingHero() {
         </Reveal>
       </div>
       {/* The SJC College Building at its own shape (no cropping), faded on the left and top edges so no hard line shows */}
-      <div className="pointer-events-none mt-6 w-full self-end md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[56%] md:max-w-[840px] md:[-webkit-mask-image:linear-gradient(to_left,#000_60%,transparent)] md:[mask-image:linear-gradient(to_left,#000_60%,transparent)]">
+      <div style={{ mixBlendMode: "luminosity" }} className="pointer-events-none mt-6 w-full self-end md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[56%] md:max-w-[840px] md:[-webkit-mask-image:linear-gradient(to_left,#000_60%,transparent)] md:[mask-image:linear-gradient(to_left,#000_60%,transparent)]">
         <img src="/photos/sjc-building.jpg" alt="The Saint Joseph College building in Maasin City" width="740" height="414" decoding="async"
           className="block h-auto w-full opacity-90 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_30%)] [mask-image:linear-gradient(to_bottom,transparent,#000_30%)]"
-          style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.08) brightness(1.08)" }} />
+          />
       </div>
     </ArtHero>
   );
