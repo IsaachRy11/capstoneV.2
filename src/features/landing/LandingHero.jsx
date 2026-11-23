@@ -1,13 +1,22 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Globe, MapPin } from "lucide-react";
+import { ArrowRight, Globe } from "lucide-react";
 import ArtHero from "../../components/ArtHero";
-import { SealLogo } from "../../components/ui";
 import Reveal from "./Reveal";
 
-// The top of the public landing page: a full-width orange banner that fills the first screen, like the college's own
-// CCS poster (title, motto, the three programs, where to inquire). The four students on the right are the poster's photo, softened, tinted into the orange
-// and blurred until nobody can be recognized. Behind the text, students walk away from the camera. The floating nav sits over the top.
+// The top of the public landing page, laid out like the college's own CCS poster: "COLLEGE OF" light over a bold
+// "COMPUTER STUDIES", the motto under the title's right edge, the three programs in capitals, where to inquire, and the
+// SJC seal with the college's web and Facebook names. Colors stay the site's own. Behind the text, students walk away
+// from the camera; on the right, the SJC College Building, tinted into the orange but kept sharp.
 const PROGRAMS = ["Bachelor of Science in Information Technology", "Bachelor of Science in Computer Science", "Associate in Computer Technology"];
+
+function FacebookMark({ size = 17 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M13.2 18.5v-5.6h1.9l.3-2.2h-2.2V9.3c0-.6.2-1.1 1.1-1.1h1.2V6.3c-.2 0-.9-.1-1.7-.1-1.7 0-2.8 1-2.8 2.9v1.6H9.1v2.2H11v5.6z" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function LandingHero() {
   return (
@@ -18,33 +27,43 @@ export default function LandingHero() {
         style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.1)", WebkitMaskImage: "linear-gradient(to right, #000 35%, transparent)", maskImage: "linear-gradient(to right, #000 35%, transparent)" }} />
 
       <div className="relative mx-auto flex w-full max-w-[1180px] flex-col justify-center px-4 pb-0 pt-28 sm:px-6 md:pb-16">
-        <Reveal className="flex max-w-[600px] flex-col gap-5 md:pb-6">
-          <h1 className="font-display leading-[0.98] tracking-[-0.02em]">
-            <span className="block text-[28px] font-medium uppercase sm:text-[40px]">College of</span>
-            <span className="block text-balance text-[44px] font-extrabold uppercase sm:text-[64px] lg:text-[72px]">Computer Studies</span>
-          </h1>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] opacity-95 sm:text-[13px]">An open door to the limitless horizon</p>
-          <ul className="flex flex-col gap-1 text-[14px] leading-snug sm:text-[17px]">
+        <Reveal className="flex max-w-[780px] flex-col gap-5 md:pb-6">
+          {/* The title and its motto: the motto lines up with the end of "COMPUTER STUDIES", as on the poster */}
+          <div className="flex w-fit max-w-full flex-col gap-2.5">
+            <h1 className="font-display uppercase leading-[0.95] tracking-[-0.02em]">
+              <span className="block text-[30px] font-light sm:text-[46px] lg:text-[54px]">College of</span>
+              <span className="block text-balance text-[42px] font-extrabold sm:text-[62px] lg:whitespace-nowrap lg:text-[76px]">Computer Studies</span>
+            </h1>
+            <p className="self-start text-[12px] font-bold uppercase tracking-[0.05em] sm:self-end sm:text-[15px]">An open door to the limitless horizon</p>
+          </div>
+          <ul className="mt-2 flex flex-col gap-1 text-[14px] font-medium uppercase tracking-[0.02em] sm:text-[18px]">
             {PROGRAMS.map((p) => <li key={p}>{p}</li>)}
           </ul>
-          <p className="max-w-[520px] text-[14px] leading-relaxed opacity-95 sm:text-[15px]">
+          <p className="max-w-[560px] text-[14px] leading-relaxed opacity-95 sm:text-[15px]">
             The Subject Monitoring System: enrollment, grades and academic standing of every student, in one place.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link to="/signin" className="btn btn-secondary h-12 rounded-full px-7 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
             <a href="#features" className="btn glass h-12 rounded-full px-7 text-[15px]">See what it does</a>
           </div>
-          <div className="mt-1 flex flex-col gap-1 text-[12.5px] opacity-95 sm:text-[13px]">
-            <span className="flex items-start gap-2"><MapPin size={15} className="mt-0.5 shrink-0" aria-hidden="true" />For inquiries: CCS Secretary&apos;s Office, Ground Floor of the SJC College Building</span>
-            <span className="flex items-center gap-3"><SealLogo size={48} /><span className="flex items-center gap-2"><Globe size={15} className="shrink-0" aria-hidden="true" />sjc.edu.ph</span></span>
+          <p className="text-[13px] leading-relaxed sm:text-[15px]">
+            For inquiries and applications, <strong>CCS Secretary&apos;s Office</strong>
+            <br className="hidden sm:inline" /> <strong>located at Ground Floor of the SJC College Building</strong>
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <img src="/photos/sjc-seal.jpg" alt="Saint Joseph College seal" width="64" height="64" decoding="async" className="h-14 w-14 shrink-0 rounded-full sm:h-16 sm:w-16" />
+            <div className="flex flex-col gap-1.5 text-[13px] sm:text-[15px]">
+              <span className="flex items-center gap-2"><Globe size={17} className="shrink-0" aria-hidden="true" />sjc.edu.ph</span>
+              <span className="flex items-center gap-2"><FacebookMark /><span><span className="sr-only">Facebook: </span>SJC - College of Computer Studies</span></span>
+            </div>
           </div>
         </Reveal>
       </div>
-      {/* Faded on the left edge (wrapper) and on the top edge (image), so no hard line shows */}
-      <div className="pointer-events-none mt-6 w-full self-end md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[58%] md:max-w-[860px] md:[-webkit-mask-image:linear-gradient(to_left,#000_55%,transparent)] md:[mask-image:linear-gradient(to_left,#000_55%,transparent)]">
-        <img src="/photos/ccs-students.jpg" alt="Four CCS students standing together" width="1100" height="717" decoding="async"
-          className="block h-auto w-full opacity-80 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_35%)] [mask-image:linear-gradient(to_bottom,transparent,#000_35%)]"
-          style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.1)" }} />
+      {/* The SJC College Building at its own shape (no cropping), faded on the left and top edges so no hard line shows */}
+      <div className="pointer-events-none mt-6 w-full self-end md:absolute md:bottom-0 md:right-0 md:mt-0 md:w-[56%] md:max-w-[840px] md:[-webkit-mask-image:linear-gradient(to_left,#000_60%,transparent)] md:[mask-image:linear-gradient(to_left,#000_60%,transparent)]">
+        <img src="/photos/sjc-building.jpg" alt="The Saint Joseph College building in Maasin City" width="740" height="414" decoding="async"
+          className="block h-auto w-full opacity-90 [-webkit-mask-image:linear-gradient(to_bottom,transparent,#000_30%)] [mask-image:linear-gradient(to_bottom,transparent,#000_30%)]"
+          style={{ mixBlendMode: "multiply", filter: "grayscale(1) contrast(1.08) brightness(1.08)" }} />
       </div>
     </ArtHero>
   );

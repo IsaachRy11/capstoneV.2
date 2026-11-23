@@ -70,7 +70,7 @@ export default function StudentHome() {
               {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
             </ul>
             <p className="mt-2 text-[13px] text-ink-3">
-              <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS office about retaking them.
+              <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS Secretary's Office about retaking them.
             </p>
           </div>
         </section>

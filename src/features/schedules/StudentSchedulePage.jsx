@@ -37,7 +37,7 @@ export default function Schedule() {
         actions={items.some((i) => i.meetings.length) && <button className="btn btn-secondary no-print hidden sm:inline-flex" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print schedule</button>} />
       <CalendarNotice status={status} />
       <WeekTimetable items={items} todaySummary={status?.kind !== "none"} />
-      {items.some((i) => !i.meetings.length) && <p className="text-[13px] text-ink-3">Ask the CCS office about classes without a fixed schedule.</p>}
+      {items.some((i) => !i.meetings.length) && <p className="text-[13px] text-ink-3">Ask the CCS Secretary's Office about classes without a fixed schedule.</p>}
     </>
   );
 }

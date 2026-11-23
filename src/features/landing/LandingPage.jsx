@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Moon, Sun } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -16,41 +17,51 @@ import Reveal from "./Reveal";
 const STEPS = [
   { title: "Sign in", text: "Students use their student ID. Staff use their staff ID, such as CCS-001." },
   { title: "Check your subjects and grades", text: "Your schedule, grades and standing, in one place." },
-  { title: "Spot a failed subject? Act early", text: "Visit the CCS office while there's still time to plan." },
+  { title: "Spot a failed subject? Act early", text: "Visit the CCS Secretary's Office while there's still time to plan." },
 ];
 
 const MOMENTS = [
   { tone: "a", seed: 1, title: "Check your subjects any time", text: "No queue, no waiting for the office to open." },
   { tone: "g", seed: 5, title: "An open door to the limitless horizon.", text: "The College of Computer Studies, Saint Joseph College.", quote: true },
-  { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS office." },
+  { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS Secretary's Office." },
 ];
 
 const CREDITS = "Jon Eckert (the sign-in page), Bo Peng and Yanhao Fang (the landing page)";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
+  // The top bar is see-through over the banner and turns solid after a little scrolling.
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <div className="relative isolate flex min-h-screen flex-col bg-ground">
       <Backdrop still />
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2">Skip to content</a>
 
-      {/* A floating bar that stays in reach while you scroll */}
-      <header className="sticky top-0 z-40 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
-        <div className="mx-auto flex max-w-[1180px] items-center gap-3 rounded-full border border-line bg-surface py-2 pl-3 pr-2 backdrop-blur-md">
+      {/* A full-width bar: see-through over the orange banner so it blends into it, solid once the page scrolls */}
+      <header className={`sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] transition-colors duration-200 ${solid ? "border-line backdrop-blur-md" : "border-transparent"}`}
+        style={solid ? { background: "var(--surface)" } : undefined}>
+        <div className="mx-auto flex h-[76px] max-w-[1180px] items-center gap-3 px-4 sm:px-6">
           <SealLogo size={36} />
           <div className="min-w-0 flex-1">
-            <div className="truncate font-display text-[14px] font-bold leading-tight text-ink sm:text-[15px]" translate="no">CCS Subject Monitoring System</div>
-            <div className="hidden truncate text-[12px] text-ink-3 sm:block">Saint Joseph College</div>
+            <div className={`truncate font-display text-[14px] font-bold leading-tight sm:text-[15px] ${solid ? "text-ink" : "text-white"}`} translate="no">CCS Subject Monitoring System</div>
+            <div className={`hidden truncate text-[12px] sm:block ${solid ? "text-ink-3" : "text-white/80"}`}>Saint Joseph College</div>
           </div>
           <nav aria-label="Page sections" className="hidden items-center gap-1 md:flex">
-            <a href="#features" className="rounded-full px-3.5 py-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink">What it does</a>
-            <a href="#how" className="rounded-full px-3.5 py-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink">How it works</a>
+            {[["#features", "What it does"], ["#how", "How it works"]].map(([href, label]) => (
+              <a key={href} href={href} className={`rounded-full px-3.5 py-2 text-[14px] font-semibold ${solid ? "text-ink-2 hover:bg-hover hover:text-ink" : "text-white/90 hover:bg-white/15 hover:text-white"}`}>{label}</a>
+            ))}
           </nav>
-          <button className="icon-btn" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
+          <button className={`icon-btn ${solid ? "" : "text-white hover:bg-white/15 hover:text-white"}`} onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <Link to="/signin" className="btn btn-primary rounded-full px-5">Sign in</Link>
+          <Link to="/signin" className={`btn rounded-full px-5 ${solid ? "btn-primary" : "btn-secondary"}`}>Sign in</Link>
         </div>
       </header>
 
@@ -66,7 +77,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1180px] px-4 py-14 sm:px-6 sm:py-20">
             <Reveal>
               <h2 className="max-w-[720px] text-balance font-display text-[34px] font-extrabold leading-[1.06] tracking-[-0.02em] text-ink sm:text-[52px]">
-                One record for students and the CCS office.
+                One record for students and the CCS Secretary's Office.
               </h2>
               <p className="mt-4 max-w-[620px] text-[17px] leading-relaxed text-ink sm:text-[19px]">Both sides work from the same data, so a grade saved by the office is the grade the student sees.</p>
             </Reveal>
@@ -111,7 +122,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div className="max-w-[560px]">
                 <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Know where you stand before you visit the office.</h2>
-                <p className="mt-3 text-[15px]" style={{ color: "var(--panel-soft)" }}>Forgot your password? The CCS office can reset it.</p>
+                <p className="mt-3 text-[15px]" style={{ color: "var(--panel-soft)" }}>Forgot your password? The CCS Secretary's Office can reset it.</p>
               </div>
               <Link to="/signin" className="btn btn-secondary h-12 rounded-full px-8 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
             </div>
@@ -125,7 +136,7 @@ export default function LandingPage() {
           <div>
             <div className="font-display text-[16px] font-bold text-ink" translate="no">CCS Subject Monitoring System</div>
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
-            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photos on Unsplash by {CREDITS}.</p>
+            <p className="mt-2 max-w-[560px] text-[12px] text-ink-3">Photos on Unsplash by {CREDITS}. Photo of the SJC College Building by RM Reoma.</p>
           </div>
           <span className="font-mono text-[12px] tracking-wide text-ink-3">CODE · INNOVATE · TRANSFORM</span>
         </div>

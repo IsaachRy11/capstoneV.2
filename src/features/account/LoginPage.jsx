@@ -121,7 +121,7 @@ export default function Login() {
 
           {status === "unlinked" && (
             <div role="alert" className="flex flex-col items-start gap-2 rounded-lg px-4 py-3 text-[14px] tone-warn">
-              This account isn't linked to a student or secretary record yet. Ask the CCS office to add your email.
+              This account isn't linked to a student or secretary record yet. Ask the CCS Secretary's Office to add your email.
               <button className="font-semibold underline" onClick={signOut}>Sign in with another account</button>
             </div>
           )}
@@ -146,7 +146,7 @@ export default function Login() {
             <button type="submit" ref={submitRef} className="btn btn-primary mt-1 h-11" disabled={busy}>
               {busy ? "Signing in…" : <>Sign in <ArrowRight size={17} aria-hidden="true" /></>}
             </button>
-            <p className="text-[13px] text-ink-3">Forgot your password? Ask the CCS office to reset it.</p>
+            <p className="text-[13px] text-ink-3">Forgot your password? Ask the CCS Secretary's Office to reset it.</p>
           </form>
 
           <div className="flex flex-col gap-3">
