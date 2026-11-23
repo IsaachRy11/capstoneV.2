@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { ChevronRight, Download, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, Search, X } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { listStudents } from "../../services/students";
 import { getPrograms } from "../../services/catalog";
 import { Avatar, EmptyState, ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { STUDENT_TYPE, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, yearLabel } from "../../lib/format";
 import { downloadFile, toCsv } from "../../lib/csv";
+import { pageList } from "../../lib/pagination";
 import AddStudentModal from "./AddStudentModal";
 import DeleteStudentModal from "./DeleteStudentModal";
 
@@ -79,6 +80,16 @@ export default function Students() {
   const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
   const tabLabel = other ? other.title : TABS.find(([k]) => k === year)?.[1] ?? yearLabel(Number(year));
   const total = other ? data.students.filter((s) => s.status === listKey).length : data.students.filter(isEnrolled).length;
+  const pages = Math.ceil(rows.length / pageSize);
+  // Only 1st year students can be Freshmen, so a 2nd to 4th year tab doesn't offer it.
+  const typeOptions = Object.entries(STUDENT_TYPE).filter(([k]) => k !== "freshman" || other || searching || year === "1");
+  const filtered = q.trim() !== "" || programFilter !== "all" || type !== "all" || status !== "all";
+  const clearFilters = () => {
+    setQ(""); setType("all"); setStatus("all"); setPage(0);
+    const next = new URLSearchParams(params);
+    ["program", "q", "add"].forEach((k) => next.delete(k));
+    setParams(next);
+  };
 
   const exportCsv = () => downloadFile("ccs-students.csv", toCsv(rows, [
     { label: "Student ID", value: (s) => s.id }, { label: "Last name", value: (s) => s.last_name },
@@ -111,7 +122,7 @@ export default function Students() {
             const n = base.filter((s) => inTab(s, k)).length;
             const on = !searching && year === k;
             return (
-              <button key={k} role="tab" aria-selected={on} onClick={() => { setQ(""); setParam("year", k); }}
+              <button key={k} role="tab" aria-selected={on} onClick={() => { setQ(""); if (k !== "1" && type === "freshman") setType("all"); setParam("year", k); }}
                 className={`-mb-px inline-flex h-12 flex-none items-center justify-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 text-[14px] sm:justify-start sm:gap-2 sm:px-1 ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
                 <span className="sm:hidden">{label.replace(" Year", "")}</span><span className="hidden sm:inline">{label}</span>
                 <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] font-semibold ${on ? "text-white" : "bg-hover text-ink-3"}`} style={on ? { background: "var(--btn)" } : undefined}>{n}</span>
@@ -134,13 +145,16 @@ export default function Students() {
           <label htmlFor="stype" className="sr-only">Student type</label>
           <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
             <option value="all">Student type</option>
-            {Object.entries(STUDENT_TYPE).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            {typeOptions.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
           <label htmlFor="stat" className="sr-only">Status</label>
           <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
             <option value="all">Status</option>
             {other ? <option value={listKey}>{other.title}</option> : <><option value="regular">Regular</option><option value="irregular">Irregular</option></>}
           </select>
+          <button type="button" className="btn btn-secondary flex-none" onClick={clearFilters} disabled={!filtered} aria-label="Clear search and filters">
+            <X size={16} aria-hidden="true" />Clear
+          </button>
         </div>
 
         {/* Phones: a list like a contacts app. The whole row opens the record; Delete lives on the record. */}
@@ -205,8 +219,23 @@ export default function Students() {
               <select id="per-page" className="field hidden h-[34px] w-auto py-0 pr-8 text-[13px] sm:block" value={pageSize} onChange={(e) => changePageSize(Number(e.target.value))}>
                 {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
-              <button className="btn btn-secondary btn-sm flex-1 sm:flex-none" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Previous</button>
-              <button className="btn btn-secondary btn-sm flex-1 sm:flex-none" disabled={(page + 1) * pageSize >= rows.length} onClick={() => setPage((p) => p + 1)}>Next</button>
+              <nav aria-label="Pages" className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-start">
+                <button className="btn btn-secondary btn-sm min-w-10 px-2.5" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page">
+                  <ChevronLeft size={16} aria-hidden="true" /><span className="hidden sm:inline">Previous</span>
+                </button>
+                {/* Phones show the first, current and last page; computers also show the pages next to the current one. */}
+                {[["flex sm:hidden", 0], ["hidden sm:flex", 1]].map(([cls, siblings]) => (
+                  <span key={siblings} className={`${cls} items-center gap-1`}>
+                    {pageList(page, pages, siblings).map((p) => typeof p === "string"
+                      ? <span key={p} className="px-1 text-ink-3" aria-hidden="true">…</span>
+                      : <button key={p} type="button" onClick={() => setPage(p)} aria-current={p === page ? "page" : undefined} aria-label={`Page ${p + 1}`}
+                          className={`btn btn-sm min-w-10 sm:min-w-[34px] px-2 font-mono ${p === page ? "btn-primary" : "btn-secondary"}`}>{p + 1}</button>)}
+                  </span>
+                ))}
+                <button className="btn btn-secondary btn-sm min-w-10 px-2.5" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} aria-label="Next page">
+                  <span className="hidden sm:inline">Next</span><ChevronRight size={16} aria-hidden="true" />
+                </button>
+              </nav>
             </div>
           </div>
         )}
