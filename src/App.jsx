@@ -31,15 +31,18 @@ function SecretaryOnly({ children }) {
   return user.role === "secretary" ? children : <Navigate to="/" replace />;
 }
 
+// Loading placeholders shown before the app frame exists, with the page padding the frame would give.
+const BootLoading = ({ label }) => <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10"><LoadingState label={label} /></div>;
+
 export default function App() {
   const { status, user, mustChangePassword } = useAuth();
 
-  if (status === "loading") return <LoadingState label="Signing in…" />;
+  if (status === "loading") return <BootLoading label="Signing in…" />;
   // A reset or brand-new account must pick its own password before using the app.
-  if (mustChangePassword) return <Suspense fallback={<LoadingState />}><FirstSignIn /></Suspense>;
+  if (mustChangePassword) return <Suspense fallback={<BootLoading />}><FirstSignIn /></Suspense>;
 
   return (
-    <Suspense fallback={<LoadingState />}>
+    <Suspense fallback={<BootLoading />}>
       {status === "unlinked" || status === "error" ? (
         <Login />
       ) : status !== "ready" ? (

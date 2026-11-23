@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Loader2, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, X } from "lucide-react";
 import { STATUS_LABEL, STATUS_TONE, STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE, colorIndex, initials, studentStatusKey } from "../lib/format";
 
 // "Back" for pages you reach by clicking. With `to` it always goes there (a detail view back to its list).
@@ -115,11 +115,49 @@ export function SectionHeader({ title, subtitle, action }) {
   );
 }
 
-export function LoadingState({ label = "Loading…" }) {
+// Placeholder shapes shown while data loads, like the gray cards social apps show before a feed appears.
+// "page" (default): a title bar, summary cards and a list card. "list": only rows, for inside a card or dialog.
+// Screen readers hear the label; the shapes themselves are hidden from them.
+const SKEL_ROWS = ["72%", "58%", "66%", "50%", "62%"];
+function SkelRows({ count = 4 }) {
+  return SKEL_ROWS.slice(0, count).map((w, i) => (
+    <div key={i} className="flex items-center gap-3 px-4 py-3">
+      <span className="skel skel-round h-9 w-9 shrink-0" />
+      <span className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="skel h-3.5" style={{ width: w }} />
+        <span className="skel h-3" style={{ width: "34%" }} />
+      </span>
+    </div>
+  ));
+}
+export function LoadingState({ label = "Loading…", variant = "page" }) {
+  if (variant === "list") {
+    return (
+      <div role="status" aria-busy="true" className="divide-y divide-line-2 py-1">
+        <span className="sr-only">{label}</span>
+        <div aria-hidden="true"><SkelRows count={3} /></div>
+      </div>
+    );
+  }
   return (
-    <div role="status" className="flex min-h-[240px] items-center justify-center gap-3 text-[14px] text-ink-3">
-      <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-      {label}
+    <div role="status" aria-busy="true" className="flex flex-col gap-4 sm:gap-5">
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true" className="contents">
+        <span className="skel h-7 w-48 max-w-[60%]" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="card flex flex-col gap-3 p-4">
+              <span className="skel h-3 w-1/2" />
+              <span className="skel h-7 w-2/5" />
+              <span className="skel h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+        <div className="card overflow-hidden">
+          <div className="border-b border-line px-4 py-4"><span className="skel h-4 w-40" /></div>
+          <div className="divide-y divide-line-2"><SkelRows count={5} /></div>
+        </div>
+      </div>
     </div>
   );
 }

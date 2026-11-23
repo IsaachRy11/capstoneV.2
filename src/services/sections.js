@@ -76,5 +76,3 @@ export const deleteMeeting = (meetingId) =>
 export const updateOfferingCapacity = (offeringId, capacity) =>
   unwrap(supabase.from("class_offerings").update({ capacity }).eq("id", offeringId));
 
-export const updateSectionCapacity = (sectionId, capacity) =>
-  unwrap(supabase.from("sections").update({ capacity }).eq("id", sectionId));

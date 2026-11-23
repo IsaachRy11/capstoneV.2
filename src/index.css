@@ -215,6 +215,11 @@
   .page-in { animation: page-in .35s ease-out backwards; } /* opacity only: a transform here would trap fixed dialogs inside the page */
   @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
   .backdrop-still * { animation: none !important; }
+  /* Loading placeholders (LoadingState): gray shapes where the content will appear, gently pulsing. Flat color, no shimmer gradient. */
+  .skel { display: block; border-radius: 6px; background: var(--track); animation: skel-pulse 1.3s ease-in-out infinite; }
+  .skel-round { border-radius: 999px; }
+  @keyframes skel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
   @media (prefers-reduced-motion: reduce) { .bd-shape, .bd-ring, .page-in, .bar > span { animation: none; } .hover-lift, .hover-lift:hover { transition: none; transform: none; } }
   /* Landing page: sections fade up once when they scroll into view, cards lift a little on hover, the phone floats */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }

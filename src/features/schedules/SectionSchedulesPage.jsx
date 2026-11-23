@@ -44,7 +44,7 @@ export default function SectionSchedules() {
       {!section ? (
         <div className="card"><EmptyState>No {program.code} {summer ? "Summer" : yearLabel(year)} section this semester.</EmptyState></div>
       ) : offerings.loading ? (
-        <LoadingState />
+        <div className="card"><LoadingState variant="list" /></div>
       ) : offerings.error ? (
         <ErrorState error={offerings.error} onRetry={offerings.reload} />
       ) : (
