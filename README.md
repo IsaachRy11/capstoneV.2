@@ -52,17 +52,27 @@ scripts/           one-off tools (create student logins)
 
 ## Run it locally
 
-1. `npm install`
-2. Create `.env` in the project root (never commit it):
-   ```
-   VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-   VITE_SUPABASE_ANON_KEY=<publishable key>
-   ```
-3. Set up the database once by following [supabase/README.md](supabase/README.md).
-4. `npm run dev`, then open http://localhost:5173
-5. `npm test` runs the unit tests.
+1. Get the code:  (first time), or  on  in an existing copy.
+2. Unknown command: "install"
 
-Sign-in uses Supabase Auth. An account gets its role from a matching email in the `secretaries` or `students` table.
+
+Did you mean one of these?
+  npm install # Install a package
+  npm uninstall # Remove a package
+To see a list of supported npm commands, run:
+  npm help (again after every pull that changes package.json).
+3. Put the settings file next to package.json (never commit it; ask a team member for it):
+   -  for the test database (the one ccs-monitor-test.vercel.app uses, safe for demos), then  and open http://localhost:5175
+   - or  with  and  for the live database, then  and open http://localhost:5173
+4. Unknown command: "test"
+
+
+Did you mean this?
+  npm test # Test a package
+To see a list of supported npm commands, run:
+  npm help runs the unit and database tests (no settings file needed).
+
+Sign-in uses Supabase Auth: students sign in with their student ID and the secretary with a staff ID (CCS-001). The database is already set up; [supabase/README.md](supabase/README.md) is only needed to build a new one.
 
 ## Data sources
 
