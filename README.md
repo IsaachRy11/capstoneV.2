@@ -52,25 +52,12 @@ scripts/           one-off tools (create student logins)
 
 ## Run it locally
 
-1. Get the code:  (first time), or  on  in an existing copy.
-2. Unknown command: "install"
-
-
-Did you mean one of these?
-  npm install # Install a package
-  npm uninstall # Remove a package
-To see a list of supported npm commands, run:
-  npm help (again after every pull that changes package.json).
+1. Get the code: `git clone https://github.com/IsaachRy11/capstoneV.2.git` (first time), or `git pull` on `main` in an existing copy.
+2. `npm install` (again after every pull that changes package.json).
 3. Put the settings file next to package.json (never commit it; ask a team member for it):
-   -  for the test database (the one ccs-monitor-test.vercel.app uses, safe for demos), then  and open http://localhost:5175
-   - or  with  and  for the live database, then  and open http://localhost:5173
-4. Unknown command: "test"
-
-
-Did you mean this?
-  npm test # Test a package
-To see a list of supported npm commands, run:
-  npm help runs the unit and database tests (no settings file needed).
+   - `.env.rehearsal.local` for the test database (the one ccs-monitor-test.vercel.app uses, safe for demos), then `npm run dev:rehearsal` and open http://localhost:5175
+   - or `.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the live database, then `npm run dev` and open http://localhost:5173
+4. `npm test` runs the unit and database tests (no settings file needed).
 
 Sign-in uses Supabase Auth: students sign in with their student ID and the secretary with a staff ID (CCS-001). The database is already set up; [supabase/README.md](supabase/README.md) is only needed to build a new one.
 
