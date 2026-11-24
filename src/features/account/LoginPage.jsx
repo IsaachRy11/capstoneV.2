@@ -1,0 +1,171 @@
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Moon, Sun } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { FormError, SealLogo } from "../../components/ui";
+import Backdrop from "../../components/Backdrop";
+
+// Demo passwords only exist in the rehearsal/test build (VITE_DEMO_* env vars, a fake database). The live build
+// never sets them, so there the demo buttons only fill in the ID and no password is shipped in the page.
+const DEMO_ACCOUNTS = [
+  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
+  { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001", password: import.meta.env.VITE_DEMO_STUDENT_PASSWORD },
+];
+
+export default function Login() {
+  const { signIn, status, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const passwordRef = useRef(null);
+  const submitRef = useRef(null);
+  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+
+  // A demo button fills in the ID, then types the password one character at a time (when the build has one). It
+  // never presses Sign in: the person does that.
+  const typing = useRef(null);
+  useEffect(() => () => clearInterval(typing.current), []);
+  const fillDemo = (account) => {
+    clearInterval(typing.current);
+    setIdentifier(account.id);
+    setPassword("");
+    setError("");
+    if (!account.password) { passwordRef.current?.focus(); return; }
+    let n = 0;
+    typing.current = setInterval(() => {
+      n += 1;
+      setPassword(account.password.slice(0, n));
+      if (n >= account.password.length) {
+        clearInterval(typing.current);
+        submitRef.current?.focus();
+      }
+    }, 45);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      await signIn(identifier, password);
+    } catch (err) {
+      setError(err.message === "Invalid login credentials" ? "ID or password is incorrect." : err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="relative isolate flex min-h-screen flex-wrap bg-ground">
+      <Backdrop />
+      {/* Brand panel (PC only): the college's own words, set large */}
+      <section className="relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
+        style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
+        <img src="/photos/p71.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-45" />
+        <span className="bd-ring pointer-events-none absolute -right-24 top-24 -z-10 h-[420px] w-[420px]" style={{ borderColor: "rgba(255,255,255,.16)", animationDuration: "48s" }} aria-hidden="true" />
+        <span className="bd-ring pointer-events-none absolute -left-16 bottom-16 -z-10 h-[240px] w-[240px]" style={{ borderColor: "rgba(255,255,255,.12)", animationDuration: "58s" }} aria-hidden="true" />
+        <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
+          <span className="min-w-0">
+            <span className="block font-display text-[16px] font-bold">CCS Subject Monitoring System</span>
+            <span className="block text-[13px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College</span>
+          </span>
+        </Link>
+        <figure className="flex max-w-[540px] flex-col gap-6">
+          <span className="font-display text-[96px] font-extrabold leading-[0.6]" style={{ color: "var(--panel-soft)", opacity: 0.55 }} aria-hidden="true">&ldquo;</span>
+          <blockquote>
+            <p className="text-balance font-display text-[44px] font-extrabold leading-[1.1] tracking-tight" style={{ color: "var(--panel-ink)" }}>
+              An open door to the limitless horizon.
+            </p>
+          </blockquote>
+          <figcaption className="text-[13px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--panel-soft)" }}>College of Computer Studies</figcaption>
+        </figure>
+        <div className="flex flex-wrap items-center justify-between gap-4 text-[13px]" style={{ color: "var(--panel-soft)" }}>
+          <span className="font-mono tracking-wide">CODE · INNOVATE · TRANSFORM</span>
+          <span>Maasin City, Southern Leyte</span>
+        </div>
+      </section>
+
+      <section className="relative flex min-h-[100svh] flex-[1_1_480px] flex-col lg:min-h-0">
+        {/* Phones: slim brand bar with a way back to the landing page */}
+        <div className="flex items-center gap-2 px-3 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden"
+          style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
+          <Link to="/" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="Back to home">
+            <ArrowLeft size={20} />
+          </Link>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={36} /></span>
+          <div className="min-w-0 flex-1 pl-1">
+            <div className="font-display text-[15px] font-bold leading-tight">CCS Subject Monitoring System</div>
+            <div className="text-[12px]" style={{ color: "var(--panel-soft)" }}>Saint Joseph College</div>
+          </div>
+          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ color: "var(--panel-ink)" }} onClick={toggleTheme} aria-label={themeLabel}>
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+        <Link to="/" className="absolute left-5 top-4 hidden min-h-10 items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink lg:inline-flex">
+          <ArrowLeft size={16} aria-hidden="true" />Back to home
+        </Link>
+        <button className="icon-btn absolute right-4 top-4 hidden lg:inline-flex" onClick={toggleTheme} aria-label={themeLabel}>
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        <div className="flex flex-1 justify-center px-5 pb-10 pt-7 sm:px-6 lg:items-center lg:py-12">
+        <div className="flex w-full max-w-[420px] flex-col gap-6 rounded-[20px] border border-line bg-surface p-6 shadow-[0_24px_60px_-36px_rgba(20,16,10,0.4)] sm:p-8 lg:gap-7 lg:self-center">
+          <div className="flex flex-col gap-1.5 lg:gap-2">
+            <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
+            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your staff ID.</p>
+          </div>
+
+          {status === "unlinked" && (
+            <div role="alert" className="flex flex-col items-start gap-2 rounded-lg px-4 py-3 text-[14px] tone-warn">
+              This account isn't linked to a student or secretary record yet. Ask the CCS Secretary's Office to set up your sign-in.
+              <button className="font-semibold underline" onClick={signOut}>Sign in with another account</button>
+            </div>
+          )}
+          {status === "error" && <FormError error="Signed in, but your record couldn't be loaded. Check your connection and reload." />}
+
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <div>
+              <label className="label" htmlFor="email">Student ID or staff ID</label>
+              <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001 or CCS-001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
+                onKeyDown={(e) => { if (e.key === "Enter" && !password) { e.preventDefault(); passwordRef.current?.focus(); } }} />
+            </div>
+            <div>
+              <label className="label" htmlFor="password">Password</label>
+              <div className="relative">
+                <input id="password" ref={passwordRef} enterKeyHint="go" type={show ? "text" : "password"} className="field h-11 pr-12" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+                <button type="button" className="icon-btn absolute right-0.5 top-0.5" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"}>
+                  {show ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+            </div>
+            <FormError error={error} />
+            <button type="submit" ref={submitRef} className="btn btn-primary mt-1 h-11" disabled={busy}>
+              {busy ? "Signing in…" : <>Sign in <ArrowRight size={17} aria-hidden="true" /></>}
+            </button>
+            <p className="text-[13px] text-ink-3">Forgot your password? Ask the CCS Secretary's Office to reset it.</p>
+          </form>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+              <span className="h-px flex-1 bg-line" />Demo accounts<span className="h-px flex-1 bg-line" />
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {DEMO_ACCOUNTS.map((a) => (
+                <button key={a.id} type="button" onClick={() => fillDemo(a)}
+                  className="rounded-[10px] border border-line bg-surface px-3.5 py-3 text-left hover:border-accent">
+                  <div className="text-[14px] font-semibold text-ink">{a.label}</div>
+                  <div className="truncate text-[12px] text-ink-3">{a.hint}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -1,13 +1,18 @@
 {
   "name": "css-monitor",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:rehearsal": "vite --mode rehearsal --port 5175",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "accounts:students": "node scripts/create-student-accounts.mjs",
+    "accounts:staff": "node scripts/set-staff-id.mjs",
+    "check:mobile": "node scripts/check-mobile.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
@@ -17,6 +22,7 @@
     "react-router-dom": "^7.11.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -26,8 +32,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
+    "playwright-core": "^1.64.1",
     "postcss": "^8.5.20",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vitest": "^5.0.5"
   }
 }

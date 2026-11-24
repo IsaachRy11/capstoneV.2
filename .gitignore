@@ -29,3 +29,11 @@ dist-ssr
 # Custom agent skills & config
 .agents
 
+# Supabase CLI local link info and database dumps (may contain project details or data)
+supabase/.temp/
+backup.sql
+*.dump
+
+
+# Skills CLI lockfile for the unused .agents archive
+skills-lock.json
