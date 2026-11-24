@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { classStatus, edgeText, edgesOn, termEdges } from "./calendar";
+import { carryOver, classStatus, edgeText, edgesOn, shiftYear, termEdges } from "./calendar";
+
+describe("copying last year's calendar", () => {
+  it("moves a date to the same day a year later", () => {
+    expect(shiftYear("2026-11-30")).toBe("2027-11-30");
+    expect(shiftYear("2027-01-01")).toBe("2028-01-01");
+    expect(shiftYear("2028-02-29")).toBe("2029-02-28");
+  });
+  it("ticks fixed holidays only and leaves out start and end of classes", () => {
+    const events = [
+      { id: 1, school_year: "2026-2027", kind: "classes", title: "Start of Classes", starts_on: "2026-07-06", ends_on: "2026-07-06" },
+      { id: 2, school_year: "2026-2027", kind: "holiday", title: "Bonifacio Day", starts_on: "2026-11-30", ends_on: "2026-11-30" },
+      { id: 3, school_year: "2026-2027", kind: "holiday", title: "Chinese New Year", starts_on: "2027-02-06", ends_on: "2027-02-06" },
+      { id: 4, school_year: "2026-2027", kind: "exam", title: "Midterm Exams", starts_on: "2026-09-01", ends_on: "2026-09-05" },
+      { id: 5, school_year: "2025-2026", kind: "holiday", title: "Old", starts_on: "2025-11-30", ends_on: "2025-11-30" },
+    ];
+    expect(carryOver(events, "2026-2027")).toEqual([
+      { key: 2, title: "Bonifacio Day", kind: "holiday", starts_on: "2027-11-30", ends_on: "2027-11-30", movable: false, ticked: true },
+      { key: 3, title: "Chinese New Year", kind: "holiday", starts_on: "2028-02-06", ends_on: "2028-02-06", movable: true, ticked: false },
+      { key: 4, title: "Midterm Exams", kind: "exam", starts_on: "2027-09-01", ends_on: "2027-09-05", movable: false, ticked: false },
+    ]);
+  });
+});
 
 // The SY 2026-2027 shape: 1st semester ends Nov 7, break until Nov 21, 2nd semester starts Nov 23.
 const terms = [

@@ -124,6 +124,29 @@ describe("seed data", () => {
     expect(exams.n).toBe(10);
   });
 
+  it("links every calendar date to its school term, worked out from the date", async () => {
+    expect(await one(`select count(*)::int n from school_calendar_events where school_term_id is null`)).toEqual({ n: 0 });
+    const sem = (d) => one(`select t.semester from school_calendar_events e join school_terms t on t.id = e.school_term_id
+                            where e.school_year = '2026-2027' and e.starts_on = '${d}' limit 1`);
+    // Inside a term, and in the semestral break (Nov 8-22): the break belongs to the semester that just ended.
+    expect((await sem("2026-11-23")).semester).toBe(2);
+    const inBreak = await one(`select count(*)::int n, count(*) filter (where t.semester = 1)::int first
+                               from school_calendar_events e join school_terms t on t.id = e.school_term_id
+                               where e.starts_on between '2026-11-08' and '2026-11-22'`);
+    expect(inBreak.n).toBeGreaterThan(0);
+    expect(inBreak.first).toBe(inBreak.n);
+    // A new date links itself, whatever link is sent.
+    const add = await as("authenticated", SEC, `insert into school_calendar_events (school_year, title, starts_on, ends_on, kind, school_term_id)
+                                                 values ('2026-2027', 'Link test', '2027-01-15', '2027-01-15', 'school', null) returning school_term_id`);
+    const t2 = await one(`select id from school_terms where school_year = '2026-2027' and semester = 2`);
+    expect(add.rows[0].school_term_id).toBe(t2.id);
+    // Moving a term's dates relinks that school year's calendar.
+    await db.exec(`update school_terms set ends_on = '2027-01-10' where school_year = '2026-2027' and semester = 2`);
+    expect((await one(`select school_term_id from school_calendar_events where title = 'Link test'`)).school_term_id).toBe(t2.id);
+    await db.exec(`update school_terms set ends_on = '2027-04-23' where school_year = '2026-2027' and semester = 2;
+                   delete from school_calendar_events where title = 'Link test'`);
+  });
+
   it("lets students read the calendar but not change it", async () => {
     expect((await as("authenticated", STU, `select count(*)::int n from school_calendar_events`)).rows[0].n).toBe(39);
     const w = await as("authenticated", STU, `update school_calendar_events set title = 'x' returning id`);

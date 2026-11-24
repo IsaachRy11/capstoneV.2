@@ -48,6 +48,27 @@ export const EVENT_KINDS = {
   school:       { label: "School activity",      tone: "neutral" },
 };
 
+// ── Copying last school year's calendar into a new one ──
+// The same day `years` later; Feb 29 becomes Feb 28 in a year without it.
+export function shiftYear(iso, years = 1) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const last = new Date(y + years, m, 0).getDate();
+  return `${y + years}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+}
+// Holidays whose date changes every year, so they are never copied ticked.
+export const MOVABLE_HOLIDAY = /chinese new year|eid|holy (week|thursday|friday|saturday)|maundy|good friday|black saturday|easter/i;
+// Last school year's dates offered for the new one, moved one year later. Fixed-date holidays come ticked; everything
+// else (exams, breaks, registration, school activities, movable holidays) comes unticked, to be checked against the new
+// printed calendar. Start and end of classes are left out: starting the school year adds them.
+export function carryOver(events = [], fromYear) {
+  return events
+    .filter((e) => e.school_year === fromYear && e.kind !== "classes")
+    .map((e) => {
+      const movable = e.kind === "holiday" && MOVABLE_HOLIDAY.test(e.title);
+      return { key: e.id, title: e.title, kind: e.kind, starts_on: shiftYear(e.starts_on), ends_on: shiftYear(e.ends_on), movable, ticked: e.kind === "holiday" && !movable };
+    });
+}
+
 // calendar_events rows -> entries with Date objects.
 export const eventRanges = (events = []) => events.map((e) => ({ ...e, start: parseDate(e.starts_on), end: parseDate(e.ends_on) }));
 
