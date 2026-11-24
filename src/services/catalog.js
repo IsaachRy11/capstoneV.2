@@ -27,6 +27,14 @@ export async function saveCalendarEvent({ id, title, kind, starts_on, ends_on })
   forget("calendar:events");
 }
 
+// Several dates at once (copying last year's calendar into a new school year), in one request: all or none.
+// A date already on the calendar (same school year, title and day) is skipped, not doubled.
+export async function addCalendarEvents(rows) {
+  const clean = rows.map(({ title, kind, starts_on, ends_on }) => ({ title: title.trim(), kind, starts_on, ends_on, school_year: schoolYearOf(starts_on) }));
+  await unwrap(supabase.from("school_calendar_events").upsert(clean, { onConflict: "school_year,title,starts_on", ignoreDuplicates: true }));
+  forget("calendar:events");
+}
+
 export async function deleteCalendarEvent(id) {
   await unwrap(supabase.from("school_calendar_events").delete().eq("id", id));
   forget("calendar:events");

@@ -6,6 +6,7 @@ import { termLabel } from "../../lib/format";
 import { parseDate } from "../../lib/calendar";
 import { ErrorState, FormError, LoadingState, Modal, PageHeader } from "../../components/ui";
 import DateRangePicker from "./DateRangePicker";
+import CopyLastYear from "./CopyLastYear";
 
 // Secretary: move the whole site to the next semester, summer or school year. The page offers the usual next term
 // (Start 2nd Semester / Start new school year), warns when the current one has not ended yet (Continue is kept for
@@ -107,6 +108,8 @@ export default function SchoolYearPage() {
         <span>Starting a new semester or school year is done on a computer.</span>
       </p>
 
+      {current?.semester === 1 && <CopyLastYear schoolYear={current.school_year} />}
+
       {next && step === "ask" && (
         <section className="card hidden flex-col gap-4 p-5 sm:p-6 lg:flex">
           <div className="flex flex-wrap items-center gap-4">
@@ -173,7 +176,7 @@ export default function SchoolYearPage() {
               <li>The whole site switches to {next.title}: {fmt(starts)} to {fmt(ends)}.</li>
               <li>Sections and subjects are made from the curriculum. Nobody is enrolled yet: you add them subject by subject on Section allocations (Add students).</li>
               <li>A student&apos;s year level follows the subjects you enroll them in.</li>
-              {isNewYear && <li>The calendar for the new school year starts with just these two days. Add holidays and exams on the Calendar page.</li>}
+              {isNewYear && <li>The calendar for the new school year starts with just these two days. Right after the start, this page offers last year&apos;s holidays to copy; add exams and other dates on the Calendar page.</li>}
               <li>You can undo it until a grade is entered.</li>
             </ul>
           ) : (

@@ -15,16 +15,16 @@ async function loadProfile(authUser) {
   // Both lookups go out together (one round trip of waiting instead of two); row-level security
   // returns a row only from the table this person belongs to.
   const [{ data: sec, error: secErr }, { data: stu, error: stuErr }] = await Promise.all([
-    supabase.from("secretaries").select("id, full_name, email").eq("auth_user_id", uid).maybeSingle(),
-    supabase.from("students").select("id, first_name, last_name, email, year_level").eq("auth_user_id", uid).maybeSingle(),
+    supabase.from("secretaries").select("id, full_name, staff_id").eq("auth_user_id", uid).maybeSingle(),
+    supabase.from("students").select("id, first_name, last_name, year_level").eq("auth_user_id", uid).maybeSingle(),
   ]);
   if (secErr) throw secErr;
-  if (sec) return { role: "secretary", name: sec.full_name, email: sec.email, avatarUrl: await avatarPromise };
+  if (sec) return { role: "secretary", name: sec.full_name, staffId: sec.staff_id, avatarUrl: await avatarPromise };
   if (stuErr) throw stuErr;
   if (stu) {
     return {
       role: "student", studentId: stu.id, name: `${stu.first_name} ${stu.last_name}`,
-      email: stu.email, yearLevel: stu.year_level, avatarUrl: await avatarPromise,
+      yearLevel: stu.year_level, avatarUrl: await avatarPromise,
     };
   }
   return null;

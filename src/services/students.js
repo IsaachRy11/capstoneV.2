@@ -79,9 +79,9 @@ export const saveGrades = (changes) =>
   );
 
 // Creates the student only (public.add_student). Enrolling happens per subject on Section allocations > Add students.
-export async function createStudent({ id, first_name, last_name, email, programId, year_level, admission_type }) {
+export async function createStudent({ id, first_name, last_name, programId, year_level, admission_type }) {
   const params = {
-    p_id: id, p_first_name: first_name, p_last_name: last_name, p_email: email,
+    p_id: id, p_first_name: first_name, p_last_name: last_name,
     p_program_id: programId, p_year_level: year_level, p_admission_type: admission_type,
   };
   await unwrap(supabase.rpc("add_student", params));

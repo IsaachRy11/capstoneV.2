@@ -97,7 +97,7 @@ function SecretaryName() {
 }
 
 export default function Profile() {
-  const { user, email } = useAuth();
+  const { user } = useAuth();
   const isStudent = user.role === "student";
   const { data: student, error, loading, reload } = useAsync(
     () => (isStudent ? getStudent(user.studentId) : Promise.resolve(null)),
@@ -121,10 +121,7 @@ export default function Profile() {
       <section className="card overflow-hidden">
         <SectionHeader title="Account" />
         <dl>
-          <Row label="Sign-in email">
-            {email}
-            {!isStudent && <p className="mt-1 text-[13px] text-ink-3">Changing it needs email confirmation, which isn't set up yet. See the note in supabase/README.md.</p>}
-          </Row>
+          {!isStudent && <Row label="Staff ID"><span className="font-mono">{user.staffId || "Not set"}</span></Row>}
           {isStudent && student && (
             <>
               <Row label="Student ID"><span className="font-mono">{student.id}</span></Row>
