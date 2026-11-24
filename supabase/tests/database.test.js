@@ -55,10 +55,12 @@ beforeAll(async () => {
   await db.exec(`grant select, insert, update, delete on all tables in schema public to anon, authenticated;
                  grant usage on all sequences in schema public to authenticated;`);
   await db.exec(readFileSync(join(root, "seed.sql"), "utf8"));
-  await db.exec(`insert into auth.users (email) values ('ccs-001@staff.ccs-monitor.test'), ('demo.student@ccs-monitor.test')`);
+  // Sign-in accounts are linked by ID: staff ID CCS-001, and the first 2nd-year BSIT student as the demo student.
+  const demo = (await db.query(`select s.id from students s join programs p on p.id = s.program_id where p.code = 'BSIT' and s.year_level = 2 order by s.id limit 1`)).rows[0].id;
+  await db.exec(`insert into auth.users (email) values ('ccs-001@staff.ccs-monitor.test'), ('${demo.toLowerCase()}@students.ccs-monitor.test')`);
   const users = (await db.query(`select email, id from auth.users`)).rows;
   SEC = users.find((u) => u.email.startsWith("ccs-001")).id;
-  STU = users.find((u) => u.email.startsWith("demo.student")).id;
+  STU = users.find((u) => u.email.endsWith("@students.ccs-monitor.test")).id;
 }, 120_000);
 
 describe("seed data", () => {
@@ -239,14 +241,14 @@ describe("security rules (RLS)", () => {
 describe("add_student (one transaction)", () => {
   it("with a section: creates the student, registers them and enrolls them in every class of the section", async () => {
     const s = await one(`select id from sections where name = 'BSIT 1-S' and school_term_id = (select id from school_terms where is_current)`);
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student','test.student@x.test',${bsit},1::smallint,'new',${s.id}) sec`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Test','Student',${bsit},1::smallint,'new',${s.id}) sec`);
     expect(r.rows[0].sec).toBe("BSIT 1-S");
     const made = await one(`select (select count(*)::int from registrations where student_id='2026-9099') r, (select count(*)::int from enrollments where student_id='2026-9099') e`);
     expect(made).toEqual({ r: 1, e: 9 }); // BSIT 1st year, 1st semester: 9 subjects (AY 2024-2025 checklist)
   });
 
   it("without a section: creates only the student, enrolled nowhere", async () => {
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9079','Plain','Student','plain.student@x.test',${bsit},1::smallint,'new') sec`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9079','Plain','Student',${bsit},1::smallint,'new') sec`);
     expect(r.error).toBeUndefined();
     expect(r.rows[0].sec).toBeNull();
     const made = await one(`select (select count(*)::int from students where id='2026-9079') s, (select count(*)::int from registrations where student_id='2026-9079') r, (select count(*)::int from enrollments where student_id='2026-9079') e`);
@@ -254,27 +256,27 @@ describe("add_student (one transaction)", () => {
   });
 
   it("leaves nothing behind when it fails", async () => {
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9098','Dup','Email','test.student@x.test',${bsit},1::smallint,'new')`);
-    expect(r.error).toBeTruthy();
-    expect(await one(`select count(*)::int n from students where id='2026-9098'`)).toEqual({ n: 0 });
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9099','Dup','Id',${bsit},1::smallint,'new',(select id from sections where name = 'BSIT 1-T' and school_term_id = (select id from school_terms where is_current)))`);
+    expect(r.error).toBeTruthy(); // that student ID already exists
+    expect(await one(`select count(*)::int n from registrations where student_id='2026-9099'`)).toEqual({ n: 1 });
   });
 
   it("puts the student in the section you choose", async () => {
     const t = await one(`select id from sections where name = 'BSIT 1-T' and school_term_id = (select id from school_terms where is_current)`);
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9096','Pick','Section','pick.section@x.test',${bsit},1::smallint,'new',${t.id}) sec`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9096','Pick','Section',${bsit},1::smallint,'new',${t.id}) sec`);
     expect(r.error).toBeUndefined();
     expect(r.rows[0].sec).toBe("BSIT 1-T");
   });
 
   it("refuses a section from another program or year, and adds nobody", async () => {
     const other = await one(`select id from sections where name = 'BSCS 2-S' and school_term_id = (select id from school_terms where is_current)`);
-    const r = await as("authenticated", SEC, `select public.add_student('2026-9095','Wrong','Section','wrong.section@x.test',${bsit},1::smallint,'new',${other.id})`);
+    const r = await as("authenticated", SEC, `select public.add_student('2026-9095','Wrong','Section',${bsit},1::smallint,'new',${other.id})`);
     expect(r.error).toMatch(/isn't open for this program and year/);
     expect(await one(`select count(*)::int n from students where id='2026-9095'`)).toEqual({ n: 0 });
   });
 
   it("refuses students", async () => {
-    expect((await as("authenticated", STU, `select public.add_student('2026-9097','X','Y','x@y.test',${bsit},1::smallint,'new')`)).error).toBeTruthy();
+    expect((await as("authenticated", STU, `select public.add_student('2026-9097','X','Y',${bsit},1::smallint,'new')`)).error).toBeTruthy();
   });
 });
 
@@ -413,8 +415,8 @@ describe("state machine rules", () => {
     (await db.query(`select id, student_id from enrollments where offering_id = ${offeringId} order by id`)).rows.map((r) => ({ id: Number(r.id), student_id: r.student_id }));
   const save = (id, patch) => asSec(`select public.save_grades('[${JSON.stringify({ enrollment_id: id, ...patch })}]'::jsonb)`);
   const newStudent = (id, status = "active") => db.exec(`
-    insert into students (id, first_name, last_name, email, program_id, curriculum_id, year_level, status)
-    select '${id}', 'Test', 'Student', 'test${id}@x.test', p.id, c.id, 3, '${status}'
+    insert into students (id, first_name, last_name, program_id, curriculum_id, year_level, status)
+    select '${id}', 'Test', 'Student', p.id, c.id, 3, '${status}'
     from programs p join curricula c on c.program_id = p.id and c.is_active where p.code = 'BSIT'`);
 
   it("re-checks seats when a dropped student is brought back", async () => {
@@ -789,5 +791,17 @@ describe("starting a term and enrolling sections", () => {
     expect(limited.students[0].to_add).toBe(1);
     expect(limited.students[0].subjects.some((x) => x.state === "over_limit")).toBe(true);
     expect((await asSec(`update students set max_units = 0 where id = '${who.student_id}'`)).error).toMatch(/max_units/);
+  });
+});
+
+describe("sign-in accounts are linked by ID, not by email", () => {
+  it("links the secretary by staff ID and a student by student ID", async () => {
+    expect((await one(`select staff_id, auth_user_id is not null linked from secretaries where staff_id = 'CCS-001'`))).toEqual({ staff_id: "CCS-001", linked: true });
+    expect((await one(`select count(*)::int n from students where auth_user_id is not null`)).n).toBe(1);
+  });
+  it("keeps no email on students or secretaries", async () => {
+    const cols = (await db.query(`select table_name from information_schema.columns
+                                  where table_schema = 'public' and column_name = 'email' and table_name in ('students', 'secretaries')`)).rows;
+    expect(cols).toEqual([]);
   });
 });

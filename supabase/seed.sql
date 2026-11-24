@@ -53,9 +53,9 @@ on conflict do nothing;
 -- The gym hosts several PATHFIT classes at once, so it's exempt from the room double-booking rule.
 update public.rooms set is_shared = true where name = 'Gymnasium';
 
--- ─── Demo login (link it by creating an Auth user with this email) ────────
-insert into public.secretaries (full_name, email) values
-  ('Demo Secretary', 'ccs-001@staff.ccs-monitor.test')
+-- ─── Demo secretary: signs in with staff ID CCS-001 (the Auth account is linked by that ID) ────────
+insert into public.secretaries (full_name, staff_id) values
+  ('Demo Secretary', 'CCS-001')
 on conflict do nothing;
 
 -- ─── Students, sections, registrations, offerings, schedules, grades ──────
@@ -148,9 +148,8 @@ begin
           force_state := case k when 2 then 'failed' when 5 then 'incomplete' when 8 then 'dropped' else null end;
           forced_done := false;
 
-          insert into public.students (id, first_name, last_name, email, program_id, curriculum_id, year_level, admission_type)
+          insert into public.students (id, first_name, last_name, program_id, curriculum_id, year_level, admission_type)
           values (sid, fname, lname,
-                  lower(replace(fname, ' ', '') || '.' || replace(replace(lname, ' ', ''), 'ñ', 'n')) || '.' || replace(sid, '-', '') || '@student.ccs-monitor.test',
                   prog.id, cur_curriculum, y,
                   adm);
 
@@ -287,8 +286,4 @@ begin
   end loop;
 end $$;
 
--- Demo student login: the first 2nd-year BSIT student
-update public.students
-set email = 'demo.student@ccs-monitor.test'
-where id = (select s.id from public.students s join public.programs p on p.id = s.program_id
-            where p.code = 'BSIT' and s.year_level = 2 order by s.id limit 1);
+-- Demo student login: students sign in with their student ID; no email is stored.

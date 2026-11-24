@@ -1,7 +1,7 @@
-// Gives a secretary a staff ID sign-in (for example CCS-001) instead of an email.
-// Run on your own PC only:  npm run accounts:staff -- CCS-001 demo.secretary@ccs-monitor.test
+// Sets or changes a secretary's staff ID sign-in (for example CCS-001).
+// Run on your own PC only:  npm run accounts:staff -- CCS-002 CCS-001
 //   1st argument: the new staff ID (letters, a dash, 3+ digits)
-//   2nd argument: the secretary's current email (as stored in the secretaries table)
+//   2nd argument: the secretary's current staff ID (leave it out when there is only one secretary)
 //
 // Needs SUPABASE_SERVICE_ROLE_KEY in .env.local (never commit it). The password is not changed.
 // The sign-in address becomes ccs-001@staff.ccs-monitor.test, so the secretary signs in with the ID.
@@ -17,9 +17,9 @@ function readEnv(file) {
   );
 }
 
-const [staffId, currentEmail] = process.argv.slice(2);
-if (!isStaffId(staffId ?? "") || !currentEmail) {
-  console.error("Usage: npm run accounts:staff -- CCS-001 current.email@example.com");
+const [staffId, currentId] = process.argv.slice(2);
+if (!isStaffId(staffId ?? "")) {
+  console.error("Usage: npm run accounts:staff -- NEW-ID [CURRENT-ID]   e.g. CCS-002 CCS-001");
   process.exit(1);
 }
 const env = { ...readEnv(".env"), ...readEnv(".env.local") };
@@ -30,12 +30,15 @@ if (!env.VITE_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
 const admin = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const target = loginEmail(staffId);
 
-const { data: sec, error } = await admin.from("secretaries").select("id, auth_user_id, email").ilike("email", currentEmail.trim()).maybeSingle();
-if (error || !sec) { console.error("No secretary with that email."); process.exit(1); }
+let q = admin.from("secretaries").select("id, auth_user_id, staff_id");
+if (currentId) q = q.ilike("staff_id", currentId.trim());
+const { data: rows, error } = await q;
+if (error || !rows || rows.length !== 1) { console.error(currentId ? "No secretary with that staff ID." : "More than one secretary: give the current staff ID too."); process.exit(1); }
+const sec = rows[0];
 if (!sec.auth_user_id) { console.error("That secretary has no login yet. Create it in Supabase → Authentication first."); process.exit(1); }
 
 const { error: e1 } = await admin.auth.admin.updateUserById(sec.auth_user_id, { email: target, email_confirm: true });
 if (e1) { console.error(e1.message); process.exit(1); }
-const { error: e2 } = await admin.from("secretaries").update({ email: target }).eq("id", sec.id);
+const { error: e2 } = await admin.from("secretaries").update({ staff_id: staffId.toUpperCase() }).eq("id", sec.id);
 if (e2) { console.error(e2.message); process.exit(1); }
 console.log(`Done. Sign in with staff ID ${staffId.toUpperCase()} and the same password as before.`);

@@ -121,7 +121,7 @@ export default function Login() {
 
           {status === "unlinked" && (
             <div role="alert" className="flex flex-col items-start gap-2 rounded-lg px-4 py-3 text-[14px] tone-warn">
-              This account isn't linked to a student or secretary record yet. Ask the CCS Secretary's Office to add your email.
+              This account isn't linked to a student or secretary record yet. Ask the CCS Secretary's Office to set up your sign-in.
               <button className="font-semibold underline" onClick={signOut}>Sign in with another account</button>
             </div>
           )}

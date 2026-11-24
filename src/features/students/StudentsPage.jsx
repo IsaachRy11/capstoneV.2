@@ -95,7 +95,7 @@ export default function Students() {
     { label: "Student ID", value: (s) => s.id }, { label: "Last name", value: (s) => s.last_name },
     { label: "First name", value: (s) => s.first_name }, { label: "Program", value: (s) => s.program_code },
     { label: "Year", value: (s) => s.year_level }, { label: "Section", value: (s) => s.section_name },
-    { label: "Student type", value: (s) => studentTypeLabel(s) }, { label: "Status", value: (s) => studentStatusLabel(s) }, { label: "Email", value: (s) => s.email },
+    { label: "Student type", value: (s) => studentTypeLabel(s) }, { label: "Status", value: (s) => studentStatusLabel(s) },
   ]));
 
   return (
