@@ -41,6 +41,8 @@ export default function Progress() {
 
   if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} backTo="/progress" backLabel="Back to this semester" />;
 
+  const severe = progress.back.some((x) => x.backReason === "Failed"); // red if anything failed, else amber
+
   return (
     <>
       <PageHeader title="Subject tracker: this semester" />
@@ -59,18 +61,18 @@ export default function Progress() {
           <Tile to="/progress?view=enrolled" label="Subjects" value={taking.length} sub="you're taking" />
           <Tile label="Load" value={units} sub="units this semester" />
           <Tile label="Opens next" value={opening.size} sub={opening.size === 1 ? "subject after you pass" : "subjects after you pass"} />
-          <Tile to="/progress?view=failed" label="To clear" value={progress.back.length} sub={progress.back.length ? "failed, INC or dropped" : "nothing left over"} tone={progress.back.length ? "text-bad" : undefined} />
+          <Tile to="/progress?view=failed" label="To resolve" value={progress.back.length} sub={progress.back.length ? "failed, NC or dropped" : "nothing left over"} tone={progress.back.length ? (severe ? "text-bad" : "text-warn") : undefined} />
         </div>
       </section>
 
       {progress.back.length > 0 ? (
-        <section className="card flex items-start gap-3.5 px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-          <AlertTriangle size={22} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
+        <section className="card flex items-start gap-3.5 px-5 py-4" style={{ background: `var(--${severe ? "bad" : "warn"}-bg)`, borderColor: `var(--${severe ? "bad" : "warn"})` }}>
+          <AlertTriangle size={22} className={`mt-0.5 shrink-0 ${severe ? "text-bad" : "text-warn"}`} aria-hidden="true" />
           <div className="min-w-0">
-            <h2 className="text-[15px] font-bold text-bad">{progress.back.length === 1 ? "1 subject to clear" : `${progress.back.length} subjects to clear`}</h2>
+            <h2 className={`text-[15px] font-bold ${severe ? "text-bad" : "text-warn"}`}>{progress.back.length === 1 ? "1 subject to resolve" : `${progress.back.length} subjects to resolve`}</h2>
             <ul className="mt-1 text-[14px] text-ink-2">
               {progress.back.map((s) => (
-                <li key={s.id}><span className="font-mono">{s.code}</span> {s.title} · {s.backReason}{retakeNext.some((x) => x.id === s.id) ? " · offered again next semester" : ""}</li>
+                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title}{retakeNext.some((x) => x.id === s.id) ? " · offered again next semester" : ""}</li>
               ))}
             </ul>
             <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS Secretary's Office about retaking them.</p>
@@ -80,7 +82,7 @@ export default function Progress() {
         <section className="card flex items-center gap-3.5 px-5 py-4" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
           <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
           <div>
-            <h2 className="text-[15px] font-bold text-ok">Nothing to clear</h2>
+            <h2 className="text-[15px] font-bold text-ok">Nothing to resolve</h2>
             <p className="text-[14px] text-ink-2">Every subject you've finished is passed.</p>
           </div>
         </section>
