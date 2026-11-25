@@ -67,9 +67,9 @@ export default function Students() {
     return data.students.filter((s) =>
       (programFilter === "all" || s.program_code === programFilter) &&
       (status === "all" || !!other || studentStatusKey(s) === status) &&
-      (type === "all" || studentTypeKey(s) === type) &&
+      (type === "all" || listKey === "graduated" || studentTypeKey(s) === type) &&
       (!needle || `${s.full_name} ${s.id} ${s.section_name || ""}`.toLowerCase().includes(needle)));
-  }, [data, q, programFilter, status, type, other]);
+  }, [data, q, programFilter, status, type, other, listKey]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -83,6 +83,7 @@ export default function Students() {
   const pages = Math.ceil(rows.length / pageSize);
   // Only 1st year students can be Freshmen, so a 2nd to 4th year tab doesn't offer it.
   const typeOptions = Object.entries(STUDENT_TYPE).filter(([k]) => k !== "freshman" || other || searching || year === "1");
+  const hideType = listKey === "graduated"; // for graduates the type no longer matters in the list
   const filtered = q.trim() !== "" || programFilter !== "all" || type !== "all" || status !== "all";
   const clearFilters = () => {
     setQ(""); setType("all"); setStatus("all"); setPage(0);
@@ -142,16 +143,20 @@ export default function Students() {
             <option value="all">Program</option>
             {data.programs.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
           </select>
-          <label htmlFor="stype" className="sr-only">Student type</label>
-          <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
-            <option value="all">Student type</option>
-            {typeOptions.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-          </select>
-          <label htmlFor="stat" className="sr-only">Status</label>
-          <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-            <option value="all">Status</option>
-            {other ? <option value={listKey}>{other.title}</option> : <><option value="regular">Regular</option><option value="irregular">Irregular</option></>}
-          </select>
+          {!hideType && <>
+            <label htmlFor="stype" className="sr-only">Student type</label>
+            <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
+              <option value="all">Student type</option>
+              {typeOptions.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </>}
+          {!other && <>
+            <label htmlFor="stat" className="sr-only">Status</label>
+            <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
+              <option value="all">Status</option>
+              <option value="regular">Regular</option><option value="irregular">Irregular</option>
+            </select>
+          </>}
           <button type="button" className="btn btn-secondary flex-none" onClick={clearFilters} disabled={!filtered} aria-label="Clear search and filters">
             <X size={16} aria-hidden="true" />Clear
           </button>
@@ -168,7 +173,7 @@ export default function Students() {
                   <span className="block truncate text-[12px] text-ink-3"><span className="font-mono">{s.id}</span> · {s.program_code} {s.section_name ? s.section_name.replace(/^\S+\s+/, "") : ""}</span>
                   <span className="mt-1.5 flex flex-wrap gap-1.5">
                     <StudentStatusBadge student={s} />
-                    <span className="badge tone-neutral">{studentTypeLabel(s)}</span>
+                    {!hideType && <span className="badge tone-neutral">{studentTypeLabel(s)}</span>}
                   </span>
                 </span>
                 <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden="true" />
@@ -192,7 +197,7 @@ export default function Students() {
                   <td className="hidden sm:table-cell">{s.program_code}</td>
                   <td className="hidden whitespace-nowrap md:table-cell">{s.year_level}</td>
                   <td className="hidden whitespace-nowrap md:table-cell">{s.section_name ? s.section_name.replace(/^\S+\s+/, "") : "—"}</td>
-                  <td className="hidden whitespace-nowrap text-[13px] text-ink-2 lg:table-cell">{studentTypeLabel(s)}</td>
+                  <td className="hidden whitespace-nowrap text-[13px] text-ink-2 lg:table-cell">{hideType ? "—" : studentTypeLabel(s)}</td>
                   <td><StudentStatusBadge student={s} /></td>
                   <td className="hidden text-right sm:table-cell">
                     <div className="flex justify-end gap-2">

@@ -118,7 +118,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
             </span>
             <span className="block text-[13px] font-normal text-ink-3">
               SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units{term.semester === 3 ? "" : ` · ${term.section_name}`}
-              {" · "}Term average <span className="font-mono font-semibold text-ink-2" title={termAvg ? "Final grades weighted by units" : "Shown once every subject has a final grade"}>{termAvg || "—"}</span>
+              {" · "}Term average <span className="font-mono font-semibold text-ink-2" title={termAvg ? "Final grades weighted by units; NSTP and PATHFIT are not counted" : "Shown once every subject has a final grade"}>{termAvg || "—"}</span>
             </span>
           </span>
         </button>
@@ -165,7 +165,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
                         {/* The result shows live: it changes as the final grade or the NC / Drop buttons change. */}
                         <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
                           <span className="inline-flex min-w-[128px]"><GradeStatus status={outcome(d)} midterm={d.midterm} /></span>
-                          <button type="button" className="toggle-btn" aria-pressed={d.status === "incomplete"} aria-label={`Mark ${r.code} as incomplete`} onClick={() => toggle(r, "incomplete")}>NC</button>
+                          <button type="button" className="toggle-btn" aria-pressed={d.status === "incomplete"} aria-label={`Mark ${r.code} as NC (no credit)`} onClick={() => toggle(r, "incomplete")}>NC</button>
                           <button type="button" className="toggle-btn" aria-pressed={d.status === "dropped"} aria-label={`Mark ${r.code} as dropped`} onClick={() => toggle(r, "dropped")}>Drop</button>
                         </div>
                       </td>

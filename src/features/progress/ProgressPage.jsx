@@ -2,7 +2,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { sumUnits, termLabel, yearSemesterLabel } from "../../lib/format";
-import { prerequisiteText } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
@@ -75,7 +74,7 @@ export default function Progress() {
                 <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title}{retakeNext.some((x) => x.id === s.id) ? " · offered again next semester" : ""}</li>
               ))}
             </ul>
-            <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS Secretary's Office about retaking them.</p>
+            <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS Secretary's Office about resolving or retaking them.</p>
           </div>
         </section>
       ) : (
@@ -100,7 +99,7 @@ export default function Progress() {
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
-                  <tr><th className="w-[128px]">Course No.</th><th>Description</th><th className="w-px !text-center">Units</th><th className="hidden md:table-cell">Prerequisite</th><th className="hidden lg:table-cell">Passing opens</th></tr>
+                  <tr><th className="w-[128px]">Course No.</th><th>Description</th><th className="w-px !text-center">Units</th><th className="hidden lg:table-cell">Required for</th></tr>
                 </thead>
                 <tbody>
                   {taking.map((s) => (
@@ -108,11 +107,9 @@ export default function Progress() {
                       <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                       <td className="min-w-0 align-top font-medium">
                         {s.title}
-                        {prerequisiteText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prerequisiteText(s)}</span>}
-                        <span className="mt-0.5 block text-[12px] font-normal text-ink-3 lg:hidden">{s.unlocks.length ? `Passing opens ${s.unlocks.map((o) => o.code).join(", ")}` : "No other subject depends on this one."}</span>
+                        <span className="mt-0.5 block text-[12px] font-normal text-ink-3 lg:hidden">{s.unlocks.length ? `Required for ${s.unlocks.map((o) => o.code).join(", ")}` : "Not required for another subject."}</span>
                       </td>
                       <td className="num align-top">{Number(s.units)}</td>
-                      <td className="hidden align-top text-[13px] leading-snug text-ink-2 md:table-cell">{prerequisiteText(s) || <span className="text-ink-3">—</span>}</td>
                       <td className="hidden align-top text-[13px] lg:table-cell">
                         {s.unlocks.length ? <span className="font-mono text-[12px] text-accent">{s.unlocks.map((o) => o.code).join(", ")}</span> : <span className="text-ink-3">None</span>}
                       </td>
@@ -120,7 +117,7 @@ export default function Progress() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr><td colSpan={2}>Total · {taking.length} {taking.length === 1 ? "subject" : "subjects"}</td><td className="num">{units}</td><td className="hidden md:table-cell" /><td className="hidden lg:table-cell" /></tr>
+                  <tr><td colSpan={2}>Total · {taking.length} {taking.length === 1 ? "subject" : "subjects"}</td><td className="num">{units}</td><td className="hidden lg:table-cell" /></tr>
                 </tfoot>
               </table>
             </div>

@@ -146,6 +146,11 @@ describe("term average and academic record wording", () => {
     expect(termAverage([row(1.5, 3), row(null, 3, "incomplete")])).toBeNull();
     expect(termAverage([])).toBeNull();
   });
+  it("leaves NSTP and PATHFIT out, even when one has no final grade", () => {
+    const named = (code, final_grade, units) => ({ code, final_grade, units, status: final_grade === null ? "incomplete" : "passed" });
+    expect(termAverage([named("IT 101", 1.5, 3), named("PATHFIT 1", 3, 2), named("NSTP 11", null, 3)])).toBe("1.50");
+    expect(termAverage([named("PATHFIT 1", 1, 2)])).toBeNull();
+  });
   it("leaves dropped subjects out", () => {
     expect(termAverage([row(1.5, 3), row(null, 3, "dropped")])).toBe("1.50");
   });

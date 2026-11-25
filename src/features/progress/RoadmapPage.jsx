@@ -236,14 +236,17 @@ export default function Roadmap() {
 
       <section aria-labelledby="ahead-title" className="flex flex-col gap-3">
         <h2 id="ahead-title" className="flex items-center gap-2 text-[19px] font-bold"><GraduationCap size={18} className="text-accent" aria-hidden="true" />Ahead</h2>
-        {progress.back.length > 0 && (
-          <div className="card px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-            <h3 className="text-[15px] font-bold text-bad">Carry-over: {count(progress.back.length, "subject", "subjects")} to retake</h3>
-            <ul className="mt-1 text-[14px] text-ink-2">
-              {progress.back.map((s) => <li key={s.id}><span className="font-mono">{s.code}</span> {s.title} · {s.backReason}</li>)}
-            </ul>
-          </div>
-        )}
+        {progress.back.length > 0 && (() => {
+          const tone = progress.back.some((x) => x.backReason === "Failed") ? "bad" : "warn"; // red if anything failed, else amber
+          return (
+            <div className="card px-5 py-4" style={{ background: `var(--${tone}-bg)`, borderColor: `var(--${tone})` }}>
+              <h3 className={`text-[15px] font-bold ${tone === "bad" ? "text-bad" : "text-warn"}`}>Carry-over: {count(progress.back.length, "subject", "subjects")} to resolve or retake</h3>
+              <ul className="mt-1 text-[14px] text-ink-2">
+                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title}</li>)}
+              </ul>
+            </div>
+          );
+        })()}
         {ahead.length === 0 ? (
           <div className="card"><EmptyState>This is your last semester. Resolve any pending subjects to finish on time.</EmptyState></div>
         ) : (

@@ -356,6 +356,13 @@
 /* Printing: only the information, small and tight, so a record, timetable or dashboard fits one A4 page and a
    curriculum two. Colors stay so grades read the same on a color printer; words carry the meaning in black and white. */
 @page { size: A4; margin: 7mm; }
+/* A page with a weekly timetable prints sideways, so the whole week fits like on screen. */
+@page week { size: A4 landscape; margin: 7mm; }
+@media print {
+  main:has(.week-grid) { page: week; }
+  .week-grid { overflow: visible !important; }
+  .week-grid, .week-grid * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 @media print {
   .no-print, .backdrop { display: none !important; }
   html, body { background: #fff !important; }

@@ -33,7 +33,7 @@ export const ADMISSION_FOR_TYPE = { freshman: "new", continuing: "returnee", tra
 
 // Student STATUS. students.status is what the secretary sets (only "active" students can be enrolled in classes);
 // while active, the status shown is Regular or Irregular, which the database works out from the grades.
-export const STUDENT_STATUS = { active: "Active (regular or irregular)", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS = { active: "Active", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
 export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
 export const STUDENT_STATUS_TONE = { regular: "ok", irregular: "warn", graduated: "info", dropped: "neutral", shifted_out: "neutral", inactive: "neutral" };
 export const studentStatusKey = (s) => (s.status && s.status !== "active" ? s.status : s.standing === "irregular" ? "irregular" : "regular");
@@ -65,10 +65,12 @@ export const gradeStatusLabel = (status, midterm) =>
   status !== "enrolled" ? STATUS_LABEL[status] || status
   : midterm === null || midterm === undefined || midterm === "" ? "No grades yet" : "No final grade yet";
 
-// Term average, weighted by units: sum(final grade x units) / sum(units). Dropped subjects get no grade and are
-// left out. It is worked out only when every other subject has a final grade; otherwise null (shown as a dash).
+// Term average, weighted by units: sum(final grade x units) / sum(units). Left out: dropped subjects (no grade) and
+// NSTP and PATHFIT (SJC does not count them). It is worked out only when every counted subject has a final grade;
+// otherwise null (shown as a dash).
+const NOT_AVERAGED = /^\s*(NSTP|PATHFIT)/i;
 export function termAverage(rows) {
-  const counted = rows.filter((r) => r.status !== "dropped");
+  const counted = rows.filter((r) => r.status !== "dropped" && !NOT_AVERAGED.test(r.code || ""));
   if (!counted.length || counted.some((r) => r.final_grade === null || r.final_grade === undefined)) return null;
   const units = sumUnits(counted);
   return units ? (counted.reduce((t, r) => t + Number(r.final_grade) * Number(r.units), 0) / units).toFixed(2) : null;

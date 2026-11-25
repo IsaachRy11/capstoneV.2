@@ -119,6 +119,7 @@ export default function StudentRecord() {
                     {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{studentStatusLabel(student)}</span>
+                  {student.status === "active" && <span className="no-print mt-1 hidden text-[12px] font-normal text-ink-3 lg:block">Now {studentStatusLabel(student)}, set automatically from grades.</span>}
                   {statusError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={statusError} /></div>}
                 </>
               ) : studentStatusLabel(student)}
