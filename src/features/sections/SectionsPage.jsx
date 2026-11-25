@@ -13,11 +13,14 @@ import EnrollBox from "./EnrollBox";
 import SubjectCapacityModal from "./SubjectCapacityModal";
 import SummerSubjectModal from "./SummerSubjectModal";
 
+const ROSTER_PREVIEW = 8; // long class lists start short
+
 export default function Sections() {
   const picker = useSectionPicker();
   const { program, year, summer, section } = picker;
   const [offeringId, setOfferingId] = useState(null);
-  const [editingSeats, setEditingSeats] = useState(false); // one subject's own seats
+  const [editingSeats, setEditingSeats] = useState(false);
+  const [showAll, setShowAll] = useState(null); // the subject whose whole class list is open // one subject's own seats
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [addingSubject, setAddingSubject] = useState(false); // summer: open another subject for retakes
   const [actionError, setActionError] = useState("");
@@ -135,9 +138,9 @@ export default function Sections() {
               {roster.loading ? <LoadingState variant="list" /> : roster.error ? <div className="p-5"><ErrorState error={roster.error} onRetry={roster.reload} /></div> : (
                 <div className="overflow-x-auto">
                   <table className="data-table">
-                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Type / status</th><th className="hidden lg:table-cell"><span className="sr-only">Remove</span></th></tr></thead>
+                    <thead><tr><th>Student</th><th className="hidden sm:table-cell">Student ID</th><th>Status</th><th className="hidden sm:table-cell">Student type</th><th className="hidden lg:table-cell"><span className="sr-only">Remove</span></th></tr></thead>
                     <tbody>
-                      {roster.data.map((r) => (
+                      {(showAll === offering.id ? roster.data : roster.data.slice(0, ROSTER_PREVIEW)).map((r) => (
                         <tr key={r.id}>
                           <td>
                             <div className="flex items-center gap-2.5">
@@ -149,15 +152,21 @@ export default function Sections() {
                             </div>
                           </td>
                           <td className="hidden whitespace-nowrap font-mono text-[13px] text-ink-2 sm:table-cell">{r.student_id}</td>
-                          <td>
-                            <StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} />
-                            <span className="mt-0.5 block text-[12px] text-ink-3">{studentTypeLabel(r)}</span>
-                          </td>
+                          <td><StudentStatusBadge student={{ status: r.student_status, standing: r.standing }} /></td>
+                          <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{studentTypeLabel(r)}</td>
                           <td className="hidden text-right lg:table-cell"><button className="icon-btn icon-btn-danger" onClick={() => setConfirmRemove(r)} aria-label={`Remove ${r.name} from this subject`}><Trash2 size={16} /></button></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {roster.data.length > ROSTER_PREVIEW && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
+                      <span>Showing {showAll === offering.id ? roster.data.length : ROSTER_PREVIEW} of {roster.data.length} students</span>
+                      <button type="button" className="btn btn-secondary btn-sm" aria-expanded={showAll === offering.id} onClick={() => setShowAll((v) => (v === offering.id ? null : offering.id))}>
+                        {showAll === offering.id ? "Show fewer" : `Show all ${roster.data.length}`}
+                      </button>
+                    </div>
+                  )}
                   {roster.data.length === 0 && (
                     <EmptyState>
                       No students in this subject yet.

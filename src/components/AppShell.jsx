@@ -10,6 +10,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 import Backdrop from "./Backdrop";
 import ChromeArt from "./ChromeArt";
+import GlobalBack from "./GlobalBack";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -205,6 +206,7 @@ export default function AppShell() {
         <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:min-h-16 lg:py-3 isolate">
           <ChromeArt variant="bar" />
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
+          <GlobalBack />
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
             <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
@@ -249,7 +251,7 @@ export default function AppShell() {
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
           </div>
           <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
-            <span>Questions about your records? Visit the CCS Secretary's Office.</span>
+            {user.role !== "secretary" && <span>Questions about your records? Visit the CCS Secretary's Office.</span>}
             <span>© {new Date().getFullYear()} CCS Subject Monitoring System · Capstone project</span>
           </div>
         </div>

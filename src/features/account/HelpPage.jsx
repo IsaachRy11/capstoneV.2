@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, CircleHelp, Building2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
+import { GradeLegend, PageHeader } from "../../components/ui";
 
 // Short answers to the questions people actually have about this system. Facts only; for anything
 // about a real record, the answer is the CCS Secretary's Office.
@@ -18,7 +18,7 @@ const COMMON = [
     q: "What do the grade colors mean?",
     a: (
       <div className="flex flex-col gap-3">
-        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. NC and Dropped are statuses, not grades.</span>
+        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. NC (no credit) can still be resolved. NC and Dropped are statuses, not grades.</span>
         <GradeLegend className="rounded-lg border border-line px-4 py-3" />
       </div>
     ),
@@ -94,7 +94,6 @@ export default function HelpPage() {
 
   return (
     <>
-      <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
         <div className="card-head flex items-center gap-2.5 px-5 py-3.5">
@@ -104,13 +103,15 @@ export default function HelpPage() {
         </div>
         {list.map((item) => <Question key={item.q} {...item} />)}
       </section>
-      <section className="card flex items-start gap-3.5 p-5">
-        <Building2 size={22} className="shrink-0 text-accent" aria-hidden="true" />
-        <div>
-          <h2 className="text-[15px] font-bold text-ink">Still need help?</h2>
-          <p className="mt-1 text-[14px] text-ink-2">Visit the CCS Secretary's Office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
-        </div>
-      </section>
+      {user.role !== "secretary" && (
+        <section className="card flex items-start gap-3.5 p-5">
+          <Building2 size={22} className="shrink-0 text-accent" aria-hidden="true" />
+          <div>
+            <h2 className="text-[15px] font-bold text-ink">Still need help?</h2>
+            <p className="mt-1 text-[14px] text-ink-2">Visit the CCS Secretary's Office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
+          </div>
+        </section>
+      )}
     </>
   );
 }

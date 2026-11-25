@@ -115,8 +115,7 @@ export default function SchoolYearPage() {
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"><next.icon size={22} aria-hidden="true" /></span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-[13px] font-semibold text-ink-3">Usually next</h2>
-              <p className="font-display text-[20px] font-bold text-ink">{next.title}</p>
+              <h2 className="font-display text-[20px] font-bold text-ink">{next.title}</h2>
               <p className="text-[14px] text-ink-2">{next.what}</p>
             </div>
             <button className="btn btn-primary" onClick={begin}>Start {next.title}<ArrowRight size={16} aria-hidden="true" /></button>

@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
-import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
+import { EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
 // Add students to ONE subject, the only enrolling page. Listed: this section's block (pre-ticked) and anyone who took the
@@ -36,6 +36,7 @@ export default function AddToSubject({ offeringId }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
+  const [showDone, setShowDone] = useState(false); // students already in the subject or who passed it
 
   useEffect(() => {
     let alive = true;
@@ -52,6 +53,10 @@ export default function AddToSubject({ offeringId }) {
   const chosen = rows.filter(isTicked);
   const allOn = chosen.length === ready.length && ready.length > 0;
   const tooMany = chosen.length > data.seats_left;
+  const isDone = (r) => r.state === "enrolled" || r.state === "passed";
+  const done = rows.filter(isDone);
+  // A student the secretary searched for is always shown, so the reason is visible.
+  const listed = showDone ? rows : rows.filter((r) => !isDone(r) || extra.some((x) => x.student_id === r.student_id));
   const setTick = (id, on) => setChoice((m) => new Map(m).set(id, on));
   const nameOf = (id) => rows.find((r) => r.student_id === id)?.full_name || id;
   const shown = q.trim().length >= 2 ? found.filter((s) => !rows.some((r) => r.student_id === s.id)) : [];
@@ -79,7 +84,6 @@ export default function AddToSubject({ offeringId }) {
 
   return (
     <>
-      <BackButton to="/sections" label="Section allocations" />
       <PageHeader title={`Add students to ${data.code}`} showTitle
         subtitle={`${data.title} · ${data.section} · ${Number(data.units)} units${term ? ` · ${termLabel(term)}` : ""}`} />
 
@@ -137,13 +141,15 @@ export default function AddToSubject({ offeringId }) {
           </div>
           <FormError error={err} />
 
-          {rows.length === 0 ? (
+          {listed.length === 0 && rows.length > 0 ? (
+            <EmptyState>Everyone listed is already in {data.code} or has passed it. Find another student with the search above.</EmptyState>
+          ) : rows.length === 0 ? (
             <EmptyState>Nobody is listed for {data.code}. Find a student with the search above.</EmptyState>
           ) : (
             <table className="data-table">
               <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Status in this subject</th></tr></thead>
               <tbody>
-                {rows.map((r) => {
+                {listed.map((r) => {
                   const st = STATE[r.state];
                   return (
                     <tr key={r.student_id}>
@@ -161,6 +167,12 @@ export default function AddToSubject({ offeringId }) {
                 })}
               </tbody>
             </table>
+          )}
+          {done.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
+              <span>{done.length} {done.length === 1 ? "student is" : "students are"} already in {data.code} or passed it</span>
+              <button type="button" className="btn btn-secondary btn-sm" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>{showDone ? "Show less" : "Show more"}</button>
+            </div>
           )}
         </section>
       </div>

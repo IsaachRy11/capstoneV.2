@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
-import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
+import { Avatar, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
 import { STUDENT_STATUS, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
@@ -72,7 +72,6 @@ export default function StudentRecord() {
     <>
       {isSecretary && (
         <div className="no-print -mb-2 flex flex-wrap items-center gap-x-4">
-        <BackButton fallback="/students" />
         <nav aria-label="Breadcrumb" className="hidden text-[14px] text-ink-3 sm:block">
           <Link to="/students" className="inline-flex min-h-10 items-center text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
         </nav>
@@ -119,6 +118,7 @@ export default function StudentRecord() {
                     {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{studentStatusLabel(student)}</span>
+                  {student.status === "active" && <span className="no-print mt-1 hidden text-[12px] font-normal text-ink-3 lg:block">Now {studentStatusLabel(student)}, set automatically from grades.</span>}
                   {statusError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={statusError} /></div>}
                 </>
               ) : studentStatusLabel(student)}

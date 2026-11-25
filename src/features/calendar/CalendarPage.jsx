@@ -7,7 +7,7 @@ import { semesterLabel, termLabel } from "../../lib/format";
 import { useAuth } from "../../context/AuthContext";
 import CalendarEventModal from "./CalendarEventModal";
 import { EVENT_KINDS, classStatus, edgeShort, edgeText, edgesOn, resumeText, termEdges, WEEKDAYS, addMonths, dateSpan, daysLeft, eventRanges, eventsInMonth, eventsOn, monthCells, sameDay, startOfMonth, termOn, termRanges, upcoming } from "../../lib/calendar";
-import { BackButton, EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 
 // Full-page academic calendar: the official school calendar (exams, holidays, breaks, activities) on top of the
 // term dates from school_terms, and today. Nothing here is invented: every entry comes from the database.
@@ -50,7 +50,6 @@ export default function CalendarPage() {
 
   return (
     <>
-      <BackButton fallback="/" />
       <PageHeader title="Calendar" subtitle={term ? `Current term: ${termLabel(term)}` : "Academic calendar"} />
 
       <div className="flex flex-wrap items-start gap-5">

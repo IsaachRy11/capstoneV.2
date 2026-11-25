@@ -366,6 +366,69 @@ describe("schedule editing rules", () => {
   });
 });
 
+// Every way a class time can collide, on an otherwise empty day (Sunday) so only these rows are in play.
+describe("class time clash scenarios", () => {
+  let a, b, other, room1, room2, shed;
+  const add = (off, from, to, room = null) => as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${off}, 7, '${from}', '${to}', ${room ?? "null"}) returning id`);
+  const clear = () => db.exec("delete from class_meetings where weekday = 7");
+  beforeAll(async () => {
+    const cur = "(select id from school_terms where is_current)";
+    // two subjects of one section, and one subject of a section with no students in common
+    const secA = await one(`select s.id from sections s where s.school_term_id = ${cur} order by s.id limit 1`);
+    [a, b] = (await db.query(`select id from class_offerings where section_id = ${secA.id} order by id limit 2`)).rows.map((r) => r.id);
+    other = (await one(`select o.id from class_offerings o join sections s on s.id = o.section_id where s.school_term_id = ${cur} and s.id <> ${secA.id}
+      and not exists (select 1 from enrollments e1 join enrollments e2 on e2.student_id = e1.student_id where e1.offering_id = o.id and e2.offering_id in (${a}, ${b})) order by o.id limit 1`)).id;
+    [room1, room2] = (await db.query("select id from rooms where not is_shared order by name limit 2")).rows.map((r) => r.id);
+    shed = (await one("select id from rooms where is_shared limit 1")).id;
+  });
+
+  it("refuses the same subject twice at the same time, even in a different room or with no room", async () => {
+    await clear();
+    expect((await add(a, "10:00", "11:00", room1)).error).toBeUndefined();
+    for (const [from, to, room] of [["10:00", "11:00", room2], ["10:00", "11:00", null], ["10:00", "11:00", room1], ["10:30", "11:30", room2], ["09:30", "10:30", null], ["10:15", "10:45", null], ["09:00", "12:00", null]]) {
+      expect((await add(a, from, to, room)).error).toMatch(/already has a class on Sunday/);
+    }
+  });
+  it("allows classes that only touch end to start", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(a, "11:00", "12:00", room1)).error).toBeUndefined();
+    expect((await add(b, "09:00", "10:00", room1)).error).toBeUndefined();
+  });
+  it("refuses two subjects of one section at the same time", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(b, "10:30", "11:30", room2)).error).toMatch(/already has/);
+  });
+  it("refuses a room that another section is using, and allows another room or no room", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(other, "10:00", "11:00", room1)).error).toMatch(/is already taken then by/);
+    expect((await add(other, "10:00", "11:00", room2)).error).toBeUndefined();
+  });
+  it("lets two sections share the PE shed", async () => {
+    await clear();
+    expect((await add(a, "13:00", "14:00", shed)).error).toBeUndefined();
+    expect((await add(other, "13:00", "14:00", shed)).error).toBeUndefined();
+  });
+  it("applies the same rules when a time is changed, without clashing with itself", async () => {
+    await clear();
+    const first = (await add(a, "10:00", "11:00", room1)).rows[0].id;
+    const second = (await add(a, "14:00", "15:00", room1)).rows[0].id;
+    expect((await as("authenticated", SEC, `update class_meetings set ends_at = '11:30' where id = ${first}`)).error).toBeUndefined();
+    expect((await as("authenticated", SEC, `update class_meetings set starts_at = '10:30', ends_at = '11:30' where id = ${second}`)).error).toMatch(/already has a class/);
+  });
+  it("keeps class times between 7:30 AM and 8:30 PM, ending after they start", async () => {
+    await clear();
+    expect((await add(a, "07:00", "08:00")).error).toMatch(/between 7:30 AM and 8:30 PM/);
+    expect((await add(a, "20:00", "21:00")).error).toMatch(/between 7:30 AM and 8:30 PM/);
+    expect((await add(a, "10:00", "10:00")).error).toBeTruthy();
+    expect((await add(a, "07:30", "08:30")).error).toBeUndefined();
+    expect((await add(a, "19:30", "20:30")).error).toBeUndefined();
+    await clear();
+  });
+});
+
 describe("curriculum editing", () => {
   it("won't delete a subject that is scheduled or graded", async () => {
     const used = await one(`select curriculum_subject_id id from class_offerings limit 1`);
