@@ -63,10 +63,10 @@ export default function Login() {
     <div className="relative isolate flex min-h-screen flex-wrap bg-ground">
       <Backdrop />
       {/* Brand panel (PC only): the college's own words, set large */}
-      <section className="relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
+      <section className="signin-panel relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
         {/* Gray photo mixed by brightness, so it takes the panel's own color in both themes. */}
-        <img src="/photos/signin-servers.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-55 mix-blend-luminosity" />
+        <img src="/photos/signin-servers.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-30 mix-blend-luminosity" />
         <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
           <span className="min-w-0">

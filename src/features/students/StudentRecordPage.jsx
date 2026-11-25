@@ -11,6 +11,7 @@ import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import ResolveNotice from "./ResolveNotice";
+import StatusChangeModal from "./StatusChangeModal";
 
 export default function StudentRecord() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function StudentRecord() {
   const isSecretary = user.role === "secretary";
   const [statusError, setStatusError] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  const [nextStatus, setNextStatus] = useState(null); // picked in the list, waiting for "yes"
   const [limitError, setLimitError] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
@@ -56,8 +58,10 @@ export default function StudentRecord() {
     setStatusBusy(true);
     try {
       await updateStudentStatus(student.id, status);
+      setNextStatus(null);
       reload();
     } catch (err) {
+      setNextStatus(null);
       setStatusError(err.message);
     } finally {
       setStatusBusy(false);
@@ -114,7 +118,7 @@ export default function StudentRecord() {
               {isSecretary ? (
                 <>
                   <span className="lg:hidden print:hidden">{studentStatusLabel(student)}</span>
-                  <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
+                  <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => setNextStatus(e.target.value)}>
                     {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{studentStatusLabel(student)}</span>
@@ -155,6 +159,7 @@ export default function StudentRecord() {
       </div>
 
       {isSecretary && <GradeHistory changes={changes} />}
+      {nextStatus && <StatusChangeModal student={student} history={history} status={nextStatus} busy={statusBusy} onClose={() => setNextStatus(null)} onConfirm={() => changeStatus(nextStatus)} />}
       {resetting && <ResetPasswordModal student={student} onClose={() => setResetting(false)} />}
       {deleting && <DeleteStudentModal student={student} onClose={() => setDeleting(false)} onDeleted={() => navigate("/students", { replace: true })} />}
     </>
