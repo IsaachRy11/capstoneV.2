@@ -30,7 +30,6 @@ function AheadTerm({ t, isNext, pos }) {
   const units = sumUnits(t.subjects);
   const statuses = t.subjects.map((s) => prerequisiteStatus(s, pos));
   const blocked = statuses.filter((x) => x === "blocked").length;
-  const waiting = statuses.filter((x) => x === "waiting").length;
   return (
     <li className="relative pb-5 pl-9 last:pb-0">
       <span className={`absolute left-0 top-4 flex h-6 w-6 items-center justify-center rounded-full border-2 ${isNext ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3"}`} aria-hidden="true">
@@ -44,7 +43,6 @@ function AheadTerm({ t, isNext, pos }) {
             <span className="block text-[13px] text-ink-3">
               {count(t.subjects.length, "subject", "subjects")} · {units} units
               {blocked > 0 && <span className="text-warn"> · {blocked} blocked</span>}
-              {waiting > 0 && <span> · {waiting} waiting on this semester</span>}
             </span>
           </span>
           <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
