@@ -53,7 +53,7 @@ export default function LandingFooter() {
         <Column title="Visit us">
           <span className="flex items-start gap-2">
             <MapPin size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>CCS Secretary&apos;s Office<br />Ground Floor, SJC College Building<br />Maasin City, Southern Leyte</span>
+            <span>Ground Floor, SJC College Building<br />Maasin City, Southern Leyte</span>
           </span>
         </Column>
 

@@ -3,7 +3,7 @@
 
 // passed      — passed at least once
 // in_progress — enrolled this term and not yet passed (shown as "Enrolled")
-// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies); shown as "Failed subjects"
+// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies); shown as "Subjects to resolve"
 // not_taken   — never enrolled (shown as "Not yet enrolled")
 export const SUBJECT_STATE = {
   passed: { label: "Passed", tone: "ok" },
@@ -12,7 +12,7 @@ export const SUBJECT_STATE = {
   not_taken: { label: "Not yet enrolled", tone: "neutral" },
 };
 
-const BACK_LABEL = { failed: "Failed", incomplete: "INC", dropped: "Dropped" };
+const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
 
 export function buildProgress({ curriculum, history, prerequisites = [] }) {
   const attempts = new Map(); // subject id → enrollment rows, oldest first

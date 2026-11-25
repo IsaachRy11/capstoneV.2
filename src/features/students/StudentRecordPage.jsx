@@ -1,15 +1,16 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, KeyRound, Printer, Trash2 } from "lucide-react";
+import { KeyRound, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
 import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
-import { STUDENT_STATUS, semesterLabel, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
+import { STUDENT_STATUS, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
 import ResetPasswordModal from "./ResetPasswordModal";
+import ResolveNotice from "./ResolveNotice";
 
 export default function StudentRecord() {
   const { user } = useAuth();
@@ -113,7 +114,7 @@ export default function StudentRecord() {
             <dd className="mt-1 text-[15px] font-semibold text-ink">
               {isSecretary ? (
                 <>
-                  <span className="lg:hidden">{studentStatusLabel(student)}</span>
+                  <span className="lg:hidden print:hidden">{studentStatusLabel(student)}</span>
                   <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
                     {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
@@ -137,32 +138,21 @@ export default function StudentRecord() {
               </dd>
             </div>
           )}
-          <div><dt className="text-[12px] font-semibold text-ink-3">Failed subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
+          <div><dt className="text-[12px] font-semibold text-ink-3">Subjects to resolve</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
         </dl>
       </section>
 
-      {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary banner. */}
-      {!isSecretary && deficiencies.length > 0 && (
-        <div role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
-          <div className="flex flex-col gap-1">
-            <div className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`} to resolve</div>
-            <ul className="text-[14px] leading-relaxed text-ink-2">
-              {deficiencies.map((d) => (
-                <li key={d.enrollment_id}>
-                  <span className="font-mono">{d.code}</span> {d.title}: {d.status === "failed" ? "failed (5.00)" : d.status === "incomplete" ? "incomplete (INC)" : "dropped"} in {yearLabel(d.curriculum_year)}, {semesterLabel(d.semester)}, SY {d.school_year.replace("-", "–")}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary notice. */}
+      {!isSecretary && deficiencies.length > 0 && <ResolveNotice items={deficiencies} detailed />}
 
-      {terms.length > 0 && <GradeLegend className="card px-5 py-3.5" />}
+      {terms.length > 0 && <GradeLegend className="no-print card px-5 py-3.5" />}
       {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
-      {terms.map((t, i) => (
-        <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
-      ))}
+      {/* On paper the terms sit in two columns so the whole record fits one page. */}
+      <div className="record-terms flex flex-col gap-4 sm:gap-6">
+        {terms.map((t, i) => (
+          <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
+        ))}
+      </div>
 
       {isSecretary && <GradeHistory changes={changes} />}
       {resetting && <ResetPasswordModal student={student} onClose={() => setResetting(false)} />}

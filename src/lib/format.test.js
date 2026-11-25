@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { gradeStatusLabel, termAverage } from "./format";
 import { ADMISSION_FOR_TYPE, formatGrade, inferSubjectKind, initials, normKey, shortProgramName, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, sumUnits, termLabel } from "./format";
 import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
 import { isStaffId, isStudentId, loginEmail } from "./login";
@@ -131,5 +132,26 @@ describe("student type and status", () => {
     expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Dropped");
     expect(studentStatusLabel({ status: "shifted_out", standing: "regular" })).toBe("Shifted out");
     expect(studentStatusLabel({ standing: "irregular" })).toBe("Irregular");
+  });
+});
+
+describe("term average and academic record wording", () => {
+  const row = (final_grade, units, status = "passed") => ({ final_grade, units, status });
+  it("weights final grades by units", () => {
+    expect(termAverage([row(1, 3), row(2, 2)])).toBe("1.40");
+    expect(termAverage([row(5, 3, "failed"), row(1, 3)])).toBe("3.00");
+  });
+  it("gives no average until every subject that gets a grade has one", () => {
+    expect(termAverage([row(1.5, 3), row(null, 3, "enrolled")])).toBeNull();
+    expect(termAverage([row(1.5, 3), row(null, 3, "incomplete")])).toBeNull();
+    expect(termAverage([])).toBeNull();
+  });
+  it("leaves dropped subjects out", () => {
+    expect(termAverage([row(1.5, 3), row(null, 3, "dropped")])).toBe("1.50");
+  });
+  it("says what is missing instead of Enrolled", () => {
+    expect(gradeStatusLabel("enrolled", null)).toBe("No grades yet");
+    expect(gradeStatusLabel("enrolled", 1.75)).toBe("No final grade yet");
+    expect(gradeStatusLabel("incomplete", null)).toBe("NC");
   });
 });

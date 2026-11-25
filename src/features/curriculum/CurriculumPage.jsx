@@ -103,11 +103,12 @@ export default function Curriculum() {
       </header>
 
       {isSecretary && (
-        <div className="seg seg-fill self-start" role="group" aria-label="Program">
+        <div className="no-print seg seg-fill self-start" role="group" aria-label="Program">
           {data.programs.map((p) => <button key={p.code} aria-pressed={p.code === program.code} onClick={() => setParams({ program: p.code })}>{p.code}</button>)}
         </div>
       )}
 
+      <div className="curriculum-years flex flex-col gap-4 sm:gap-6">
       {years.map((y) => {
         const ofYear = subjects.filter((s) => s.year_level === y);
         const inSem = (sem) => ofYear.filter((s) => s.semester === sem);
@@ -127,6 +128,7 @@ export default function Curriculum() {
           </section>
         );
       })}
+      </div>
 
       {editing && (
         <SubjectModal program={program} subject={editing === "new" ? null : editing}

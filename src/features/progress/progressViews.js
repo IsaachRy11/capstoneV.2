@@ -27,10 +27,10 @@ export const VIEWS = {
     empty: "You're not enrolled in any subjects this semester.",
   },
   failed: {
-    title: "Failed subjects",
+    title: "Subjects to resolve",
     pick: (p) => p.back,
     headline: (rows) => plural(rows.length, "subject", "subjects"),
-    text: "Failed, INC or dropped, and not passed since. Retake them when they're offered again.",
-    empty: "No failed subjects. Keep it up.",
+    text: "Failed, NC or dropped, and not passed since. Check when each one is offered again.",
+    empty: "Nothing to resolve. Keep it up.",
   },
 };

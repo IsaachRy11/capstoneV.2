@@ -48,12 +48,12 @@ export const StudentStatusBadge = ({ student }) => {
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
 // Grade color meanings, used everywhere: red = failing, green = passed,
-// grey = INC or Dropped (no final grade).
+// grey = NC or Dropped (no final grade).
 // Each color always comes with words, so meaning never depends on color alone.
 const LEGEND = {
   passed: { color: "var(--mark-ok)", label: "Passed", detail: "1.00 – 3.00" },
   failing: { color: "var(--mark-bad)", label: "Failed", detail: "5.00" },
-  other: { color: "var(--mark-none)", label: "INC or Dropped", detail: "No grade" },
+  other: { color: "var(--mark-none)", label: "NC or Dropped", detail: "No grade" },
 };
 
 // Swatches use the brighter --mark-* colors (distinct at a glance); text keeps the darker readable tones.

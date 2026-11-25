@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { BookOpen, Check, ChevronDown, Pencil } from "lucide-react";
 import { saveGrades } from "../../services/students";
-import { Badge, FormError, StatusBadge } from "../../components/ui";
-import { GRADE_OPTIONS, STATUS_LABEL, formatGrade, sumUnits, yearSemesterLabel } from "../../lib/format";
+import { Badge, FormError } from "../../components/ui";
+import { GRADE_OPTIONS, STATUS_LABEL, STATUS_TONE, formatGrade, gradeStatusLabel, sumUnits, termAverage, yearSemesterLabel } from "../../lib/format";
 
 // What a row will be once saved. Passed and Failed always follow the final grade (3.00 or better passes, 5.00 fails),
-// so they can never disagree with it; INC and Dropped are chosen with their buttons and carry no final grade.
+// so they can never disagree with it; NC and Dropped are chosen with their buttons and carry no final grade.
 const outcome = (d) =>
   d.status === "incomplete" ? "incomplete"
   : d.status === "dropped" ? "dropped"
   : d.final === "" ? "enrolled"
   : Number(d.final) > 3 ? "failed" : "passed";
 
-const KIND_NAME = { incomplete: "INC", dropped: "Dropped" };
+const KIND_NAME = { incomplete: "NC", dropped: "Dropped" };
+const GradeStatus = ({ status, midterm }) => <Badge tone={STATUS_TONE[status]}>{gradeStatusLabel(status, midterm)}</Badge>;
 
 // Each term is a card that opens and closes (the newest starts open), like "Completed" on the roadmap.
 // For the secretary it also holds the grade editor.
@@ -22,7 +23,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
   const [draft, setDraft] = useState({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [note, setNote] = useState(""); // what the last INC / Drop button did
+  const [note, setNote] = useState(""); // what the last NC / Drop button did
 
   const savedDraft = () => Object.fromEntries(rows.map((r) => [r.enrollment_id, {
     midterm: r.midterm_grade ?? "", final: r.final_grade ?? "", finalBackup: "",
@@ -31,8 +32,8 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
   const start = () => { setDraft(savedDraft()); setEditing(true); setOpen(true); setError(""); setNote(""); };
   const set = (id, k, v) => setDraft((d) => ({ ...d, [id]: { ...d[id], [k]: v } }));
 
-  // INC / Drop for one row: pressing it again goes back to a normal graded class. The final grade is set aside
-  // (not lost) while it is on, because INC and Dropped classes carry no final grade.
+  // NC / Drop for one row: pressing it again goes back to a normal graded class. The final grade is set aside
+  // (not lost) while it is on, because NC and Dropped classes carry no final grade.
   const toggle = (r, kind) => {
     const d = draft[r.enrollment_id];
     if (d.status === kind) {
@@ -94,11 +95,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
     </select>
   );
 
-  const termAvg = (() => {
-    const graded = rows.filter((r) => r.final_grade !== null);
-    const u = sumUnits(graded);
-    return u ? (graded.reduce((t, r) => t + r.final_grade * r.units, 0) / u).toFixed(2) : null;
-  })();
+  const termAvg = termAverage(rows);
 
   // What saving will do, in words (only while editing).
   const results = editing ? rows.map((r) => outcome(draft[r.enrollment_id])) : [];
@@ -121,7 +118,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
             </span>
             <span className="block text-[13px] font-normal text-ink-3">
               SY {term.school_year.replace("-", "–")} · {term.is_current ? "in progress" : "completed"} · {sumUnits(rows)} units{term.semester === 3 ? "" : ` · ${term.section_name}`}
-              {termAvg && <> · Term average <span className="font-mono font-semibold text-ink-2">{termAvg}</span></>}
+              {" · "}Term average <span className="font-mono font-semibold text-ink-2" title={termAvg ? "Final grades weighted by units" : "Shown once every subject has a final grade"}>{termAvg || "—"}</span>
             </span>
           </span>
         </button>
@@ -136,7 +133,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
         <div className="no-print flex flex-wrap items-center gap-2 border-b border-line bg-surface-2 px-4 py-2.5 sm:px-5">
           <span className="text-[13px] font-semibold text-ink-2">Whole semester</span>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAll("dropped")}>Drop all</button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAll("incomplete")}>Mark all INC</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => markAll("incomplete")}>Mark all NC</button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setDraft(savedDraft()); setNote(""); }}>Undo changes</button>
           {note && <p role="status" className="basis-full text-[13px] text-ink-2">{note}</p>}
         </div>
@@ -157,7 +154,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
                   <td className="font-medium">
                     <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{r.code} <span className="text-ink-3">· {Number(r.units)} {Number(r.units) === 1 ? "unit" : "units"}</span></span>
                     {r.title}
-                    {!editing && <span className="mt-1.5 block sm:hidden"><StatusBadge status={r.status} /></span>}
+                    {!editing && <span className="mt-1.5 block sm:hidden"><GradeStatus status={r.status} midterm={r.midterm_grade} /></span>}
                   </td>
                   <td className="num hidden sm:table-cell">{Number(r.units)}</td>
                   {editing ? (
@@ -165,10 +162,10 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
                       <td className="text-center">{gradeSelect(r.enrollment_id, "midterm", `Midterm grade for ${r.code}`)}</td>
                       <td className="text-center">{gradeSelect(r.enrollment_id, "final", `Final grade for ${r.code}`)}</td>
                       <td>
-                        {/* The result shows live: it changes as the final grade or the INC / Drop buttons change. */}
+                        {/* The result shows live: it changes as the final grade or the NC / Drop buttons change. */}
                         <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
-                          <span className="inline-flex min-w-[78px]"><StatusBadge status={outcome(d)} /></span>
-                          <button type="button" className="toggle-btn" aria-pressed={d.status === "incomplete"} aria-label={`Mark ${r.code} as incomplete`} onClick={() => toggle(r, "incomplete")}>INC</button>
+                          <span className="inline-flex min-w-[128px]"><GradeStatus status={outcome(d)} midterm={d.midterm} /></span>
+                          <button type="button" className="toggle-btn" aria-pressed={d.status === "incomplete"} aria-label={`Mark ${r.code} as incomplete`} onClick={() => toggle(r, "incomplete")}>NC</button>
                           <button type="button" className="toggle-btn" aria-pressed={d.status === "dropped"} aria-label={`Mark ${r.code} as dropped`} onClick={() => toggle(r, "dropped")}>Drop</button>
                         </div>
                       </td>
@@ -177,7 +174,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
                     <>
                       <td className="num" style={r.midterm_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.midterm_grade)}</td>
                       <td className={`num font-semibold ${bad ? "text-bad" : ""}`} style={r.final_grade === null ? { color: "var(--ink-3)" } : undefined}>{formatGrade(r.final_grade)}</td>
-                      <td className="hidden sm:table-cell"><StatusBadge status={r.status} /></td>
+                      <td className="hidden sm:table-cell"><GradeStatus status={r.status} midterm={r.midterm_grade} /></td>
                     </>
                   )}
                 </tr>
@@ -194,10 +191,10 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
               {/* What saving will do, so a failing grade is noticed before it is saved. */}
               <p role="status" className="text-[13px] text-ink-2">
                 <span className="font-semibold text-ink">When saved: </span>
-                {tally.map(([k, n], i) => <span key={k}>{i ? " · " : ""}{n} {STATUS_LABEL[k]}</span>)}
+                {tally.map(([k, n], i) => <span key={k}>{i ? " · " : ""}{n} {k === "enrolled" ? "without a final grade" : STATUS_LABEL[k]}</span>)}
               </p>
               {failing > 0 && <p className="mt-0.5 text-[13px] font-semibold text-bad">{failing === 1 ? "1 class has a failing final grade (5.00)" : `${failing} classes have a failing final grade (5.00)`} and will be marked Failed.</p>}
-              <p className="mt-0.5 text-[12px] text-ink-3">1.00 is highest, 3.00 is still passing, 5.00 fails. Passed and Failed follow the final grade; use INC or Drop for the rest.</p>
+              <p className="mt-0.5 text-[12px] text-ink-3">1.00 is highest, 3.00 is still passing, 5.00 fails. Passed and Failed follow the final grade; use NC or Drop for the rest.</p>
             </div>
             <div className="flex gap-2.5">
               <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>

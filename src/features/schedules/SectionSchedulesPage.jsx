@@ -52,7 +52,7 @@ export default function SectionSchedules() {
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h2 className="text-[19px] font-bold">{section.name}</h2>
             <span className="text-[13px] text-ink-3 sm:text-[14px]">
-              {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room || "Room TBA"} · {section.enrolled} of {section.capacity} seats filled
+              {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room ? `${section.home_room} · ` : ""}{section.enrolled} of {section.capacity} seats filled
             </span>
           </div>
           <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />

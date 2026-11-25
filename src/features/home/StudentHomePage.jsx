@@ -1,5 +1,5 @@
-import { Link, useOutletContext } from "react-router-dom";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
+import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
 import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
@@ -11,6 +11,7 @@ import { useClassStatus } from "../../hooks/useCalendar";
 import TodayCard from "./TodayCard";
 import ProgressCard from "./ProgressCard";
 import WelcomeBanner from "../../components/WelcomeBanner";
+import ResolveNotice from "../students/ResolveNotice";
 
 export default function StudentHome() {
   const { user } = useAuth();
@@ -52,29 +53,16 @@ export default function StudentHome() {
           ["Units this term", `${units} units`],
         ]} />
 
-      {/* Failed-subject status first: it is what the student most needs to know. */}
+      {/* Subjects to resolve first: it is what the student most needs to know. */}
       {deficiencies.length === 0 ? (
         <section className="card flex items-center gap-3.5 px-5 py-4" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
           <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
           <div>
-            <h2 className="text-[15px] font-bold text-ok">No failed subjects</h2>
+            <h2 className="text-[15px] font-bold text-ok">No subjects to resolve</h2>
             <p className="mt-1 text-[14px] leading-relaxed text-ink-2">Every subject you've finished is passed.</p>
           </div>
         </section>
-      ) : (
-        <section className="card flex items-start gap-3.5 px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-          <AlertTriangle size={22} className="shrink-0 text-bad" aria-hidden="true" />
-          <div>
-            <h2 className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`}</h2>
-            <ul className="mt-1 text-[14px] leading-relaxed text-ink-2">
-              {deficiencies.map((d) => <li key={d.enrollment_id}><span className="font-mono">{d.code}</span> {d.title}</li>)}
-            </ul>
-            <p className="mt-2 text-[13px] text-ink-3">
-              <Link to="/progress" className="font-semibold">See when they're offered again</Link>, then talk to the CCS Secretary's Office about retaking them.
-            </p>
-          </div>
-        </section>
-      )}
+      ) : <ResolveNotice items={deficiencies} />}
 
       {/* Today's classes and where the student stands in the program. The full week is on Schedule and
           the grades are on Academic record, so neither is repeated here. */}

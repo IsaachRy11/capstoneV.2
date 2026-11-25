@@ -13,8 +13,8 @@ export const shortProgramName = (name = "") => name.replace(/^Bachelor of Scienc
 export const formatGrade = (g) => (g === null || g === undefined ? "—" : Number(g).toFixed(2));
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 
-export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "INC", dropped: "Dropped" };
-// INC and Dropped are grey (no final grade).
+export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "NC", dropped: "Dropped" };
+// NC and Dropped are grey (no final grade).
 export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
 
 // "BSIT 1-T" -> "T" (the block section letter)
@@ -59,3 +59,17 @@ export function inferSubjectKind(code, title = "") {
 }
 
 export const sumUnits = (rows) => rows.reduce((t, r) => t + Number(r.units || 0), 0);
+
+// Academic record wording: a subject with no result yet says so instead of "Enrolled".
+export const gradeStatusLabel = (status, midterm) =>
+  status !== "enrolled" ? STATUS_LABEL[status] || status
+  : midterm === null || midterm === undefined || midterm === "" ? "No grades yet" : "No final grade yet";
+
+// Term average, weighted by units: sum(final grade x units) / sum(units). Dropped subjects get no grade and are
+// left out. It is worked out only when every other subject has a final grade; otherwise null (shown as a dash).
+export function termAverage(rows) {
+  const counted = rows.filter((r) => r.status !== "dropped");
+  if (!counted.length || counted.some((r) => r.final_grade === null || r.final_grade === undefined)) return null;
+  const units = sumUnits(counted);
+  return units ? (counted.reduce((t, r) => t + Number(r.final_grade) * Number(r.units), 0) / units).toFixed(2) : null;
+}

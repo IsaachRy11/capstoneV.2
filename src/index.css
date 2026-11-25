@@ -353,10 +353,41 @@
 [data-theme="dark"] .av-5 { background: #4a2335; color: #fbcfe8; }
 [data-theme="dark"] .av-6 { background: #2a3245; color: #cbd5e1; }
 
+/* Printing: only the information, small and tight, so a record, timetable or dashboard fits one A4 page and a
+   curriculum two. Colors stay so grades read the same on a color printer; words carry the meaning in black and white. */
+@page { size: A4; margin: 7mm; }
 @media print {
-  .no-print { display: none !important; }
-  body { background: #fff; }
-  .card { border-color: #ddd; }
+  .no-print, .backdrop { display: none !important; }
+  html, body { background: #fff !important; }
+  main { zoom: 0.62; padding: 0 !important; gap: 8px !important; }
+  .card { border-color: #bbb; box-shadow: none !important; }
+  .card, section { break-inside: avoid; }
+  main table :is(th, td) { padding: 2px 6px !important; line-height: 1.2 !important; height: auto !important; }
+  main .card-head { padding-top: 4px !important; padding-bottom: 4px !important; }
+  .page-in, .reveal { animation: none !important; opacity: 1 !important; transform: none !important; }
+
+  /* Academic record: compact heading, terms in two columns. */
+  .record-terms { display: block !important; columns: 2; column-gap: 10px; }
+  .record-terms > * { break-inside: avoid; margin-bottom: 8px; }
+  .record-terms :is(th, td) { font-size: 12px !important; padding: 1px 4px !important; }
+  .record-terms thead th:first-child, .record-terms tbody td:first-child { width: 78px !important; }
+  .record-terms .badge { padding: 0 4px; font-size: 11px; }
+  .record-terms button { min-height: 0; }
+  .record-terms [aria-expanded] > span:first-child { display: none; }
+  .record-terms > section > div:first-child { padding: 4px 8px !important; }
+
+  /* Curriculum: years flow in two columns over two pages. */
+  .curriculum-years { display: block !important; columns: 2; column-gap: 10px; }
+  .curriculum-years > section { display: block; break-inside: auto; margin-bottom: 8px; }
+  .curriculum-years > section > * { margin-bottom: 6px; }
+  .curriculum-years .grid { display: block; }
+  .curriculum-years .grid > * { margin-bottom: 6px; }
+  .curriculum-years :is(th, td) { font-size: 11px !important; padding: 1px 4px !important; }
+  .curriculum-years th:first-child { width: 76px !important; }
+  .curriculum-years th:nth-child(3) { width: 40px !important; }
+  .curriculum-years th:nth-child(4) { width: 90px !important; }
+  .curriculum-years td { font-weight: 400; }
+  .curriculum-years td span { font-size: 11px !important; }
 }
 
 /* Excel-style tables: every cell is boxed. The card already draws the outer frame, so a table keeps only its

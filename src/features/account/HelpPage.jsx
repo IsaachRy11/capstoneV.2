@@ -18,7 +18,7 @@ const COMMON = [
     q: "What do the grade colors mean?",
     a: (
       <div className="flex flex-col gap-3">
-        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. INC and Dropped are statuses, not grades.</span>
+        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. NC and Dropped are statuses, not grades.</span>
         <GradeLegend className="rounded-lg border border-line px-4 py-3" />
       </div>
     ),
@@ -29,7 +29,7 @@ const COMMON = [
   },
   {
     q: "What do Regular and Irregular mean?",
-    a: <>Regular: no failed subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
+    a: <>Regular: nothing to resolve. Irregular: at least one failed, NC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
 ];
 

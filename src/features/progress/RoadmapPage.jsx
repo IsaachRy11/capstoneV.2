@@ -245,7 +245,7 @@ export default function Roadmap() {
           </div>
         )}
         {ahead.length === 0 ? (
-          <div className="card"><EmptyState>This is your last semester. Clear any failed subjects to finish on time.</EmptyState></div>
+          <div className="card"><EmptyState>This is your last semester. Resolve any pending subjects to finish on time.</EmptyState></div>
         ) : (
           <ol className="relative">
             <span className="absolute bottom-3 left-[11px] top-5 w-0.5 bg-line" aria-hidden="true" />

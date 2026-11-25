@@ -39,7 +39,7 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
                 <li className="text-ink-2">{waiting.length} {waiting.length === 1 ? "subject opens" : "subjects open"} once you pass what you're taking now</li>
               )}
               {retakes.length > 0 && (
-                <li className="text-bad">{retakes.length} failed {retakes.length === 1 ? "subject is" : "subjects are"} offered again</li>
+                <li className="text-bad">{retakes.length} {retakes.length === 1 ? "subject" : "subjects"} to resolve {retakes.length === 1 ? "is" : "are"} offered again</li>
               )}
               {blocked.length === 0 && waiting.length === 0 && retakes.length === 0 && <li className="text-ink-2">Nothing is blocking your next semester.</li>}
             </ul>

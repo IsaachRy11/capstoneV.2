@@ -11,7 +11,7 @@ const Bar = ({ w, tone = "bg-[var(--grid-line)]" }) => <span className={`block h
 function Failed() {
   return (
     <ul className="flex flex-col gap-2">
-      {[["Failed", "bad"], ["INC", "neutral"]].map(([label, tone]) => (
+      {[["Failed", "bad"], ["NC", "neutral"]].map(([label, tone]) => (
         <li key={label} className="flex items-center gap-3 rounded-lg border border-[var(--grid-line)] bg-surface px-3 py-2.5">
           <span className="flex flex-1 flex-col gap-1.5"><Bar w="58%" /><Bar w="30%" tone="bg-line" /></span>
           <Badge tone={tone} dot>{label}</Badge>
@@ -42,7 +42,7 @@ function Record() {
   return (
     <ul className="flex flex-col">
       <li className="grid grid-cols-[1fr_52px_52px] gap-2 pb-2 text-[11px] font-semibold text-ink-2"><span>Subject</span><span className="text-center">Midterm</span><span className="text-center">Final</span></li>
-      {[["ok", "Passed"], ["ok", "Passed"], ["bad", "Failed"], ["neutral", "INC"]].map(([tone, label], i) => (
+      {[["ok", "Passed"], ["ok", "Passed"], ["bad", "Failed"], ["neutral", "NC"]].map(([tone, label], i) => (
         <li key={i} className="grid grid-cols-[1fr_52px_52px] items-center gap-2 border-t border-line py-2">
           <Bar w={`${70 - i * 9}%`} />
           <span className="mx-auto h-2 w-6 rounded-full bg-[var(--grid-line)]" />
@@ -112,7 +112,7 @@ const SETS = {
     label: "For students",
     cards: [
       { span: "md:col-span-4", title: "Subject tracker", text: "See what you've passed, what you're taking and what's left, all the way to graduation.", visual: <PathTiles /> },
-      { span: "md:col-span-2", title: "Failed subjects", text: "Find out first, then plan with the office.", visual: <Failed /> },
+      { span: "md:col-span-2", title: "Subjects to resolve", text: "Find out first, then plan with the office.", visual: <Failed /> },
       { span: "md:col-span-2", title: "Weekly schedule", text: "Your subjects by day, time and room.", visual: <Week /> },
       { span: "md:col-span-4", title: "Academic record", text: "Every midterm and final grade, term by term, in colors that always come with words.", visual: <Record /> },
     ],
