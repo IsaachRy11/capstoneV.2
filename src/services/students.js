@@ -1,8 +1,15 @@
 import { supabase, unwrap } from "../lib/supabase";
 
 // v_student_overview computes standing, section and deficiency counts in the database.
-export const listStudents = () =>
-  unwrap(supabase.from("v_student_overview").select("*").order("last_name").order("first_name"));
+const PAGE = 1000; // the most rows the database returns in one request
+export async function listStudents() {
+  const all = [];
+  for (let from = 0; ; from += PAGE) {
+    const rows = await unwrap(supabase.from("v_student_overview").select("*").order("last_name").order("first_name").order("id").range(from, from + PAGE - 1));
+    all.push(...rows);
+    if (rows.length < PAGE) return all;
+  }
+}
 
 export const getStudent = (id) =>
   unwrap(supabase.from("v_student_overview").select("*").eq("id", id).maybeSingle());
