@@ -16,7 +16,7 @@ import LandingFooter from "./LandingFooter";
 // the banners are illustrated with line-art school things (see ArtHero).
 
 const STEPS = [
-  { title: "Sign in", text: "Students use their student ID. Staff use their staff ID, such as CCS-001." },
+  { title: "Sign in", text: "Students use their student ID. The secretary uses a secretary ID, such as CCS-001." },
   { title: "Check your subjects and grades", text: "Your schedule, grades and standing, in one place." },
   { title: "A subject to resolve? Act early", text: "Visit the CCS Secretary's Office while there's still time to plan." },
 ];

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { gradeStatusLabel, termAverage } from "./format";
 import { ADMISSION_FOR_TYPE, formatGrade, inferSubjectKind, initials, normKey, shortProgramName, studentStatusKey, studentStatusLabel, studentTypeKey, studentTypeLabel, sumUnits, termLabel } from "./format";
 import { formatTime, meetingDays, scheduleLines, timeRange } from "./schedule";
-import { isStaffId, isStudentId, loginEmail } from "./login";
+import { isSecretaryId, isStudentId, loginEmail } from "./login";
 import { toCsv } from "./csv";
 
 describe("grades and labels", () => {
@@ -82,10 +82,10 @@ describe("login", () => {
     expect(loginEmail(" 2025-0001 ")).toBe("2025-0001@students.ccs-monitor.test");
   });
 
-  it("turns a staff ID into the secretary's login address", () => {
+  it("turns a secretary ID into the secretary's login address", () => {
     expect(loginEmail(" CCS-001 ")).toBe("ccs-001@staff.ccs-monitor.test");
-    expect(isStaffId("CCS-001")).toBe(true);
-    expect(isStaffId("2025-0001")).toBe(false);
+    expect(isSecretaryId("CCS-001")).toBe(true);
+    expect(isSecretaryId("2025-0001")).toBe(false);
   });
 
   it("leaves other emails alone (lower-cased)", () => {

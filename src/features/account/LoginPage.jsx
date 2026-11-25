@@ -9,7 +9,7 @@ import Backdrop from "../../components/Backdrop";
 // Demo passwords only exist in the rehearsal/test build (VITE_DEMO_* env vars, a fake database). The live build
 // never sets them, so there the demo buttons only fill in the ID and no password is shipped in the page.
 const DEMO_ACCOUNTS = [
-  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
+  { id: "CCS-001", label: "Demo secretary", hint: "Secretary ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
   { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001", password: import.meta.env.VITE_DEMO_STUDENT_PASSWORD },
 ];
 
@@ -116,7 +116,7 @@ export default function Login() {
         <div className="flex w-full max-w-[420px] flex-col gap-6 rounded-[20px] border border-line bg-surface p-6 shadow-[0_24px_60px_-36px_rgba(20,16,10,0.4)] sm:p-8 lg:gap-7 lg:self-center">
           <div className="flex flex-col gap-1.5 lg:gap-2">
             <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
-            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your staff ID.</p>
+            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your secretary ID.</p>
           </div>
 
           {status === "unlinked" && (
@@ -129,7 +129,7 @@ export default function Login() {
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-              <label className="label" htmlFor="email">Student ID or staff ID</label>
+              <label className="label" htmlFor="email">Student ID or secretary ID</label>
               <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001 or CCS-001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
                 onKeyDown={(e) => { if (e.key === "Enter" && !password) { e.preventDefault(); passwordRef.current?.focus(); } }} />
             </div>

@@ -121,7 +121,7 @@ export default function Profile() {
       <section className="card overflow-hidden">
         <SectionHeader title="Account" />
         <dl>
-          {!isStudent && <Row label="Staff ID"><span className="font-mono">{user.staffId || "Not set"}</span></Row>}
+          {!isStudent && <Row label="Secretary ID"><span className="font-mono">{user.secretaryId || "Not set"}</span></Row>}
           {isStudent && student && (
             <>
               <Row label="Student ID"><span className="font-mono">{student.id}</span></Row>

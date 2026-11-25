@@ -8,7 +8,7 @@ import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
 const COMMON = [
   {
     q: "How do I sign in?",
-    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their staff ID, such as CCS-001. Forgot your password? The CCS Secretary's Office can reset it.</>,
+    a: <>Students sign in with their student ID (for example 2025-0001). The secretary signs in with a secretary ID, such as CCS-001. Forgot your password? The CCS Secretary's Office can reset it.</>,
   },
   {
     q: "How do I change my password or theme?",

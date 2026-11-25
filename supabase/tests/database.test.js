@@ -55,7 +55,7 @@ beforeAll(async () => {
   await db.exec(`grant select, insert, update, delete on all tables in schema public to anon, authenticated;
                  grant usage on all sequences in schema public to authenticated;`);
   await db.exec(readFileSync(join(root, "seed.sql"), "utf8"));
-  // Sign-in accounts are linked by ID: staff ID CCS-001, and the first 2nd-year BSIT student as the demo student.
+  // Sign-in accounts are linked by ID: secretary ID CCS-001, and the first 2nd-year BSIT student as the demo student.
   const demo = (await db.query(`select s.id from students s join programs p on p.id = s.program_id where p.code = 'BSIT' and s.year_level = 2 order by s.id limit 1`)).rows[0].id;
   await db.exec(`insert into auth.users (email) values ('ccs-001@staff.ccs-monitor.test'), ('${demo.toLowerCase()}@students.ccs-monitor.test')`);
   const users = (await db.query(`select email, id from auth.users`)).rows;
@@ -795,8 +795,8 @@ describe("starting a term and enrolling sections", () => {
 });
 
 describe("sign-in accounts are linked by ID, not by email", () => {
-  it("links the secretary by staff ID and a student by student ID", async () => {
-    expect((await one(`select staff_id, auth_user_id is not null linked from secretaries where staff_id = 'CCS-001'`))).toEqual({ staff_id: "CCS-001", linked: true });
+  it("links the secretary by secretary ID and a student by student ID", async () => {
+    expect((await one(`select secretary_id, auth_user_id is not null linked from secretaries where secretary_id = 'CCS-001'`))).toEqual({ secretary_id: "CCS-001", linked: true });
     expect((await one(`select count(*)::int n from students where auth_user_id is not null`)).n).toBe(1);
   });
   it("keeps no email on students or secretaries", async () => {
