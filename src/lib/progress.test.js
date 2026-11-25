@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -134,5 +134,20 @@ describe("prerequisiteText", () => {
     expect(prerequisiteText(bySubject(prog)["IT 101"])).toBe("");
     expect(prerequisiteText({ prereqs: [{ code: "CAPSTONE 1" }], standing_required: 4 })).toBe("CAPSTONE 1, 4th year standing");
     expect(prerequisiteText({ prereqs: [], standing_required: 4 })).toBe("4th year standing");
+  });
+});
+
+describe("graduationCheck", () => {
+  const sub = (id, state) => ({ id, state });
+  it("is eligible only when every subject is passed", () => {
+    expect(graduationCheck({ subjects: [sub(1, "passed"), sub(2, "passed")] }).eligible).toBe(true);
+    for (const state of ["in_progress", "back", "not_taken"]) {
+      const r = graduationCheck({ subjects: [sub(1, "passed"), sub(2, state)] });
+      expect(r.eligible).toBe(false);
+      expect(r.missing.map((s) => s.id)).toEqual([2]);
+    }
+  });
+  it("is not eligible without a curriculum", () => {
+    expect(graduationCheck({ subjects: [] }).eligible).toBe(false);
   });
 });

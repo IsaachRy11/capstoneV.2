@@ -55,10 +55,10 @@ begin
   from public.class_offerings co join public.sections sc on sc.id = co.section_id
   where co.id = e.offering_id and sc.school_term_id = old_term.id and e.status = 'enrolled' and e.final_grade is null;
 
-  -- The demo student shows both kinds of "subjects to resolve": one failed and one NC (neither blocks the whole term).
+  -- The demo student shows both kinds of "subjects to resolve": IT 203 failed (only IT 305 needs it) and THEO 2A NC.
   with mine as (
     select e.id, row_number() over (
-             order by (exists (select 1 from public.subject_prerequisites p where p.prerequisite_id = co.curriculum_subject_id)), cs.sort_order desc) rn
+             order by (cs.code = 'IT 203') desc, (cs.code = 'THEO 2A') desc, cs.sort_order desc) rn
     from public.enrollments e
     join public.class_offerings co on co.id = e.offering_id
     join public.sections sc on sc.id = co.section_id

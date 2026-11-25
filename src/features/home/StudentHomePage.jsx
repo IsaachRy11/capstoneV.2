@@ -66,7 +66,7 @@ export default function StudentHome() {
 
       {/* Today's classes and where the student stands in the program. The full week is on Schedule and
           the grades are on Academic record, so neither is repeated here. */}
-      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
+      <div className="grid items-start gap-4 lg:gap-5 xl:grid-cols-2">
         <TodayCard classes={classes} status={status} />
         <ProgressCard progress={progress} next={next} pos={{ year: student.year_level, semester: term.semester }} />
       </div>

@@ -130,3 +130,9 @@ export function prerequisiteText(subject) {
   if (subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
   return parts.join(", ");
 }
+
+// Ready to graduate = every subject of the student's curriculum is passed. Returns what is still missing.
+export function graduationCheck(progress) {
+  const missing = progress.subjects.filter((s) => s.state !== "passed");
+  return { total: progress.subjects.length, missing, eligible: progress.subjects.length > 0 && missing.length === 0 };
+}

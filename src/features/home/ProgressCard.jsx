@@ -36,7 +36,7 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
                 <li className="text-warn">{blocked.length} {blocked.length === 1 ? "subject is" : "subjects are"} blocked until a prerequisite or year standing is met</li>
               )}
               {waiting.length > 0 && (
-                <li className="text-ink-2">{waiting.length} {waiting.length === 1 ? "subject opens" : "subjects open"} once you pass what you're taking now</li>
+                <li className="text-ink-2">{waiting.length} {waiting.length === 1 ? "subject" : "subjects"} will be opened once you have passed the subjects you are currently taking</li>
               )}
               {retakes.length > 0 && (
                 <li className="text-bad">{retakes.length} {retakes.length === 1 ? "subject" : "subjects"} to resolve {retakes.length === 1 ? "is" : "are"} offered again</li>
