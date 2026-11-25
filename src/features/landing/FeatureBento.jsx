@@ -17,7 +17,7 @@ function Failed() {
           <Badge tone={tone} dot>{label}</Badge>
         </li>
       ))}
-      <li className="rounded-lg border border-dashed border-[var(--grid-line)] px-3 py-2 text-[12px] text-ink-2">Shows when it is offered again</li>
+      <li className="rounded-lg border border-dashed border-[var(--grid-line)] px-3 py-2 text-[12px] text-ink-2">Shows where it sits in the curriculum</li>
     </ul>
   );
 }

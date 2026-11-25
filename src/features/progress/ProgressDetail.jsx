@@ -5,10 +5,9 @@ import { VIEWS } from "./progressViews";
 
 // The list behind each summary card on the subject tracker (opened with ?view=units|passed|enrolled|failed).
 // Grades live on the Academic record, so these lists show the subject, where it sits in the curriculum, and its status.
-export default function ProgressDetail({ view, progress, retakeNext }) {
+export default function ProgressDetail({ view, progress }) {
   const cfg = VIEWS[view];
   const rows = cfg.pick(progress);
-  const offeredAgain = new Set(retakeNext.map((s) => s.id));
 
   return (
     <>
@@ -39,14 +38,12 @@ export default function ProgressDetail({ view, progress, retakeNext }) {
                       <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearSemesterLabel(s.year_level, s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                       <span className="mt-1.5 block sm:hidden">
                         <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
-                        {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
                       </span>
                     </td>
                     <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearSemesterLabel(s.year_level, s.semester)}</td>
                     <td className="num hidden sm:table-cell">{Number(s.units)}</td>
                     <td className="hidden sm:table-cell">
                       <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
-                      {offeredAgain.has(s.id) && <span className="mt-1 block text-[12px] text-ink-3">Offered again next semester</span>}
                     </td>
                   </tr>
                 ))}

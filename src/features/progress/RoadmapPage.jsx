@@ -154,12 +154,11 @@ export default function Roadmap() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <LoadingState />;
 
-  const { student, progress, next, ahead, term } = data;
+  const { student, progress, ahead, term } = data;
   const pct = progress.totalUnits ? Math.round((progress.unitsEarned / progress.totalUnits) * 100) : 0;
   const unitsLeft = progress.totalUnits - progress.unitsEarned;
   const passed = progress.subjects.filter((s) => s.state === "passed");
   const completedYears = [...new Set(passed.map((s) => s.year_level))].sort();
-  const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
   // The computation behind the percentage, year by year (curriculum units vs units passed).
   const years = [...new Set(progress.subjects.map((s) => s.year_level))].sort();
   const yearTotals = years.map((y) => sumUnits(progress.subjects.filter((s) => s.year_level === y)));
@@ -170,7 +169,7 @@ export default function Roadmap() {
   });
   const exact = progress.totalUnits ? ((progress.unitsEarned / progress.totalUnits) * 100).toFixed(1) : "0.0";
 
-  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
+  if (view) return <ProgressDetail view={view} progress={progress} />;
 
   return (
     <>

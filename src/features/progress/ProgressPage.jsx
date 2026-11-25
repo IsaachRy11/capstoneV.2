@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
-import { sumUnits, termLabel, yearSemesterLabel } from "../../lib/format";
+import { sumUnits, termLabel, yearSemesterLabel, semesterSubject } from "../../lib/format";
 import ProgressDetail from "./ProgressDetail";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
@@ -31,14 +31,13 @@ export default function Progress() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <LoadingState />;
 
-  const { student, progress, term, next } = data;
+  const { student, progress, term } = data;
   const taking = progress.inProgress;
   const units = sumUnits(taking);
   // Distinct future subjects that open once the current ones are passed.
   const opening = new Map(taking.flatMap((s) => s.unlocks).map((u) => [u.id, u]));
-  const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
 
-  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
+  if (view) return <ProgressDetail view={view} progress={progress} />;
 
   const severe = progress.back.some((x) => x.backReason === "Failed"); // red if anything failed, else amber
 
@@ -71,10 +70,10 @@ export default function Progress() {
             <h2 className={`text-[15px] font-bold ${severe ? "text-bad" : "text-warn"}`}>{progress.back.length === 1 ? "1 subject to resolve" : `${progress.back.length} subjects to resolve`}</h2>
             <ul className="mt-1 text-[14px] text-ink-2">
               {progress.back.map((s) => (
-                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title}{retakeNext.some((x) => x.id === s.id) ? " · offered again next semester" : ""}</li>
+                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · {semesterSubject(s.semester)} in the curriculum</li>
               ))}
             </ul>
-            <p className="mt-2 text-[13px] text-ink-3">Talk to the CCS Secretary's Office about resolving or retaking them.</p>
+            <p className="mt-2 text-[13px] text-ink-3">Check with the college how to resolve or retake them.</p>
           </div>
         </section>
       ) : (
