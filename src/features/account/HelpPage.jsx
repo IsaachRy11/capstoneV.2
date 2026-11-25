@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, CircleHelp, Building2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
+import { GradeLegend, PageHeader } from "../../components/ui";
 
 // Short answers to the questions people actually have about this system. Facts only; for anything
 // about a real record, the answer is the CCS Secretary's Office.
@@ -94,7 +94,6 @@ export default function HelpPage() {
 
   return (
     <>
-      <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
         <div className="card-head flex items-center gap-2.5 px-5 py-3.5">

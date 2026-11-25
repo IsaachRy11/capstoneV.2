@@ -38,7 +38,7 @@ export default function Progress() {
   const opening = new Map(taking.flatMap((s) => s.unlocks).map((u) => [u.id, u]));
   const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
 
-  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} backTo="/progress" backLabel="Back to this semester" />;
+  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
 
   const severe = progress.back.some((x) => x.backReason === "Failed"); // red if anything failed, else amber
 

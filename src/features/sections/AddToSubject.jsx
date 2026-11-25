@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
-import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
+import { EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
 // Add students to ONE subject, the only enrolling page. Listed: this section's block (pre-ticked) and anyone who took the
@@ -84,7 +84,6 @@ export default function AddToSubject({ offeringId }) {
 
   return (
     <>
-      <BackButton to="/sections" label="Section allocations" />
       <PageHeader title={`Add students to ${data.code}`} showTitle
         subtitle={`${data.title} · ${data.section} · ${Number(data.units)} units${term ? ` · ${termLabel(term)}` : ""}`} />
 

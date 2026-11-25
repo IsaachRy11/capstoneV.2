@@ -10,6 +10,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 import Backdrop from "./Backdrop";
 import ChromeArt from "./ChromeArt";
+import GlobalBack from "./GlobalBack";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -205,6 +206,7 @@ export default function AppShell() {
         <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:min-h-16 lg:py-3 isolate">
           <ChromeArt variant="bar" />
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
+          <GlobalBack />
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
           {user.role === "secretary" && (
             <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">

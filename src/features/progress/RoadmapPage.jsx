@@ -170,7 +170,7 @@ export default function Roadmap() {
   });
   const exact = progress.totalUnits ? ((progress.unitsEarned / progress.totalUnits) * 100).toFixed(1) : "0.0";
 
-  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} backTo="/progress/roadmap" backLabel="Back to roadmap" />;
+  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} />;
 
   return (
     <>

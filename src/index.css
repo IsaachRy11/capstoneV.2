@@ -423,3 +423,6 @@ main table:not(.no-grid) tfoot td { background: var(--surface-2); font-weight: 6
    picture; in the dark theme it is screened in at low strength instead. */
 .mesh-photo { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.05); opacity: 0.32; }
 [data-theme="dark"] .mesh-photo { mix-blend-mode: screen; opacity: 0.16; }
+
+/* Sign-in picture panel: a dark blue network drawing, the same in both themes. */
+:root { --signin-bg: #06112a; --signin-ink: #ffffff; --signin-soft: #b9d4ff; }

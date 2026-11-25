@@ -6,7 +6,7 @@ import { SealLogo } from "../../components/ui";
 // and the college's web and Facebook names; a copyright line and the photo credits underneath. Brand color band.
 // The Facebook link searches for the page by its name (we don't keep a page address that could go out of date).
 const FB_SEARCH = "https://www.facebook.com/search/top?q=" + encodeURIComponent("SJC - College of Computer Studies");
-const CREDITS = "Photos on Unsplash by Jon Eckert (the sign-in page), Bo Peng and Yanhao Fang (the landing page). Photo of the SJC College Building by RM Reoma.";
+const CREDITS = "Photos on Unsplash by Bo Peng and Yanhao Fang (the landing page). Photo of the SJC College Building by RM Reoma.";
 
 export function FacebookMark({ size = 17 }) {
   return (

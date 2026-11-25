@@ -22,8 +22,8 @@ const STEPS = [
 ];
 
 const MOMENTS = [
-  { tone: "a", seed: 1, title: "Check your subjects any time", text: "No queue, no waiting for the office to open." },
-  { tone: "g", seed: 5, title: "An open door to the limitless horizon.", text: "The College of Computer Studies, Saint Joseph College.", quote: true },
+  { tone: "a", seed: 1, title: "Check your subjects any time", text: "Your subjects, schedule and grades, on your phone or computer." },
+  { tone: "g", seed: 5, title: "See your way to graduation", text: "What you've passed, what's left, and what to resolve first." },
   { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS Secretary's Office." },
 ];
 
@@ -92,7 +92,7 @@ export default function LandingPage() {
               <Reveal key={m.title} delay={i * 90}>
                 <ArtHero tone={m.tone} seed={m.seed} className="h-full min-h-[170px] rounded-[20px] sm:min-h-[200px]">
                   <div className="flex h-full min-h-[170px] flex-col justify-end gap-1.5 p-5 sm:min-h-[200px] sm:p-6">
-                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] ${m.quote ? "text-[22px] sm:text-[24px]" : "text-[19px] sm:text-[20px]"}`}>{m.title}</p>
+                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] text-[19px] sm:text-[20px]`}>{m.title}</p>
                     <p className="text-[14px] opacity-90">{m.text}</p>
                   </div>
                 </ArtHero>
