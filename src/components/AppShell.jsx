@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, CalendarRange, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { BookOpen, CalendarClock, CalendarRange, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -164,13 +164,11 @@ function readCollapsed() {
 export default function AppShell() {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const toggleSidebar = () => setCollapsed((c) => {
     try { localStorage.setItem(SIDEBAR_KEY, c ? "open" : "collapsed"); } catch { /* private mode: just don't remember */ }
     return !c;
   });
-  const [q, setQ] = useState("");
   const term = useAsync(getCurrentTerm, [], "term");
 
   // Pages that live under a dropdown show "Group / Page" (Subject tracker / This semester).
@@ -188,10 +186,6 @@ export default function AppShell() {
   const title = path === "/"
     ? (user.role === "secretary" ? "Dashboard" : "Home")
     : crumb() || PAGE_TITLES.find(([re]) => re.test(path))?.[1] || "";
-  const search = (e) => {
-    e.preventDefault();
-    if (q.trim()) navigate(`/students?q=${encodeURIComponent(q.trim())}`);
-  };
 
   return (
     <div className="relative isolate flex min-h-screen flex-col bg-ground">
@@ -208,13 +202,6 @@ export default function AppShell() {
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
           <GlobalBack />
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
-          {user.role === "secretary" && (
-            <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
-              <label htmlFor="global-search" className="sr-only">Search students</label>
-              <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
-              <input id="global-search" className="field pl-9" placeholder="Search students by name or ID" value={q} onChange={(e) => setQ(e.target.value)} />
-            </form>
-          )}
           <TermCalendar term={term.data} />
           <UserMenu />
         </header>

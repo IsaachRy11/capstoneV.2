@@ -429,6 +429,26 @@ describe("class time clash scenarios", () => {
   });
 });
 
+describe("students only take subjects of their own curriculum", () => {
+  const pick = () => one(`
+    select st.id as student, o.id as offering from students st
+    join class_offerings o on true join sections sec on sec.id = o.section_id join school_terms t on t.id = sec.school_term_id and t.is_current
+    where st.program_id = (select id from programs where code = 'BSCS') and st.status = 'active'
+      and sec.program_id = (select id from programs where code = 'BSIT') and sec.year_level = 1
+    order by st.id, o.id limit 1`);
+  it("refuses a BSCS student in a BSIT subject, however it is added", async () => {
+    const x = await pick();
+    const direct = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('${x.student}', ${x.offering})`);
+    expect(direct.error).toMatch(/Students can only take subjects of their own curriculum/);
+    const plan = (await as("authenticated", SEC, `select public.subject_enroll_plan(${x.offering}, array['${x.student}']) as r`)).rows[0].r;
+    expect(["other_program", "passed", "enrolled"]).toContain(plan.students[0].state);
+    expect(plan.students[0].state).toBe("other_program");
+    const saved = (await as("authenticated", SEC, `select public.enroll_in_subject(${x.offering}, array['${x.student}']) as r`)).rows[0].r;
+    expect(saved[0]).toMatchObject({ ok: false, why: "not a subject of their curriculum" });
+    expect(await one(`select count(*)::int n from enrollments where student_id = '${x.student}' and offering_id = ${x.offering}`)).toEqual({ n: 0 });
+  });
+});
+
 describe("curriculum editing", () => {
   it("won't delete a subject that is scheduled or graded", async () => {
     const used = await one(`select curriculum_subject_id id from class_offerings limit 1`);

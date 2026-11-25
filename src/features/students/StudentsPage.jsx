@@ -34,7 +34,9 @@ export default function Students() {
   const listKey = LISTS[params.get("list")] ? params.get("list") : "enrolled";
   const other = LISTS[listKey]; // undefined while looking at enrolled students
   const programFilter = params.get("program") || "all";
-  const [q, setQ] = useState(params.get("q") || "");
+  const [q, setQ] = useState(params.get("q") || "");       // the search that is applied
+  const [typed, setTyped] = useState(params.get("q") || ""); // what is in the box; applied on Enter or Search
+  const applySearch = (value) => { setTyped(value); setQ(value.trim()); setPage(0); };
   const [status, setStatus] = useState("all");
   const [type, setType] = useState("all");
   const [deleting, setDeleting] = useState(null);
@@ -84,9 +86,9 @@ export default function Students() {
   // Only 1st year students can be Freshmen, so a 2nd to 4th year tab doesn't offer it.
   const typeOptions = Object.entries(STUDENT_TYPE).filter(([k]) => k !== "freshman" || other || searching || year === "1");
   const hideType = listKey === "graduated"; // for graduates the type no longer matters in the list
-  const filtered = q.trim() !== "" || programFilter !== "all" || type !== "all" || status !== "all";
+  const filtered = q.trim() !== "" || typed !== "" || programFilter !== "all" || type !== "all" || status !== "all";
   const clearFilters = () => {
-    setQ(""); setType("all"); setStatus("all"); setPage(0);
+    applySearch(""); setType("all"); setStatus("all");
     const next = new URLSearchParams(params);
     ["program", "q", "add"].forEach((k) => next.delete(k));
     setParams(next);
@@ -115,7 +117,7 @@ export default function Students() {
         {/* Phones have no sidebar dropdown: a switch between the lists instead. */}
         <div className="seg seg-fill m-2 lg:hidden" role="group" aria-label="Student list">
           {[["enrolled", "Enrolled"], ...Object.entries(LISTS).map(([k, v]) => [k, v.title])].map(([k, label]) => (
-            <button key={k} type="button" aria-pressed={listKey === k} onClick={() => { setQ(""); setParam("list", k === "enrolled" ? null : k); }}>{label}</button>
+            <button key={k} type="button" aria-pressed={listKey === k} onClick={() => { applySearch(""); setParam("list", k === "enrolled" ? null : k); }}>{label}</button>
           ))}
         </div>
         {!other && <div role="tablist" aria-label="Year level" className="flex gap-1 overflow-x-auto border-b border-line px-2 sm:gap-6 sm:px-5">
@@ -123,7 +125,7 @@ export default function Students() {
             const n = base.filter((s) => inTab(s, k)).length;
             const on = !searching && year === k;
             return (
-              <button key={k} role="tab" aria-selected={on} onClick={() => { setQ(""); if (k !== "1" && type === "freshman") setType("all"); setParam("year", k); }}
+              <button key={k} role="tab" aria-selected={on} onClick={() => { applySearch(""); if (k !== "1" && type === "freshman") setType("all"); setParam("year", k); }}
                 className={`-mb-px inline-flex h-12 flex-none items-center justify-center gap-1.5 whitespace-nowrap border-b-[3px] px-2.5 text-[14px] sm:justify-start sm:gap-2 sm:px-1 ${on ? "border-accent font-bold text-ink" : "border-transparent font-medium text-ink-3 hover:text-ink"}`}>
                 <span className="sm:hidden">{label.replace(" Year", "")}</span><span className="hidden sm:inline">{label}</span>
                 <span className={`rounded-full px-2 py-0.5 font-mono text-[12px] font-semibold ${on ? "text-white" : "bg-hover text-ink-3"}`} style={on ? { background: "var(--btn)" } : undefined}>{n}</span>
@@ -133,11 +135,15 @@ export default function Students() {
         </div>}
 
         <div className="flex flex-wrap gap-2.5 border-b border-line bg-surface-2 px-4 py-3 sm:px-5 sm:py-4">
-          <div className="relative flex-[1_1_260px]">
-            <label htmlFor="find" className="sr-only">Search students</label>
-            <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
-            <input id="find" className="field pl-9" placeholder="Name, student ID or section" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
-          </div>
+          <form role="search" className="flex flex-[1_1_300px] gap-2" onSubmit={(e) => { e.preventDefault(); applySearch(typed); }}>
+            <div className="relative min-w-0 flex-1">
+              <label htmlFor="find" className="sr-only">Search students</label>
+              <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
+              <input id="find" type="search" enterKeyHint="search" className="field pl-9" placeholder="Name, student ID or section" value={typed}
+                onChange={(e) => { setTyped(e.target.value); if (!e.target.value) applySearch(""); }} />
+            </div>
+            <button type="submit" className="btn btn-secondary flex-none">Search</button>
+          </form>
           <label htmlFor="prog" className="sr-only">Program</label>
           <select id="prog" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_220px]" value={programFilter} onChange={(e) => setParam("program", e.target.value)}>
             <option value="all">Program</option>
