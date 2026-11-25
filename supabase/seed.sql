@@ -53,8 +53,8 @@ on conflict do nothing;
 -- The gym hosts several PATHFIT classes at once, so it's exempt from the room double-booking rule.
 update public.rooms set is_shared = true where name = 'Gymnasium';
 
--- ─── Demo secretary: signs in with staff ID CCS-001 (the Auth account is linked by that ID) ────────
-insert into public.secretaries (full_name, staff_id) values
+-- ─── Demo secretary: signs in with secretary ID CCS-001 (the Auth account is linked by that ID) ────────
+insert into public.secretaries (full_name, secretary_id) values
   ('Demo Secretary', 'CCS-001')
 on conflict do nothing;
 

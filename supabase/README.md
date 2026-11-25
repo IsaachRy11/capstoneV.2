@@ -16,7 +16,7 @@ programs ─ curricula ─ curriculum_subjects ─ subject_prerequisites
 school_terms ─ sections ─ class_offerings ─ class_meetings (schedule)
 students ─ registrations (section per term)
          └ enrollments (one per class taken; midterm/final grade, status)
-secretaries (the only staff role; students are the other role)
+secretaries (the secretary role; students are the other role)
 ```
 
 Views the app reads: `v_student_overview` (standing, section, flags), `v_enrollment_details`
@@ -28,7 +28,7 @@ Regular/irregular is **computed**, never typed in.
 1. Dashboard → SQL Editor → run `legacy/rename_legacy_tables.sql`. This renames, not deletes, so no backup is needed.
 2. Run the three migration files in order, then `seed.sql`.
 4. Dashboard → Authentication → Users → **Add user** for
-   `ccs-001@staff.ccs-monitor.test` (the secretary signs in with staff ID CCS-001) and `demo.student@ccs-monitor.test` (pick passwords).
+   `ccs-001@staff.ccs-monitor.test` (the secretary signs in with secretary ID CCS-001) and `demo.student@ccs-monitor.test` (pick passwords).
    They link to their records automatically.
 
 Later changes go in a **new** migration file (never edit an applied one).

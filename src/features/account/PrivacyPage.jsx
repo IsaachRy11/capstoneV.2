@@ -31,7 +31,7 @@ export default function PrivacyPage() {
     {
       icon: ShieldCheck,
       title: "How it's protected",
-      body: <>These rules are enforced by the database itself, not just hidden on screen. Passwords are stored as one-way hashes, so no one can read them.</>,
+      body: <>These rules are enforced by the system itself, not just hidden on screen. Passwords are stored as one-way hashes, so no one can read them.</>,
     },
     {
       icon: History,

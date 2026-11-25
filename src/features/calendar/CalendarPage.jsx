@@ -63,6 +63,15 @@ export default function CalendarPage() {
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, 1))} aria-label="Next month"><ChevronRight size={18} /></button>
           </div>
 
+          {/* Each key looks exactly like the label it explains on the days below. */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 sm:px-5" aria-label="Legend">
+            <span className="mr-1 text-[12px] font-bold uppercase tracking-[0.08em] text-ink">Legend</span>
+            <span className="flex items-center gap-1 rounded-md border border-current px-2 py-1 text-[12px] font-bold tone-ok"><Flag size={12} aria-hidden="true" />First day of classes</span>
+            <span className="flex items-center gap-1 rounded-md border border-current px-2 py-1 text-[12px] font-bold tone-info"><Flag size={12} aria-hidden="true" />Last day of classes</span>
+            {Object.entries(EVENT_KINDS).filter(([k]) => data.events.some((e) => e.kind === k)).map(([k, v]) => <span key={k} className={`rounded-md border border-current px-2 py-1 text-[12px] font-semibold tone-${v.tone}`}>{v.label}</span>)}
+            <span className="flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-[12px] font-semibold text-ink"><span className="h-3.5 w-3.5 rounded-full" style={{ background: "var(--btn)" }} />Today</span>
+          </div>
+
           <div className="grid grid-cols-7 border-b border-line bg-surface-2">
             {WEEKDAYS.map((w) => <div key={w} className="px-2 py-2 text-center text-[12px] font-semibold text-ink-3">{w}</div>)}
           </div>
@@ -78,7 +87,7 @@ export default function CalendarPage() {
               return (
                 <div key={d.toISOString()} role="gridcell"
                   aria-label={`${fmt(d, { weekday: "long", month: "long", day: "numeric" })}${t ? `, ${semesterLabel(t.semester)}` : ""}${dayEvents.map((e) => `, ${e.title}`).join("")}${marks.map((m) => `, ${edgeText(m)}`).join("")}${isToday ? ", today" : ""}`}
-                  className={`flex min-h-[56px] flex-col gap-1 border-line p-1.5 sm:min-h-[112px] sm:p-2 ${i % 7 ? "border-l" : ""} ${i >= 7 ? "border-t" : ""} ${t && here ? "bg-tint" : ""} ${here ? "" : "opacity-45"}`}>
+                  className={`flex min-h-[56px] flex-col gap-1 border-line p-1.5 sm:min-h-[112px] sm:p-2 ${i % 7 ? "border-l" : ""} ${i >= 7 ? "border-t" : ""} ${here ? "" : "opacity-45"}`}>
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] ${isToday ? "font-bold text-white" : t ? "font-semibold text-ink" : "text-ink-2"}`}
                     style={isToday ? { background: "var(--btn)" } : undefined}>
                     {d.getDate()}
@@ -101,15 +110,6 @@ export default function CalendarPage() {
                 </div>
               );
             })}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3 text-[12px] text-ink-3 sm:px-5" aria-label="Legend">
-            <span className="font-semibold uppercase tracking-[0.08em]">Legend</span>
-            <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-tint ring-1 ring-line" />Semester days</span>
-            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-ok"><Flag size={11} aria-hidden="true" /></span>First day of classes</span>
-            <span className="flex items-center gap-1.5"><span className="flex h-4 items-center rounded px-1 tone-info"><Flag size={11} aria-hidden="true" /></span>Last day of classes</span>
-            {Object.entries(EVENT_KINDS).filter(([k]) => data.events.some((e) => e.kind === k)).map(([k, v]) => <span key={k} className="flex items-center gap-1.5"><span className={`h-3 w-5 rounded tone-${v.tone}`} style={{ background: "currentColor" }} />{v.label}</span>)}
-            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: "var(--btn)" }} />Today</span>
           </div>
 
           {/* The month's entries as a list: the cells are small, and phones can't show labels in them at all. */}

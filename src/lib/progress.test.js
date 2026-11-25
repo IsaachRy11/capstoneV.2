@@ -31,8 +31,8 @@ describe("buildProgress", () => {
     expect(s["IT 103"]).toMatchObject({ state: "back", backReason: "Failed" });
   });
 
-  it("treats INC as a failed subject (unresolved)", () => {
-    expect(s["GE 4"]).toMatchObject({ state: "back", backReason: "INC" });
+  it("treats NC as a subject still to resolve", () => {
+    expect(s["GE 4"]).toMatchObject({ state: "back", backReason: "NC" });
   });
 
   it("shows a current-term subject as enrolled, with its midterm", () => {
