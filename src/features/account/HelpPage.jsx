@@ -25,7 +25,7 @@ const COMMON = [
   },
   {
     q: "What are Student type and Status?",
-    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated or Dropped.</>,
+    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated, Withdrawn or Shifted out.</>,
   },
   {
     q: "What do Regular and Irregular mean?",
@@ -54,12 +54,16 @@ const SECRETARY = [
     a: <>Yes. You are asked to confirm, the grades go away with the subject, and the removal is saved in the student's grade change history, which can't be edited or deleted.</>,
   },
   {
-    q: "Why can't I put a dropped student back in a subject?",
-    a: <>Bringing a student back runs the same checks as a new enrollment: the subject must have a free seat and no schedule clash.</>,
+    q: "What happens when a student is Withdrawn?",
+    a: <>They leave the current semester: its subjects without a result are marked Withdrawn and their seats are freed. Earlier semesters and results already given don't change. If they come back, set them to Active and add their subjects. To undo a withdrawal made by mistake, set Active, then use Encode grades and choose Graded for each subject; a free seat and no schedule clash are required. To withdraw just one subject, use Encode grades and choose Withdrawn.</>,
+  },
+  {
+    q: "What are credited subjects?",
+    a: <>Subjects a shiftee or transferee already passed before, accepted by the school. On the student's record, use Add credited subjects. A credit counts as passed, has no grade, and can be removed if added by mistake; the system logs who added or removed it. A subject the student still has to take is added in Section allocations as usual.</>,
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record: Active, Graduated, Dropped or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated and Dropped students have their own tabs on the Students page.</>,
+    a: <>It is set on the student's record: Active, Graduated, Withdrawn or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated, Withdrawn and Shifted out students have their own tabs on the Students page.</>,
   },
   {
     q: "Why can't I delete a subject?",
@@ -67,7 +71,7 @@ const SECRETARY = [
   },
   {
     q: "Why was a class time refused?",
-    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The gymnasium is the only room that can be shared.</>,
+    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The PE shed is the only room that can be shared.</>,
   },
   {
     q: "Where can I see who changed a grade?",

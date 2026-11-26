@@ -13,7 +13,7 @@ export default function DeleteSubjectModal({ subject, onClose, onDeleted }) {
       onDeleted();
     } catch (err) {
       setError(err.code === "23503"
-        ? `${subject.code} can't be deleted because it's on a class schedule or students already have grades in it. Their records are kept safe.`
+        ? `${subject.code} can't be deleted because it's on a class schedule, or students already have grades or credit in it. Their records are kept safe.`
         : err.message);
       setBusy(false);
     }

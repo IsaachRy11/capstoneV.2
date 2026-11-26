@@ -17,9 +17,11 @@ export const shortProgramName = (name = "") => name.replace(/^Bachelor of Scienc
 export const formatGrade = (g) => (g === null || g === undefined ? "—" : Number(g).toFixed(2));
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 
-export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "NC", dropped: "Dropped" };
+export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "NC", dropped: "Dropped", withdrawn: "Withdrawn" };
 // NC and Dropped are grey (no final grade).
-export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
+export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral", withdrawn: "neutral" };
+// A Dropped or Withdrawn subject no longer holds a seat, a place in the timetable or units in the term.
+export const holdsSeat = (status) => status !== "dropped" && status !== "withdrawn";
 
 // "BSIT 1-T" -> "T" (the block section letter)
 export const sectionLetter = (name) => String(name).split("-").pop();
@@ -37,9 +39,13 @@ export const ADMISSION_FOR_TYPE = { freshman: "new", continuing: "returnee", tra
 
 // Student STATUS. students.status is what the secretary sets (only "active" students can be enrolled in classes);
 // while active, the status shown is Regular or Irregular, which the database works out from the grades.
-export const STUDENT_STATUS = { active: "Active", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
-export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out", inactive: "Inactive" };
+// The status stored as "dropped" is shown as "Withdrawn" (the student left the term). A single SUBJECT can still be "Dropped".
+export const STUDENT_STATUS = { active: "Active", graduated: "Graduated", dropped: "Withdrawn", shifted_out: "Shifted out", inactive: "Inactive" };
+export const STUDENT_STATUS_LABEL = { regular: "Regular", irregular: "Irregular", graduated: "Graduated", dropped: "Withdrawn", shifted_out: "Shifted out", inactive: "Inactive" };
 export const STUDENT_STATUS_TONE = { regular: "ok", irregular: "warn", graduated: "info", dropped: "neutral", shifted_out: "neutral", inactive: "neutral" };
+// Section, this term's units and student type only mean something while the student is Active. They are kept, and
+// show again when the status goes back to Active.
+export const isActiveStudent = (s) => !s.status || s.status === "active";
 export const studentStatusKey = (s) => (s.status && s.status !== "active" ? s.status : s.standing === "irregular" ? "irregular" : "regular");
 export const studentStatusLabel = (s) => STUDENT_STATUS_LABEL[studentStatusKey(s)];
 
@@ -69,12 +75,14 @@ export const gradeStatusLabel = (status, midterm) =>
   status !== "enrolled" ? STATUS_LABEL[status] || status
   : midterm === null || midterm === undefined || midterm === "" ? "No grades yet" : "No final grade yet";
 
-// Term average, weighted by units: sum(final grade x units) / sum(units). Left out: dropped subjects (no grade) and
-// NSTP and PATHFIT (SJC does not count them). It is worked out only when every counted subject has a final grade;
-// otherwise null (shown as a dash).
+// Term average, weighted by units: sum(final grade x units) / sum(units). No average (null, shown as a dash) while
+// any subject of the term is Failed, NC or Dropped, or while a counted subject has no final grade. Left out of the
+// computation: Withdrawn subjects (not taken) and NSTP and PATHFIT (SJC does not count them).
 const NOT_AVERAGED = /^\s*(NSTP|PATHFIT)/i;
+const NO_AVERAGE = ["failed", "incomplete", "dropped"];
 export function termAverage(rows) {
-  const counted = rows.filter((r) => r.status !== "dropped" && !NOT_AVERAGED.test(r.code || ""));
+  if (rows.some((r) => NO_AVERAGE.includes(r.status))) return null;
+  const counted = rows.filter((r) => r.status !== "withdrawn" && !NOT_AVERAGED.test(r.code || ""));
   if (!counted.length || counted.some((r) => r.final_grade === null || r.final_grade === undefined)) return null;
   const units = sumUnits(counted);
   return units ? (counted.reduce((t, r) => t + Number(r.final_grade) * Number(r.units), 0) / units).toFixed(2) : null;

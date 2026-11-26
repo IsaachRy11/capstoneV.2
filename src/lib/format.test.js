@@ -125,11 +125,11 @@ describe("student type and status", () => {
     expect(ADMISSION_FOR_TYPE).toEqual({ freshman: "new", continuing: "returnee", transferee: "transferee", shiftee: "shiftee" });
   });
 
-  it("shows Regular or Irregular while active, otherwise Graduated or Dropped", () => {
+  it("shows Regular or Irregular while active, otherwise Graduated or Withdrawn", () => {
     expect(studentStatusLabel({ status: "active", standing: "regular" })).toBe("Regular");
     expect(studentStatusLabel({ status: "active", standing: "irregular" })).toBe("Irregular");
     expect(studentStatusKey({ status: "graduated", standing: "irregular" })).toBe("graduated");
-    expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Dropped");
+    expect(studentStatusLabel({ status: "dropped", standing: "regular" })).toBe("Withdrawn");
     expect(studentStatusLabel({ status: "shifted_out", standing: "regular" })).toBe("Shifted out");
     expect(studentStatusLabel({ standing: "irregular" })).toBe("Irregular");
   });
@@ -139,7 +139,6 @@ describe("term average and academic record wording", () => {
   const row = (final_grade, units, status = "passed") => ({ final_grade, units, status });
   it("weights final grades by units", () => {
     expect(termAverage([row(1, 3), row(2, 2)])).toBe("1.40");
-    expect(termAverage([row(5, 3, "failed"), row(1, 3)])).toBe("3.00");
   });
   it("gives no average until every subject that gets a grade has one", () => {
     expect(termAverage([row(1.5, 3), row(null, 3, "enrolled")])).toBeNull();
@@ -147,12 +146,18 @@ describe("term average and academic record wording", () => {
     expect(termAverage([])).toBeNull();
   });
   it("leaves NSTP and PATHFIT out, even when one has no final grade", () => {
-    const named = (code, final_grade, units) => ({ code, final_grade, units, status: final_grade === null ? "incomplete" : "passed" });
+    const named = (code, final_grade, units) => ({ code, final_grade, units, status: final_grade === null ? "enrolled" : "passed" });
     expect(termAverage([named("IT 101", 1.5, 3), named("PATHFIT 1", 3, 2), named("NSTP 11", null, 3)])).toBe("1.50");
     expect(termAverage([named("PATHFIT 1", 1, 2)])).toBeNull();
   });
-  it("leaves dropped subjects out", () => {
-    expect(termAverage([row(1.5, 3), row(null, 3, "dropped")])).toBe("1.50");
+  it("gives no average while a subject is failed, NC or dropped, even NSTP or PATHFIT", () => {
+    expect(termAverage([row(5, 3, "failed"), row(1, 3)])).toBeNull();
+    expect(termAverage([row(1.5, 3), row(null, 3, "dropped")])).toBeNull();
+    expect(termAverage([row(1.5, 3), { code: "PATHFIT 3", final_grade: 5, units: 2, status: "failed" }])).toBeNull();
+  });
+  it("leaves withdrawn subjects out", () => {
+    expect(termAverage([row(1.5, 3), row(null, 3, "withdrawn")])).toBe("1.50");
+    expect(termAverage([row(null, 3, "withdrawn")])).toBeNull();
   });
   it("says what is missing instead of Enrolled", () => {
     expect(gradeStatusLabel("enrolled", null)).toBe("No grades yet");

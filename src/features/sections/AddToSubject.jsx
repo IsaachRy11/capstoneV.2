@@ -14,14 +14,16 @@ const STATE = {
   add: { text: "Can be added", tone: "text-ok" },
   enrolled: { text: "Already in this subject", tone: "text-ink-3" },
   passed: { text: "Already passed it", tone: "text-ink-3" },
+  withdrawn: { text: "Withdrew from it this term", tone: "text-ink-3" },
   over_limit: { text: "Over their unit limit", tone: "text-warn" },
   other_program: { text: "Not in their curriculum", tone: "text-bad" },
 };
 
 // The student's own history with THIS subject (not their overall Regular/Irregular status).
 function subjectStatus(r) {
-  if (r.state === "passed") return <span className="badge tone-ok">Passed</span>;
+  if (r.state === "passed") return <span className="badge tone-ok">Passed or credited</span>;
   if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
+  if (r.state === "withdrawn") return <span className="badge tone-neutral">Withdrawn</span>;
   if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
   if (r.retake) return <span className="badge tone-warn">Retake</span>;
   return <span className="text-[13px] text-ink-3">Not yet enrolled</span>;
@@ -64,7 +66,7 @@ export default function AddToSubject({ offeringId }) {
   const chosen = rows.filter(isTicked);
   const allOn = chosen.length === ready.length && ready.length > 0;
   const tooMany = chosen.length > data.seats_left;
-  const isDone = (r) => r.state === "enrolled" || r.state === "passed";
+  const isDone = (r) => r.state === "enrolled" || r.state === "passed" || r.state === "withdrawn";
   const done = rows.filter(isDone);
   // A student the secretary searched for is always shown, so the reason is visible.
   const listed = showDone ? rows : rows.filter((r) => !isDone(r) || extra.some((x) => x.student_id === r.student_id));

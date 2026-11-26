@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { sumUnits, termLabel, yearSemesterLabel, semesterSubject } from "../../lib/format";
 import ProgressDetail from "./ProgressDetail";
+import SubjectLink from "./SubjectLink";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
 import { useProgress } from "./useProgress";
@@ -37,7 +38,7 @@ export default function Progress() {
   // Distinct future subjects that open once the current ones are passed.
   const opening = new Map(taking.flatMap((s) => s.unlocks).map((u) => [u.id, u]));
 
-  if (view) return <ProgressDetail view={view} progress={progress} />;
+  if (view) return <ProgressDetail view={view} progress={progress} student={student} />;
 
   const severe = progress.back.some((x) => x.backReason === "Failed"); // red if anything failed, else amber
 
@@ -70,10 +71,10 @@ export default function Progress() {
             <h2 className={`text-[15px] font-bold ${severe ? "text-bad" : "text-warn"}`}>{progress.back.length === 1 ? "1 subject to resolve" : `${progress.back.length} subjects to resolve`}</h2>
             <ul className="mt-1 text-[14px] text-ink-2">
               {progress.back.map((s) => (
-                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · {semesterSubject(s.semester)} in the curriculum</li>
+                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono"><SubjectLink subject={s} student={student} /></span> {s.title} · {semesterSubject(s.semester)} in the curriculum</li>
               ))}
             </ul>
-            <p className="mt-2 text-[13px] text-ink-3">Check with the college how to resolve or retake them.</p>
+            <p className="mt-2 text-[13px] text-ink-3">Check with the CCS Secretary's Office how to resolve or retake them.</p>
           </div>
         </section>
       ) : (
@@ -91,6 +92,7 @@ export default function Progress() {
           <h2 id="taking-title" className="flex items-center gap-2 text-[19px] font-bold"><Layers size={18} className="text-accent" aria-hidden="true" />What you're taking</h2>
           <Link to="/schedule" className="inline-flex min-h-10 items-center text-[13px] font-semibold">See your week</Link>
         </div>
+        {taking.length > 0 && <p className="-mt-1.5 text-[13px] text-ink-3">Select a course number to see the subject's details.</p>}
         {taking.length === 0 ? (
           <div className="card px-5 py-10 text-center text-[14px] text-ink-3">You're not enrolled in any subjects this semester.</div>
         ) : (
@@ -103,7 +105,7 @@ export default function Progress() {
                 <tbody>
                   {taking.map((s) => (
                     <tr key={s.id}>
-                      <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                      <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent"><SubjectLink subject={s} student={student} /></td>
                       <td className="min-w-0 align-top font-medium">
                         {s.title}
                         <span className="mt-0.5 block text-[12px] font-normal text-ink-3 lg:hidden">{s.unlocks.length ? `Required for ${s.unlocks.map((o) => o.code).join(", ")}` : "Not required for another subject."}</span>

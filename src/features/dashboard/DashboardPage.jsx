@@ -37,7 +37,7 @@ export default function Dashboard() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   const { students: everyone, sections, curriculum, programs, offerings } = data;
-  // Graduated and dropped students are counted on their own tabs of the Students page, not in the year counts here.
+  // Graduated and withdrawn students are counted on their own tabs of the Students page, not in the year counts here.
   const students = everyone.filter((s) => s.status === "active" || s.status === "inactive");
   const graduated = everyone.filter((s) => s.status === "graduated").length;
   const byProgram = (code) => students.filter((s) => s.program_code === code);

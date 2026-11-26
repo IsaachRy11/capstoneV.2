@@ -61,7 +61,7 @@ const NAV = {
   secretary: [
     { to: "/", end: true, icon: LayoutDashboard, label: "Dashboard", tab: "Home" },
     { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records", byList: true,
-      children: [{ to: "/students", label: "Enrolled" }, { to: "/students?list=graduated", label: "Graduated" }, { to: "/students?list=dropped", label: "Dropped" }, { to: "/students?list=shifted_out", label: "Shifted out" }] },
+      children: [{ to: "/students", label: "Enrolled" }, { to: "/students?list=graduated", label: "Graduated" }, { to: "/students?list=dropped", label: "Withdrawn" }, { to: "/students?list=shifted_out", label: "Shifted out" }] },
     { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
     { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
@@ -178,7 +178,7 @@ export default function AppShell() {
     if (path === "/progress") return "Subject tracker / This semester";
     if (path === "/progress/roadmap") return "Subject tracker / Roadmap";
     if (path === "/curriculum" && user.role === "student") return "Subject tracker / Curriculum";
-    if (path === "/students") return `Students / ${{ graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out" }[list] || "Enrolled"}`;
+    if (path === "/students") return `Students / ${{ graduated: "Graduated", dropped: "Withdrawn", shifted_out: "Shifted out" }[list] || "Enrolled"}`;
     if (path === "/schedules") return "Schedules / Timetables";
     if (path === "/schedules/edit") return "Schedules / Edit class times";
     return null;

@@ -35,6 +35,28 @@ export const getTermClasses = (studentId, termId) =>
   ).then((rows) => rows.sort((a, b) =>
     a.class_offerings.curriculum_subjects.sort_order - b.class_offerings.curriculum_subjects.sort_order));
 
+// Credited subjects (shiftees and transferees); removed ones are kept in the table as the log and left out here.
+// An empty list while the table doesn't exist yet, so pages still load before the database is updated.
+export const getCredits = (id) =>
+  unwrap(
+    supabase.from("student_credits")
+      .select("id, curriculum_subject_id, created_at, curriculum_subjects(code, title, units, year_level, semester, sort_order)")
+      .eq("student_id", id).is("removed_at", null)
+  ).then((rows) => rows.sort((a, b) => a.curriculum_subjects.year_level - b.curriculum_subjects.year_level
+    || a.curriculum_subjects.semester - b.curriculum_subjects.semester || a.curriculum_subjects.sort_order - b.curriculum_subjects.sort_order))
+    .catch((err) => {
+      if (/student_credits/.test(err.message || "")) return [];
+      throw err;
+    });
+
+// Secretary only. One insert, so either every picked subject is credited or none is.
+export const addCredits = (studentId, subjectIds) =>
+  unwrap(supabase.from("student_credits").insert(subjectIds.map((id) => ({ student_id: studentId, curriculum_subject_id: id }))));
+
+// Secretary only. The row stays, marked with who removed it and when.
+export const removeCredit = (creditId) =>
+  unwrap(supabase.from("student_credits").update({ removed_at: new Date().toISOString() }).eq("id", creditId));
+
 // Failed / INC / dropped subjects not cleared by a later pass (computed by the database view).
 export const getDeficiencies = (id) =>
   unwrap(

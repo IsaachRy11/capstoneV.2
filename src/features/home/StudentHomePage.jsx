@@ -2,10 +2,10 @@ import { useOutletContext } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
+import { getCredits, getDeficiencies, getHistory, getStudent, getTermClasses } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { ErrorState, LoadingState, StudentStatusBadge } from "../../components/ui";
-import { sumUnits, yearLabel } from "../../lib/format";
+import { isActiveStudent, sumUnits, yearLabel } from "../../lib/format";
 import { buildProgress, nextTermFor } from "../../lib/progress";
 import { useClassStatus } from "../../hooks/useCalendar";
 import TodayCard from "./TodayCard";
@@ -21,13 +21,13 @@ export default function StudentHome() {
   const { data, error, loading, reload } = useAsync(async () => {
     if (termLoading) return null; // wait for the semester instead of loading everything twice
     const student = await getStudent(user.studentId);
-    const [classes, deficiencies, curriculum, history, prerequisites, programs] = await Promise.all([
+    const [classes, deficiencies, curriculum, history, prerequisites, programs, credits] = await Promise.all([
       term ? getTermClasses(user.studentId, term.id) : [],
       getDeficiencies(user.studentId),
-      getCurriculum(student.program_code), getHistory(user.studentId), getPrerequisites(), getPrograms(),
+      getCurriculum(student.program_code), getHistory(user.studentId), getPrerequisites(), getPrograms(), getCredits(user.studentId),
     ]);
     const program = programs.find((p) => p.code === student.program_code);
-    const progress = buildProgress({ curriculum, history, prerequisites });
+    const progress = buildProgress({ curriculum, history, prerequisites, credits });
     const next = program
       ? nextTermFor(term, student.year_level, program.duration_years, (y) => progress.subjects.some((x) => x.year_level === y && x.semester === 3))
       : null;
@@ -38,7 +38,7 @@ export default function StudentHome() {
   if (loading || !data) return <LoadingState />;
 
   const { student, classes, deficiencies, progress, next } = data;
-  const active = classes.filter((c) => c.status !== "dropped");
+  const active = classes.filter((c) => c.status !== "dropped" && c.status !== "withdrawn");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
 
   return (
@@ -48,9 +48,9 @@ export default function StudentHome() {
         badge={<StudentStatusBadge student={student} />}
         facts={[
           ["Year level", yearLabel(student.year_level)],
-          ["Section", student.section_name || "Not yet enrolled"],
-          ["Subjects this term", `${active.length} subjects`],
-          ["Units this term", `${units} units`],
+          ["Section", isActiveStudent(student) ? student.section_name || "Not yet enrolled" : "—"],
+          ["Subjects this term", isActiveStudent(student) ? `${active.length} subjects` : "—"],
+          ["Units this term", isActiveStudent(student) ? `${units} units` : "—"],
         ]} />
 
       {/* Subjects to resolve first: it is what the student most needs to know. */}

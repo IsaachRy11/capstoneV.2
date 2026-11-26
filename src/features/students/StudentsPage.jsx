@@ -17,7 +17,7 @@ const PAGE_SIZES = [10, 25, 50, 100];
 const TABS = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
 const LISTS = {
   graduated: { title: "Graduated", empty: "No graduates yet. A student appears here when the secretary marks them as Graduated on their record." },
-  dropped: { title: "Dropped", empty: "No dropped students. A student appears here when the secretary marks them as Dropped on their record." },
+  dropped: { title: "Withdrawn", empty: "No withdrawn students. A student appears here when the secretary marks them as Withdrawn on their record." },
   shifted_out: { title: "Shifted out", empty: "No one has shifted out. When a student moves to another program, mark the old record as Shifted out and add them again as a new student." },
 };
 const isEnrolled = (s) => s.status === "active" || s.status === "inactive";
@@ -69,9 +69,9 @@ export default function Students() {
     return data.students.filter((s) =>
       (programFilter === "all" || s.program_code === programFilter) &&
       (status === "all" || !!other || studentStatusKey(s) === status) &&
-      (type === "all" || listKey === "graduated" || studentTypeKey(s) === type) &&
+      (type === "all" || !!other || studentTypeKey(s) === type) &&
       (!needle || `${s.full_name} ${s.id} ${s.section_name || ""}`.toLowerCase().includes(needle)));
-  }, [data, q, programFilter, status, type, other, listKey]);
+  }, [data, q, programFilter, status, type, other]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
@@ -85,7 +85,7 @@ export default function Students() {
   const pages = Math.ceil(rows.length / pageSize);
   // Only 1st year students can be Freshmen, so a 2nd to 4th year tab doesn't offer it.
   const typeOptions = Object.entries(STUDENT_TYPE).filter(([k]) => k !== "freshman" || other || searching || year === "1");
-  const hideType = listKey === "graduated"; // for graduates the type no longer matters in the list
+  const hideType = !!other; // type only matters while Active: not on the Graduated, Withdrawn or Shifted out lists
   const filtered = q.trim() !== "" || typed !== "" || programFilter !== "all" || type !== "all" || status !== "all";
   const clearFilters = () => {
     applySearch(""); setType("all"); setStatus("all");

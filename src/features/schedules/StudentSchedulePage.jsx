@@ -23,7 +23,7 @@ export default function Schedule() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
   const items = classes
-    .filter((c) => c.status !== "dropped")
+    .filter((c) => c.status !== "dropped" && c.status !== "withdrawn")
     .map((c) => ({
       id: c.id,
       code: c.class_offerings.curriculum_subjects.code,

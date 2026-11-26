@@ -10,7 +10,7 @@ export default function TodayCard({ classes, status, className = "" }) {
   const day = todayWeekday();
   const now = new Date().getHours() * 60 + new Date().getMinutes();
   const today = classes
-    .filter((c) => c.status !== "dropped")
+    .filter((c) => c.status !== "dropped" && c.status !== "withdrawn")
     .flatMap((c) => c.class_offerings.class_meetings.filter((m) => m.weekday === day).map((m) => ({
       key: `${c.id}-${m.starts_at}`,
       code: c.class_offerings.curriculum_subjects.code,
