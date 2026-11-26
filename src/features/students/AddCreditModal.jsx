@@ -73,7 +73,7 @@ export default function AddCreditModal({ student, history, credits, onClose, onS
           {busy ? "Saving…" : chosen.length ? `Save ${chosen.length} ${chosen.length === 1 ? "subject" : "subjects"}` : "Save subjects"}
         </button>
       </>}>
-      <p className="text-[14px] text-ink-2">Tick each subject and enter its grades. A final grade of 1.00 to 3.00 is <strong className="text-ink">Credited</strong>. A final grade of 5.00 is <strong className="text-ink">Not credited</strong>, and the student takes the subject here.</p>
+      <p className="text-[14px] text-ink-2">Tick each subject and enter its grades. A final grade of 1.00 to 3.00 is <strong className="text-ink">Credited</strong>. A final grade of 5.00 is <strong className="text-ink">Not credited</strong>.</p>
       <label htmlFor="credit-find" className="sr-only">Find a subject</label>
       <input id="credit-find" className="field mt-3" placeholder="Course No. or description" value={filter} onChange={(e) => setFilter(e.target.value)} autoComplete="off" />
       {loading && <div className="mt-3"><LoadingState variant="list" /></div>}

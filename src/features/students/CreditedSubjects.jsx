@@ -147,7 +147,7 @@ function CreditResult({ ok, passedHere }) {
   return (
     <span className="block">
       <Badge tone="bad" dot>Not credited</Badge>
-      <span className="mt-1 block text-[12px] text-ink-2">{passedHere ? "Failed before. Passed here since." : "Subject to resolve. Take it here."}</span>
+      <span className="mt-1 block text-[12px] text-ink-2">{passedHere ? "Failed before. Passed here since." : "Subject to resolve."}</span>
     </span>
   );
 }
