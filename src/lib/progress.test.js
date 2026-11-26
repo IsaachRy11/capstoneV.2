@@ -164,6 +164,15 @@ describe("credited subjects", () => {
   });
 });
 
+describe("grades from earlier studies", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 1, semester: 1 }];
+  it("credits a passing final grade and not a failed one", () => {
+    const progress = buildProgress({ curriculum, history: [], credits: [{ curriculum_subject_id: 1, final_grade: "3.00" }, { curriculum_subject_id: 2, final_grade: "5.00" }] });
+    expect(progress.subjects.map((s) => s.state)).toEqual(["passed", "not_taken"]);
+    expect(progress.unitsEarned).toBe(3);
+  });
+});
+
 describe("termYear", () => {
   const row = (term, year, curriculum_year, status = "enrolled") => ({ school_term_id: term, school_year: year, semester: 1, curriculum_year, status });
   it("is not renamed by one late subject from a lower year", () => {

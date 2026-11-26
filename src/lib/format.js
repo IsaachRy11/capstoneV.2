@@ -3,12 +3,11 @@
 
 export const yearLabel = (y) => ["", "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"][y] || `Year ${y}`;
 export const semesterLabel = (s) => (s === 1 ? "1st Semester" : s === 2 ? "2nd Semester" : "Summer");
-// Where a subject sits in the curriculum, said as a kind of subject: "1st semester subject", "summer subject".
-export const semesterSubject = (semester, n = 1) =>
-  `${{ 1: "1st semester", 2: "2nd semester", 3: "summer" }[semester]} ${n === 1 ? "subject" : "subjects"}`;
-
 // "3rd Year · 1st Semester"; summer is just "Summer" (it also holds retakes from any year).
 export const yearSemesterLabel = (year, sem) => (sem === 3 ? "Summer" : `${yearLabel(year)} · ${semesterLabel(sem)}`);
+
+// Where a subject sits in the curriculum, inside a sentence: "2nd Year, 1st Semester"; "summer after 3rd Year".
+export const curriculumPlace = (year, sem) => (sem === 3 ? `summer after ${yearLabel(year)}` : `${yearLabel(year)}, ${semesterLabel(sem)}`);
 export const termLabel = (t) => (t ? `SY ${t.school_year.replace("-", "–")} · ${semesterLabel(t.semester)}` : "");
 
 // "Bachelor of Science in Computer Science" → "BS Computer Science" (display only).

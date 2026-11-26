@@ -170,6 +170,8 @@
     padding: 12px 20px; font-size: 14px; color: var(--ink);
     border-bottom: 1px solid var(--line-2); vertical-align: middle;
   }
+  /* A failing grade stays red inside a table (the cell color above would otherwise win). */
+  .data-table td.text-bad { color: var(--bad); }
   .data-table tbody tr:last-child td { border-bottom: 0; }
   .data-table tbody tr:hover td { background: var(--row-hover); }
   .data-table .num { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -430,7 +432,7 @@ main table:not(.no-grid) tfoot td { background: var(--surface-2); font-weight: 6
 .signin-panel figcaption { font-size: 15px; }
 .signin-panel > div:last-child { font-size: 14px; font-weight: 600; }
 
-/* A course number that opens the subject preview: dotted underline so it reads as something to press. */
-.subject-link { display: inline-block; font: inherit; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; text-align: left; padding: 6px 2px; margin: -6px -2px; border-radius: 4px; white-space: nowrap; }
-.subject-link:hover { text-decoration-style: solid; }
-@media (max-width: 1023px) { .subject-link { display: inline-flex; align-items: center; min-height: 36px; min-width: 44px; margin: -2px; } }
+/* "See if there's a class this semester": a normal text link at the end of a subject-to-resolve line. */
+.subject-link { display: inline-block; font: inherit; font-weight: 400; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-align: left; padding: 4px 2px; margin: -4px 0 -4px 6px; border-radius: 4px; }
+.subject-link:hover { text-decoration-thickness: 2px; }
+@media (max-width: 1023px) { .subject-link { display: flex; align-items: center; min-height: 36px; margin: 0; } }

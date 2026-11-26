@@ -59,7 +59,7 @@ const SECRETARY = [
   },
   {
     q: "What are credited subjects?",
-    a: <>Subjects a shiftee or transferee already passed before, accepted by the school. On the student's record, use Add credited subjects. A credit counts as passed, has no grade, and can be removed if added by mistake; the system logs who added or removed it. A subject the student still has to take is added in Section allocations as usual.</>,
+    a: <>Subjects a shiftee or transferee passed before. On the student's record, use Add earlier subjects and enter the midterm and final grade. A final grade of 1.00 to 3.00 is Credited and counts as passed. A final grade of 5.00 is Not credited: it counts for nothing, and the student takes the subject here. To correct a mistake, remove the entry and add it again; the system logs who added or removed it. A subject the student still has to take is added in Section allocations as usual.</>,
   },
   {
     q: "What does Student status do?",

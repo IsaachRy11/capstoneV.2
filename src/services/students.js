@@ -40,7 +40,7 @@ export const getTermClasses = (studentId, termId) =>
 export const getCredits = (id) =>
   unwrap(
     supabase.from("student_credits")
-      .select("id, curriculum_subject_id, created_at, curriculum_subjects(code, title, units, year_level, semester, sort_order)")
+      .select("id, curriculum_subject_id, midterm_grade, final_grade, created_at, curriculum_subjects(code, title, units, year_level, semester, sort_order)")
       .eq("student_id", id).is("removed_at", null)
   ).then((rows) => rows.sort((a, b) => a.curriculum_subjects.year_level - b.curriculum_subjects.year_level
     || a.curriculum_subjects.semester - b.curriculum_subjects.semester || a.curriculum_subjects.sort_order - b.curriculum_subjects.sort_order))
@@ -49,9 +49,11 @@ export const getCredits = (id) =>
       throw err;
     });
 
-// Secretary only. One insert, so either every picked subject is credited or none is.
-export const addCredits = (studentId, subjectIds) =>
-  unwrap(supabase.from("student_credits").insert(subjectIds.map((id) => ({ student_id: studentId, curriculum_subject_id: id }))));
+// Secretary only. One insert, so either every entry is saved or none is. entries: [{ subjectId, midterm, final }].
+export const addCredits = (studentId, entries) =>
+  unwrap(supabase.from("student_credits").insert(entries.map((e) => ({
+    student_id: studentId, curriculum_subject_id: e.subjectId, midterm_grade: e.midterm, final_grade: e.final,
+  }))));
 
 // Secretary only. The row stays, marked with who removed it and when.
 export const removeCredit = (creditId) =>

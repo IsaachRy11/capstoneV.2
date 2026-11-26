@@ -895,7 +895,7 @@ describe("credited subjects and withdrawal", () => {
     await db.exec(`insert into students (id, first_name, last_name, program_id, curriculum_id, year_level, admission_type)
       select '${id}', 'Test', '${id}', p.id, c.id, 1, '${type}' from programs p join curricula c on c.program_id = p.id and c.is_active where p.code = '${program}'`);
   };
-  const credit = (student, subjectId) => sec(`insert into student_credits (student_id, curriculum_subject_id) values ('${student}', ${subjectId}) returning id`);
+  const credit = (student, subjectId, final = 1.75, midterm = 2.0) => sec(`insert into student_credits (student_id, curriculum_subject_id, midterm_grade, final_grade) values ('${student}', ${subjectId}, ${midterm}, ${final}) returning id`);
   const passed = async (student, subjectId) => (await one(`select private.has_passed('${student}', ${subjectId}) p`)).p;
   // A subject with a prerequisite, and that prerequisite.
   const pair = () => one(`select sp.subject_id, sp.prerequisite_id, pre.year_level pre_year from subject_prerequisites sp
@@ -911,7 +911,7 @@ describe("credited subjects and withdrawal", () => {
 
   it("only the secretary credits, only shiftees and transferees, only their own curriculum", async () => {
     const p = await pair();
-    expect((await as("authenticated", STU, `insert into student_credits (student_id, curriculum_subject_id) values ('2099-0001', ${p.prerequisite_id})`)).error).toMatch(/row-level security|only for shiftees/i);
+    expect((await as("authenticated", STU, `insert into student_credits (student_id, curriculum_subject_id, final_grade) values ('2099-0001', ${p.prerequisite_id}, 1.5)`)).error).toMatch(/row-level security|only for shiftees/i);
     expect((await credit("2099-0002", p.prerequisite_id)).error).toMatch(/only for shiftees and transferees/);
     const other = await one(`select cs.id from curriculum_subjects cs join curricula c on c.id = cs.curriculum_id and c.is_active join programs pr on pr.id = c.program_id where pr.code = 'BSCS' limit 1`);
     expect((await credit("2099-0001", other.id)).error).toMatch(/own curriculum/);
@@ -940,6 +940,29 @@ describe("credited subjects and withdrawal", () => {
     expect(await passed("2099-0001", p.prerequisite_id)).toBe(false);
     expect((await sec(`update student_credits set removed_at = null where id = ${row.id}`)).error).toMatch(/only be removed/);
     expect((await sec(`delete from students where id = '2099-0001'`)).error).toMatch(/record is kept/);
+  });
+
+  it("needs a final grade on the official scale, and the grades can't be edited afterwards", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0006", "transferee");
+    const p = await pair();
+    expect((await credit("2099-0006", p.prerequisite_id, "null")).error).toMatch(/Enter the final grade/);
+    expect((await credit("2099-0006", p.prerequisite_id, 1.2)).error).toMatch(/final_scale/);
+    expect((await credit("2099-0006", p.prerequisite_id, 2.5)).error).toBeUndefined();
+    expect((await sec(`update student_credits set final_grade = 1.0 where student_id = '2099-0006'`)).error).toMatch(/only be removed/);
+  });
+
+  it("a failed grade is kept but is not a credit: nothing counts, and the student can take the subject", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0007", "shiftee");
+    const p = await pair();
+    expect((await credit("2099-0007", p.prerequisite_id, 5.0)).error).toBeUndefined();
+    expect((await one(`select is_credited from student_credits where student_id = '2099-0007'`)).is_credited).toBe(false);
+    expect(await passed("2099-0007", p.prerequisite_id)).toBe(false);
+    expect((await one(`select year_level from students where id = '2099-0007'`)).year_level).toBe(1);
+    const same = await one(`select o.id from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current
+      where o.curriculum_subject_id = ${p.prerequisite_id} limit 1`);
+    if (same) expect((await sec(`select public.subject_enroll_plan(${same.id}, array['2099-0007']) p`)).rows[0].p.students[0].state).not.toBe("passed");
   });
 
   it("a student reads only their own credits", async () => {

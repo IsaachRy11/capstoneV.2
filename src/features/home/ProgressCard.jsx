@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, GraduationCap } from "lucide-react";
-import { semesterSubject, sumUnits, yearSemesterLabel } from "../../lib/format";
+import { curriculumPlace, sumUnits, yearSemesterLabel } from "../../lib/format";
 import { prerequisiteStatus } from "../../lib/progress";
 
 // Home: where the student stands in the whole program, and what comes next.
@@ -11,7 +11,9 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
   // "Blocked": a prerequisite was failed or skipped. "Waiting": it is being taken right now (see prerequisiteStatus).
   const blocked = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "blocked");
   const waiting = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "waiting");
-  const retakes = next ? progress.back.filter((s) => s.semester === next.semester) : [];
+  // Every subject to resolve, with the places in the curriculum they come from.
+  const retakes = progress.back;
+  const from = [...new Set(retakes.map((s) => curriculumPlace(s.year_level, s.semester)))].join(" and ");
 
   return (
     <section className={`card flex flex-col gap-5 p-5 sm:p-6 ${className}`} aria-label="Your progress">
@@ -39,7 +41,7 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
                 <li className="text-ink-2">{waiting.length} {waiting.length === 1 ? "subject" : "subjects"} will be opened once you have passed the subjects you are currently taking</li>
               )}
               {retakes.length > 0 && (
-                <li className="text-bad">{retakes.length} {retakes.length === 1 ? "subject" : "subjects"} to resolve {retakes.length === 1 ? "is a" : "are"} {semesterSubject(next.semester, retakes.length)} in the curriculum</li>
+                <li className="text-bad">You also have {retakes.length} {retakes.length === 1 ? "subject" : "subjects"} to resolve from {from}</li>
               )}
               {blocked.length === 0 && waiting.length === 0 && retakes.length === 0 && <li className="text-ink-2">Nothing is blocking your next semester.</li>}
             </ul>

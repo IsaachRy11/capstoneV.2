@@ -8,14 +8,16 @@ import { Badge, FormError, Modal } from "../../components/ui";
 import { isActiveStudent, yearSemesterLabel } from "../../lib/format";
 import { SUBJECT_STATE, prerequisiteText, stateLabel } from "../../lib/progress";
 
-// A course number that opens a short preview of the subject. subject comes from buildProgress().
+// A worded link that opens a short preview of a subject to resolve, including whether a class for it is listed this
+// semester. subject comes from buildProgress(). Only an Active student can still take it, so others get no link.
 export default function SubjectLink({ subject, student, term }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const context = useOutletContext();
+  if (!isActiveStudent(student)) return null;
   return (
     <>
-      <button type="button" className="subject-link" onClick={() => setOpen(true)} aria-label={`Details of ${subject.code}`}>{subject.code}</button>
+      <button type="button" className="subject-link" onClick={() => setOpen(true)} aria-label={`See if ${subject.code} has a class this semester`}>See if there's a class this semester</button>
       {open && createPortal(<SubjectPreview subject={subject} student={student} term={term || context?.term} onClose={close} />, document.body)}
     </>
   );
@@ -26,7 +28,7 @@ function SubjectPreview({ subject, student, term, onClose }) {
   // The class list only matters for a subject an Active student still has to take.
   const asksThisTerm = isActiveStudent(student) && (subject.state === "back" || subject.state === "not_taken");
   const facts = [
-    ["In the curriculum", yearSemesterLabel(subject.year_level, subject.semester)],
+    ["In your curriculum", yearSemesterLabel(subject.year_level, subject.semester)],
     ["Units", `${Number(subject.units)} ${Number(subject.units) === 1 ? "unit" : "units"}`],
     ["Prerequisite", prerequisiteText(subject) || "None"],
     ["Required for", requiredFor || "No other subject"],
