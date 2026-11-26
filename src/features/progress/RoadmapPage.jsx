@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
-import { semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
+import { curriculumPlace, semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
 import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import SubjectLink from "./SubjectLink";
@@ -37,7 +37,7 @@ function ToClear({ codes }) {
   );
 }
 
-function AheadTerm({ t, isNext, pos, student }) {
+function AheadTerm({ t, isNext, pos }) {
   const units = sumUnits(t.subjects);
   const statuses = t.subjects.map((s) => prerequisiteStatus(s, pos));
   const blocked = statuses.filter((x) => x === "blocked").length;
@@ -70,7 +70,7 @@ function AheadTerm({ t, isNext, pos, student }) {
                 const inTheWay = blocked ? blockingPrereqs(s, pos).map((p) => p.code).join(", ") : "";
                 return (
                   <tr key={s.id} style={blocked ? { background: "var(--bad-bg)" } : undefined}>
-                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent"><SubjectLink subject={s} student={student} /></td>
+                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                     <td className="min-w-0 align-top font-medium">
                       {s.title}
                       {text && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {text}</span>}
@@ -253,7 +253,7 @@ export default function Roadmap() {
             <div className="card px-5 py-4" style={{ background: `var(--${tone}-bg)`, borderColor: `var(--${tone})` }}>
               <h3 className={`text-[15px] font-bold ${tone === "bad" ? "text-bad" : "text-warn"}`}>Carry-over: {count(progress.back.length, "subject", "subjects")} to resolve or retake</h3>
               <ul className="mt-1 text-[14px] text-ink-2">
-                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono"><SubjectLink subject={s} student={student} /></span> {s.title}</li>)}
+                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
               </ul>
             </div>
           );
@@ -263,7 +263,7 @@ export default function Roadmap() {
         ) : (
           <ol className="relative">
             <span className="absolute bottom-3 left-[11px] top-5 w-0.5 bg-line" aria-hidden="true" />
-            {ahead.map((t, i) => <AheadTerm key={`${t.year}-${t.semester}`} t={t} isNext={i === 0} student={student} pos={{ year: student.year_level, semester: term.semester }} />)}
+            {ahead.map((t, i) => <AheadTerm key={`${t.year}-${t.semester}`} t={t} isNext={i === 0} pos={{ year: student.year_level, semester: term.semester }} />)}
           </ol>
         )}
       </section>

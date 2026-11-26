@@ -31,10 +31,11 @@ export default function ProgressDetail({ view, progress, student }) {
               <tbody>
                 {rows.map((s) => (
                   <tr key={s.id}>
-                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent"><SubjectLink subject={s} student={student} /></td>
+                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                     <td className="min-w-0 align-top sm:min-w-[200px]">
                       <span className="block font-medium">{s.title}</span>
                       {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
+                      {s.state === "back" && <span className="mt-1 block text-[13px]"><SubjectLink subject={s} student={student} /></span>}
                       {/* Phones: the hidden columns are folded in here. */}
                       <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearSemesterLabel(s.year_level, s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                       <span className="mt-1.5 block sm:hidden">
