@@ -1138,3 +1138,40 @@ describe("after a summer", () => {
     expect((await one(`select private.has_passed('${who}', ${off.subject}) as p`)).p).toBe(true);
   }, 240_000);
 });
+
+// Runs on from "after a summer" (the current term is the 1st semester of 2027-2028).
+describe("an inactive student when new terms start", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const rpc = async (sql) => {
+    const r = await asSec(`select ${sql} as r`);
+    if (r.error) throw new Error(r.error);
+    return r.rows[0].r;
+  };
+
+  it("stays inactive and gets no subjects through a 2nd semester, a summer, a new school year and Undo", async () => {
+    const before = await one(`select s.id, s.year_level, (select count(*)::int from enrollments e where e.student_id = s.id) as subjects
+      from students s where s.status = 'active' and not exists (select 1 from v_enrollment_details d where d.student_id = s.id and d.is_current and d.status = 'enrolled')
+      and exists (select 1 from enrollments e where e.student_id = s.id) order by s.id limit 1`);
+    expect((await asSec(`update students set status = 'inactive' where id = '${before.id}'`)).error).toBeUndefined();
+    const check = async () => {
+      expect(await one(`select s.status::text as status, s.year_level, (select count(*)::int from enrollments e where e.student_id = s.id) as subjects
+        from students s where s.id = '${before.id}'`)).toEqual({ status: "inactive", year_level: before.year_level, subjects: before.subjects });
+    };
+    const terms = [["2027-2028", 2, "2027-11-22", "2028-04-21"], ["2027-2028", 3, "2028-05-01", "2028-06-09"], ["2028-2029", 1, "2028-07-03", "2028-11-04"]];
+    for (const [year, semester, from, to] of terms) {
+      await rpc(`public.begin_term('${year}', ${semester}::smallint, '${from}', '${to}')`);
+      await check();
+      const off = await one(`select o.id from class_offerings o join sections x on x.id = o.section_id join school_terms t on t.id = x.school_term_id and t.is_current
+        join students s on s.program_id = x.program_id where s.id = '${before.id}' order by o.id limit 1`);
+      if (!off) continue;
+      const plan = await rpc(`public.subject_enroll_plan(${off.id})`);
+      expect(plan.students.map((x) => x.student_id)).not.toContain(before.id);
+      expect((await asSec(`insert into enrollments (student_id, offering_id) values ('${before.id}', ${off.id})`)).error).toBeTruthy();
+    }
+    await rpc(`public.undo_term_start()`);
+    await check();
+    // Coming back: set to Active again, with the same record.
+    expect((await asSec(`update students set status = 'active' where id = '${before.id}'`)).error).toBeUndefined();
+    expect((await one(`select count(*)::int as n from enrollments where student_id = '${before.id}'`)).n).toBe(before.subjects);
+  }, 480_000);
+});

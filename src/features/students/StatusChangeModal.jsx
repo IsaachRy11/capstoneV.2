@@ -13,7 +13,7 @@ const EXPLAIN = {
   active: "They return to the Enrolled list and can be added to subjects again.",
   dropped: "They leave this semester and move to the Withdrawn list. They can't be added to subjects while Withdrawn.",
   shifted_out: "They move to the Shifted out list and can't be added to subjects. Their record and grades are kept.",
-  inactive: "They can't be added to subjects while Inactive.",
+  inactive: "For a student who didn't continue but hasn't officially withdrawn. They move to the Inactive list and can't be added to subjects while Inactive. Their record and grades are kept.",
 };
 const STATE_WORD = { in_progress: "Enrolled now", back: "To resolve", not_taken: "Not yet taken" };
 
@@ -29,19 +29,26 @@ export default function StatusChangeModal({ student, history, credits = [], stat
   const short = graduating && data && !data.eligible;
   const label = status === "active" ? "Active" : STUDENT_STATUS_LABEL[status];
   const withdrawing = status === "dropped";
-  // The same subjects the system marks Withdrawn on withdrawal: this term, no result yet.
-  const leaving = withdrawing ? history.filter((r) => r.is_current && r.status === "enrolled" && r.final_grade === null) : [];
+  // This term's subjects with no result yet: withdrawal marks them Withdrawn, and Inactive isn't allowed while any exist.
+  const ongoing = history.filter((r) => r.is_current && r.status === "enrolled" && r.final_grade === null);
+  const leaving = withdrawing ? ongoing : [];
+  const stillTaking = status === "inactive" ? ongoing.length : 0;
 
   return (
     <Modal title={graduating ? `Mark ${student.full_name} as Graduated?` : withdrawing ? `Withdraw ${student.full_name}?` : `Change status to ${label}?`} onClose={onClose}
       footer={<>
         <button className="btn btn-secondary" onClick={onClose} disabled={busy}>Cancel</button>
         <button className={`btn ${short || withdrawing ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}
-          disabled={busy || checking || (graduating && !data) || (short && !understood)}>
+          disabled={busy || checking || stillTaking > 0 || (graduating && !data) || (short && !understood)}>
           {busy ? "Saving…" : short ? "Graduate anyway" : graduating ? "Mark as Graduated" : withdrawing ? "Withdraw student" : `Change to ${label}`}
         </button>
       </>}>
       {!graduating && <p className="text-[14px] text-ink-2"><strong className="text-ink">{student.full_name}</strong> ({student.id}). {EXPLAIN[status]}</p>}
+      {stillTaking > 0 && (
+        <p role="alert" className="mt-3 rounded-lg px-4 py-3 text-[14px] tone-warn">
+          This student still has {stillTaking} {stillTaking === 1 ? "subject" : "subjects"} this semester with no result, so they can't be marked Inactive. If they are leaving now, choose Withdrawn.
+        </p>
+      )}
       {withdrawing && (
         <div className="mt-3 flex flex-col gap-2">
           {leaving.length > 0 ? (

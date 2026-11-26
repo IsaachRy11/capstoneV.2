@@ -125,7 +125,7 @@ export default function StudentRecord() {
                 <>
                   <span className="lg:hidden print:hidden">{studentStatusLabel(student)}</span>
                   <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => setNextStatus(e.target.value)}>
-                    {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                    {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{studentStatusLabel(student)}</span>
                   {student.status === "active" && <span className="no-print mt-1 hidden text-[12px] font-normal text-ink-3 lg:block">Now {studentStatusLabel(student)}, set automatically from grades.</span>}

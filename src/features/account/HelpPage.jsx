@@ -25,7 +25,7 @@ const COMMON = [
   },
   {
     q: "What are Student type and Status?",
-    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated, Withdrawn or Shifted out.</>,
+    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated, Withdrawn, Shifted out or Inactive.</>,
   },
   {
     q: "What do Regular and Irregular mean?",
@@ -63,7 +63,7 @@ const SECRETARY = [
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record: Active, Graduated, Withdrawn or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated, Withdrawn and Shifted out students have their own tabs on the Students page.</>,
+    a: <>It is set on the student's record: Active, Graduated, Withdrawn, Shifted out or Inactive. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Inactive is for a student who didn't continue but hasn't officially withdrawn; it can't be set while they have a subject this semester with no result, and you can set them back to Active when they return. Graduated, Withdrawn, Shifted out and Inactive students have their own lists under Students.</>,
   },
   {
     q: "Why can't I delete a subject?",

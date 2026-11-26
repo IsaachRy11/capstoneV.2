@@ -12,15 +12,16 @@ import AddStudentModal from "./AddStudentModal";
 import DeleteStudentModal from "./DeleteStudentModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
-// Enrolled students are listed by year; Graduated, Dropped and Shifted out each have their own list (sidebar: Students),
+// Enrolled students are listed by year; Graduated, Withdrawn, Shifted out and Inactive each have their own list (sidebar: Students),
 // so they never mix into a year.
 const TABS = [["1", "1st Year"], ["2", "2nd Year"], ["3", "3rd Year"], ["4", "4th Year"]];
 const LISTS = {
   graduated: { title: "Graduated", empty: "No graduates yet. A student appears here when the secretary marks them as Graduated on their record." },
   dropped: { title: "Withdrawn", empty: "No withdrawn students. A student appears here when the secretary marks them as Withdrawn on their record." },
   shifted_out: { title: "Shifted out", empty: "No one has shifted out. When a student moves to another program, mark the old record as Shifted out and add them again as a new student." },
+  inactive: { title: "Inactive", empty: "No inactive students. A student appears here when the secretary marks them as Inactive on their record." },
 };
-const isEnrolled = (s) => s.status === "active" || s.status === "inactive";
+const isEnrolled = (s) => s.status === "active";
 const inTab = (s, tab) => String(s.year_level) === tab && isEnrolled(s);
 const SIZE_KEY = "ccs-students-per-page";
 function readPageSize() {
@@ -85,7 +86,7 @@ export default function Students() {
   const pages = Math.ceil(rows.length / pageSize);
   // Only 1st year students can be Freshmen, so a 2nd to 4th year tab doesn't offer it.
   const typeOptions = Object.entries(STUDENT_TYPE).filter(([k]) => k !== "freshman" || other || searching || year === "1");
-  const hideType = !!other; // type only matters while Active: not on the Graduated, Withdrawn or Shifted out lists
+  const hideType = !!other; // type only matters while Active: not on the other lists
   const filtered = q.trim() !== "" || typed !== "" || programFilter !== "all" || type !== "all" || status !== "all";
   const clearFilters = () => {
     applySearch(""); setType("all"); setStatus("all");
@@ -115,7 +116,7 @@ export default function Students() {
 
       <section className="card overflow-hidden">
         {/* Phones have no sidebar dropdown: a switch between the lists instead. */}
-        <div className="seg seg-fill m-2 lg:hidden" role="group" aria-label="Student list">
+        <div className="seg m-2 grid grid-cols-3 sm:flex lg:hidden" role="group" aria-label="Student list">
           {[["enrolled", "Enrolled"], ...Object.entries(LISTS).map(([k, v]) => [k, v.title])].map(([k, label]) => (
             <button key={k} type="button" aria-pressed={listKey === k} onClick={() => { applySearch(""); setParam("list", k === "enrolled" ? null : k); }}>{label}</button>
           ))}
