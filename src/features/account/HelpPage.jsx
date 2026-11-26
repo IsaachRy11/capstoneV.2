@@ -55,7 +55,7 @@ const SECRETARY = [
   },
   {
     q: "What happens when a student is Withdrawn?",
-    a: <>They leave the current semester: its subjects without a result are marked Dropped and their seats are freed. Earlier semesters and results already given don't change. If they come back, set them to Active and add their subjects. To undo a withdrawal made by mistake, set Active, then use Encode grades and press Drop again on each subject; a free seat and no schedule clash are required.</>,
+    a: <>They leave the current semester: its subjects without a result are marked Withdrawn and their seats are freed. Earlier semesters and results already given don't change. If they come back, set them to Active and add their subjects. To undo a withdrawal made by mistake, set Active, then use Encode grades and choose Graded for each subject; a free seat and no schedule clash are required. To withdraw just one subject, use Encode grades and choose Withdrawn.</>,
   },
   {
     q: "What are credited subjects?",

@@ -71,7 +71,7 @@ export default function StudentRecord() {
   };
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
-  const current = history.filter((r) => r.is_current && r.status !== "dropped");
+  const current = history.filter((r) => r.is_current && r.status !== "dropped" && r.status !== "withdrawn");
   // Units earned: passed here plus credited from before.
   const earned = sumUnits([...history.filter((r) => r.status === "passed"), ...credits.map((c) => c.curriculum_subjects)]);
   const active = isActiveStudent(student);

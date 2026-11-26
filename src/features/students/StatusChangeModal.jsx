@@ -29,7 +29,7 @@ export default function StatusChangeModal({ student, history, credits = [], stat
   const short = graduating && data && !data.eligible;
   const label = status === "active" ? "Active" : STUDENT_STATUS_LABEL[status];
   const withdrawing = status === "dropped";
-  // The same subjects the system marks Dropped on withdrawal: this term, no result yet.
+  // The same subjects the system marks Withdrawn on withdrawal: this term, no result yet.
   const leaving = withdrawing ? history.filter((r) => r.is_current && r.status === "enrolled" && r.final_grade === null) : [];
 
   return (
@@ -46,7 +46,7 @@ export default function StatusChangeModal({ student, history, credits = [], stat
         <div className="mt-3 flex flex-col gap-2">
           {leaving.length > 0 ? (
             <>
-              <p className="text-[14px] font-semibold text-ink">{leaving.length} {leaving.length === 1 ? "subject" : "subjects"} this semester will be marked Dropped, and {leaving.length === 1 ? "its seat" : "their seats"} freed:</p>
+              <p className="text-[14px] font-semibold text-ink">{leaving.length} {leaving.length === 1 ? "subject" : "subjects"} this semester will be marked Withdrawn, and {leaving.length === 1 ? "its seat" : "their seats"} freed:</p>
               <ul className="max-h-40 overflow-auto rounded-lg border border-line">
                 {leaving.map((r) => (
                   <li key={r.enrollment_id} className="border-b border-line-2 px-3 py-2 text-[13px] last:border-0"><span className="font-mono">{r.code}</span> {r.title}</li>
@@ -54,7 +54,7 @@ export default function StatusChangeModal({ student, history, credits = [], stat
               </ul>
             </>
           ) : <p className="text-[14px] text-ink-2">No subject this semester is waiting for a result.</p>}
-          <p className="text-[13px] text-ink-3">Passed, Failed and NC results stay, and earlier semesters don't change. Dropped subjects show as subjects to resolve until they are passed.</p>
+          <p className="text-[13px] text-ink-3">Passed, Failed, NC and Dropped results stay, and earlier semesters don't change. A withdrawn subject counts as not yet taken.</p>
         </div>
       )}
       {checking && <p role="status" className="text-[14px] text-ink-3">Checking the curriculum…</p>}

@@ -9,6 +9,7 @@ export const getSectionOfferings = (sectionId) =>
     supabase.from("class_offerings")
       .select("id, capacity, curriculum_subjects(id, code, title, units, kind, sort_order), class_meetings(id, weekday, starts_at, ends_at, room_id, rooms(name)), enrollments(count)")
       .eq("section_id", sectionId)
+      .not("enrollments.status", "in", "(dropped,withdrawn)")
   ).then((rows) => rows
     .map((o) => ({ ...o, enrolled: o.enrollments?.[0]?.count ?? 0 }))
     .sort((a, b) => a.curriculum_subjects.sort_order - b.curriculum_subjects.sort_order));
@@ -16,6 +17,7 @@ export const getSectionOfferings = (sectionId) =>
 export async function getRoster(offeringId) {
   const rows = await unwrap(
     supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name, admission_type, status, year_level)").eq("offering_id", offeringId)
+      .not("status", "in", "(dropped,withdrawn)")
   );
   if (!rows.length) return [];
   const standings = await unwrap(

@@ -4,7 +4,7 @@ import { formatGrade } from "../../lib/format";
 const FIRST = 1; // only the latest change is shown at first
 
 const gradeOrStatus = (grade, status) =>
-  status === "incomplete" ? "NC" : status === "dropped" ? "Dropped" : formatGrade(grade);
+  status === "incomplete" ? "NC" : status === "dropped" ? "Dropped" : status === "withdrawn" ? "Withdrawn" : formatGrade(grade);
 
 // Every grade edit, recorded by the database (grade_changes): who, when, from what to what.
 // Newest first; the latest few are shown and the rest open with "Show more".

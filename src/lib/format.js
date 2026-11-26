@@ -17,9 +17,11 @@ export const shortProgramName = (name = "") => name.replace(/^Bachelor of Scienc
 export const formatGrade = (g) => (g === null || g === undefined ? "—" : Number(g).toFixed(2));
 export const GRADE_OPTIONS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 5.0];
 
-export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "NC", dropped: "Dropped" };
+export const STATUS_LABEL = { enrolled: "Enrolled", passed: "Passed", failed: "Failed", incomplete: "NC", dropped: "Dropped", withdrawn: "Withdrawn" };
 // NC and Dropped are grey (no final grade).
-export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral" };
+export const STATUS_TONE = { enrolled: "info", passed: "ok", failed: "bad", incomplete: "neutral", dropped: "neutral", withdrawn: "neutral" };
+// A Dropped or Withdrawn subject no longer holds a seat, a place in the timetable or units in the term.
+export const holdsSeat = (status) => status !== "dropped" && status !== "withdrawn";
 
 // "BSIT 1-T" -> "T" (the block section letter)
 export const sectionLetter = (name) => String(name).split("-").pop();
@@ -73,12 +75,14 @@ export const gradeStatusLabel = (status, midterm) =>
   status !== "enrolled" ? STATUS_LABEL[status] || status
   : midterm === null || midterm === undefined || midterm === "" ? "No grades yet" : "No final grade yet";
 
-// Term average, weighted by units: sum(final grade x units) / sum(units). Left out: dropped subjects (no grade) and
-// NSTP and PATHFIT (SJC does not count them). It is worked out only when every counted subject has a final grade;
-// otherwise null (shown as a dash).
+// Term average, weighted by units: sum(final grade x units) / sum(units). No average (null, shown as a dash) while
+// any subject of the term is Failed, NC or Dropped, or while a counted subject has no final grade. Left out of the
+// computation: Withdrawn subjects (not taken) and NSTP and PATHFIT (SJC does not count them).
 const NOT_AVERAGED = /^\s*(NSTP|PATHFIT)/i;
+const NO_AVERAGE = ["failed", "incomplete", "dropped"];
 export function termAverage(rows) {
-  const counted = rows.filter((r) => r.status !== "dropped" && !NOT_AVERAGED.test(r.code || ""));
+  if (rows.some((r) => NO_AVERAGE.includes(r.status))) return null;
+  const counted = rows.filter((r) => r.status !== "withdrawn" && !NOT_AVERAGED.test(r.code || ""));
   if (!counted.length || counted.some((r) => r.final_grade === null || r.final_grade === undefined)) return null;
   const units = sumUnits(counted);
   return units ? (counted.reduce((t, r) => t + Number(r.final_grade) * Number(r.units), 0) / units).toFixed(2) : null;

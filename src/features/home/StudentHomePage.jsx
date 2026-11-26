@@ -38,7 +38,7 @@ export default function StudentHome() {
   if (loading || !data) return <LoadingState />;
 
   const { student, classes, deficiencies, progress, next } = data;
-  const active = classes.filter((c) => c.status !== "dropped");
+  const active = classes.filter((c) => c.status !== "dropped" && c.status !== "withdrawn");
   const units = sumUnits(active.map((c) => c.class_offerings.curriculum_subjects));
 
   return (

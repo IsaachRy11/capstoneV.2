@@ -151,7 +151,8 @@ export const creditable = (subjects) => subjects.filter((s) => s.state !== "pass
 // year therefore can't rename the whole term.
 export function termYear(history, term, credits = []) {
   const mine = history.filter((r) => r.school_term_id === term.school_term_id);
-  const counted = mine.some((r) => r.status !== "dropped") ? mine.filter((r) => r.status !== "dropped") : mine;
+  const held = mine.filter((r) => r.status !== "dropped" && r.status !== "withdrawn");
+  const counted = held.length ? held : mine;
   const before = history.filter((r) => r.status === "passed" && (r.school_year + r.semester) < (term.school_year + term.semester));
   return Math.max(...[...counted, ...before].map((r) => Number(r.curriculum_year)),
     ...credits.map((c) => Number(c.curriculum_subjects?.year_level || 0)));

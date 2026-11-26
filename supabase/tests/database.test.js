@@ -950,7 +950,7 @@ describe("credited subjects and withdrawal", () => {
     expect((await sec(`select count(*)::int n from student_credits where removed_at is null`)).rows[0].n).toBeGreaterThan(0);
   });
 
-  it("withdrawing drops this term's subjects without a result, frees the seats and keeps the rest", async () => {
+  it("withdrawing marks this term's subjects without a result Withdrawn, frees the seats and keeps the rest", async () => {
     await db.exec("select set_config('request.jwt.claim.sub', '', false)");
     await mk("2099-0004", "transferee");
     const offs = (await db.query(`select o.id from class_offerings o join sections s on s.id = o.section_id
@@ -968,7 +968,44 @@ describe("credited subjects and withdrawal", () => {
       update enrollments set midterm_grade = 1.5, final_grade = 1.5 where student_id = '2099-0004' and offering_id = ${all[0].id}`);
     expect((await sec(`update students set status = 'dropped' where id = '2099-0004'`)).error).toBeUndefined();
     const rows = (await db.query(`select offering_id, status from enrollments where student_id = '2099-0004' order by offering_id`)).rows;
-    expect(rows.map((r) => r.status)).toEqual(["passed", "dropped"]);
+    expect(rows.map((r) => r.status)).toEqual(["passed", "withdrawn"]);
     expect((await sec(`insert into enrollments (student_id, offering_id) values ('2099-0004', ${all[2]?.id ?? all[0].id})`)).error).toMatch(/withdrawn/);
+  });
+
+  it("one subject can be withdrawn: no grade needed, the seat is freed, and it is not a subject to resolve", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0005", "transferee");
+    const off = await one(`select o.id from class_offerings o join sections sc on sc.id = o.section_id
+      join school_terms t on t.id = sc.school_term_id and t.is_current join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      join students st on st.id = '2099-0005' and st.curriculum_id = cs.curriculum_id where cs.year_level = 1 order by o.id desc limit 1`);
+    await db.exec(`delete from class_meetings where offering_id = ${off.id}; update class_offerings set capacity = 60 where id = ${off.id};
+      insert into enrollments (student_id, offering_id) values ('2099-0005', ${off.id})`);
+    const e = await one(`select id from enrollments where student_id = '2099-0005'`);
+    const save = (status, final = "null") => sec(`select public.save_grades('[{"enrollment_id":${e.id},"midterm":null,"final":${final},"status":"${status}"}]'::jsonb)`);
+    expect((await save("withdrawn")).error).toBeUndefined();
+    expect((await one(`select status from enrollments where id = ${e.id}`)).status).toBe("withdrawn");
+    expect((await one(`select count(*)::int n from v_student_deficiencies where student_id = '2099-0005'`)).n).toBe(0);
+    // The seat is free again: seats can be lowered to exactly the students still taking it.
+    const taking = (await one(`select count(*)::int n from enrollments where offering_id = ${off.id} and status not in ('dropped','withdrawn')`)).n;
+    expect((await sec(`update class_offerings set capacity = ${Math.max(taking, 1)} where id = ${off.id}`)).error).toBeUndefined();
+    // Bringing it back checks the seats again.
+    if (taking >= 1) expect((await save("auto")).error).toMatch(/full/);
+    await db.exec(`update class_offerings set capacity = 60 where id = ${off.id}`);
+    expect((await save("auto")).error).toBeUndefined();
+    // Dropped still counts against the student.
+    expect((await save("dropped")).error).toBeUndefined();
+    expect((await one(`select count(*)::int n from v_student_deficiencies where student_id = '2099-0005'`)).n).toBe(1);
+  });
+
+  it("a subject with a final grade can't be withdrawn", async () => {
+    const e = await one(`select id from enrollments where student_id = '2099-0004' and status = 'passed' limit 1`);
+    const r = await sec(`select public.save_grades('[{"enrollment_id":${e.id},"midterm":1.5,"final":null,"status":"withdrawn"}]'::jsonb)`);
+    expect(r.error).toMatch(/final grade can't be withdrawn/);
+  });
+
+  it("Add students says a student withdrew from the subject this term", async () => {
+    const w = await one(`select offering_id from enrollments where student_id = '2099-0004' and status = 'withdrawn' limit 1`);
+    const r = await sec(`select public.subject_enroll_plan(${w.offering_id}, array['2099-0004']) p`);
+    expect(r.rows[0].p.students[0].state).toBe("withdrawn");
   });
 });
