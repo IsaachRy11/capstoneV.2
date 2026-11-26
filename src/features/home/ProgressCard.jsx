@@ -12,7 +12,7 @@ export default function ProgressCard({ progress, next, pos, className = "" }) {
   const blocked = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "blocked");
   const waiting = nextSubjects.filter((s) => prerequisiteStatus(s, pos) === "waiting");
   // Every subject to resolve, with the places in the curriculum they come from.
-  const retakes = progress.back;
+  const retakes = progress.resolve;
   const from = [...new Set(retakes.map((s) => curriculumPlace(s.year_level, s.semester)))].join(" and ");
 
   return (

@@ -143,7 +143,7 @@ export default function AddToSubject({ offeringId }) {
 
         {result && (
           <div role="status" className="card flex flex-col gap-1 p-4 text-[14px]">
-            <p><strong className="text-ink">{result.filter((r) => r.ok).length} students added</strong> to {data.code}.</p>
+            <p><strong className="text-ink">{result.filter((r) => r.ok).length} {result.filter((r) => r.ok).length === 1 ? "student" : "students"} added</strong> to {data.code}.</p>
             {result.filter((r) => !r.ok).map((r) => <p key={r.student_id} className="text-[13px] text-ink-2">{nameOf(r.student_id)}: {r.why}</p>)}
           </div>
         )}

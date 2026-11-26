@@ -49,8 +49,8 @@ export default function StudentHome() {
         facts={[
           ["Year level", yearLabel(student.year_level)],
           ["Section", isActiveStudent(student) ? student.section_name || "Not yet enrolled" : "—"],
-          ["Subjects this term", isActiveStudent(student) ? `${active.length} subjects` : "—"],
-          ["Units this term", isActiveStudent(student) ? `${units} units` : "—"],
+          ["Subjects this term", isActiveStudent(student) ? `${active.length} ${active.length === 1 ? "subject" : "subjects"}` : "—"],
+          ["Units this term", isActiveStudent(student) ? `${units} ${units === 1 ? "unit" : "units"}` : "—"],
         ]} />
 
       {/* Subjects to resolve first: it is what the student most needs to know. */}

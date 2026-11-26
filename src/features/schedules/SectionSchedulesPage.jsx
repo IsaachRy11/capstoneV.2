@@ -55,7 +55,15 @@ export default function SectionSchedules() {
               {items.length} {items.length === 1 ? "subject" : "subjects"} · {sumUnits(items)} units · {section.home_room ? `${section.home_room} · ` : ""}{section.enrolled} of {section.capacity} seats filled
             </span>
           </div>
-          <WeekTimetable items={items} emptyText="No classes scheduled for this section yet." />
+          <WeekTimetable items={items} emptyText={items.length
+            ? `No class times yet. This section has ${items.length} ${items.length === 1 ? "subject" : "subjects"}, but none has a day, time and room set.`
+            : "This section has no subjects yet."} />
+          {/* A summer section only gets more subjects on Section allocations, so say where to go. */}
+          {summer && (
+            <p className="no-print hidden text-[13px] text-ink-3 lg:block">
+              To add a summer subject, go to <Link to="/sections" className="font-semibold">Section allocations</Link>. To set its days, times and rooms, use <Link to="/schedules/edit" className="font-semibold">Edit class times</Link>.
+            </p>
+          )}
         </>
       )}
     </>
