@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
-import { semesterLabel, yearLabel } from "../../lib/format";
+import { semesterLabel } from "../../lib/format";
 
 // "Subjects to resolve" for the student, color-coded by how serious it is: Failed (red) must be taken again,
 // NC (amber) is still unfinished, Dropped (grey). Home shows only the count; the Academic record lists each one.
@@ -19,7 +19,7 @@ export default function ResolveNotice({ items, detailed = false }) {
               <li key={d.enrollment_id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className={`badge ${KIND[d.status]?.[1] || "tone-neutral"}`}>{KIND[d.status]?.[0] || d.status}</span>
                 <span><span className="font-mono">{d.code}</span> {d.title}</span>
-                <span className="text-[13px] text-ink-3">{yearLabel(d.curriculum_year)}, {semesterLabel(d.semester)}, SY {d.school_year.replace("-", "–")}</span>
+                <span className="text-[13px] text-ink-3">Taken {d.semester === 3 ? "in the summer" : `in the ${semesterLabel(d.semester)}`}, SY {d.school_year.replace("-", "–")}</span>
               </li>
             ))}
           </ul>

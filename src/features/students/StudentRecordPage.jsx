@@ -3,15 +3,17 @@ import { KeyRound, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
+import { getCredits, getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
 import { Avatar, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
-import { STUDENT_STATUS, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
+import { STUDENT_STATUS, isActiveStudent, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import ResolveNotice from "./ResolveNotice";
 import StatusChangeModal from "./StatusChangeModal";
+import CreditedSubjects from "./CreditedSubjects";
+import { termYear } from "../../lib/progress";
 
 export default function StudentRecord() {
   const { user } = useAuth();
@@ -27,10 +29,10 @@ export default function StudentRecord() {
   const [limitError, setLimitError] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [student, history, deficiencies, changes, limit] = await Promise.all([
-      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [], getUnitLimit(id),
+    const [student, history, deficiencies, changes, limit, credits] = await Promise.all([
+      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [], getUnitLimit(id), getCredits(id),
     ]);
-    return { student, history, deficiencies, changes, limit };
+    return { student, history, deficiencies, changes, limit, credits };
   }, [id, isSecretary], "record");
 
   if (loading) return <LoadingState />;
@@ -39,7 +41,7 @@ export default function StudentRecord() {
     return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const { student, history, deficiencies, changes, limit } = data;
+  const { student, history, deficiencies, changes, limit, credits } = data;
   // The most units this student may take in a term; used when a new term starts. Saved when the field loses focus.
   const saveLimit = async (raw) => {
     const n = Number(raw);
@@ -70,7 +72,11 @@ export default function StudentRecord() {
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
   const current = history.filter((r) => r.is_current && r.status !== "dropped");
-  const earned = sumUnits(history.filter((r) => r.status === "passed"));
+  // Units earned: passed here plus credited from before.
+  const earned = sumUnits([...history.filter((r) => r.status === "passed"), ...credits.map((c) => c.curriculum_subjects)]);
+  const active = isActiveStudent(student);
+  // Credits are only for shiftees and transferees; the database enforces the same rule.
+  const mayCredit = isSecretary && (student.admission_type === "transferee" || student.admission_type === "shiftee");
 
   return (
     <>
@@ -104,11 +110,11 @@ export default function StudentRecord() {
         </div>
         <dl className="stat-grid border-t border-line-2 pt-5">
           {[
-            ["Section", student.section_name || "Not yet enrolled"],
-            ["Units this term", `${sumUnits(current)} units`],
+            ["Section", active ? student.section_name || "Not yet enrolled" : "—"],
+            ["Units this term", active ? `${sumUnits(current)} units` : "—"],
             ["Units earned", `${earned} units`],
             ...(limit && !isSecretary ? [["Unit limit", `${limit} units a term`]] : []),
-            ["Student type", studentTypeLabel(student)],
+            ["Student type", active ? studentTypeLabel(student) : "—"],
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
           ))}
@@ -150,16 +156,17 @@ export default function StudentRecord() {
       {!isSecretary && deficiencies.length > 0 && <ResolveNotice items={deficiencies} detailed />}
 
       {terms.length > 0 && <GradeLegend className="no-print card px-5 py-3.5" />}
-      {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
+      {terms.length === 0 && credits.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
+      <CreditedSubjects student={student} history={history} credits={credits} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} />
       {/* On paper the terms sit in two columns so the whole record fits one page. */}
       <div className="record-terms flex flex-col gap-4 sm:gap-6">
         {terms.map((t, i) => (
-          <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
+          <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} year={termYear(history, t, credits)} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
         ))}
       </div>
 
       {isSecretary && <GradeHistory changes={changes} />}
-      {nextStatus && <StatusChangeModal student={student} history={history} status={nextStatus} busy={statusBusy} onClose={() => setNextStatus(null)} onConfirm={() => changeStatus(nextStatus)} />}
+      {nextStatus && <StatusChangeModal student={student} history={history} credits={credits} status={nextStatus} busy={statusBusy} onClose={() => setNextStatus(null)} onConfirm={() => changeStatus(nextStatus)} />}
       {resetting && <ResetPasswordModal student={student} onClose={() => setResetting(false)} />}
       {deleting && <DeleteStudentModal student={student} onClose={() => setDeleting(false)} onDeleted={() => navigate("/students", { replace: true })} />}
     </>

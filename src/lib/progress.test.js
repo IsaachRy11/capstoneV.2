@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck, creditable, stateLabel, termYear, termsLeft } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -149,5 +149,38 @@ describe("graduationCheck", () => {
   });
   it("is not eligible without a curriculum", () => {
     expect(graduationCheck({ subjects: [] }).eligible).toBe(false);
+  });
+});
+
+describe("credited subjects", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 2, semester: 1 }];
+  const progress = buildProgress({ curriculum, history: [], prerequisites: [{ subject_id: 2, prerequisite_id: 1 }], credits: [{ curriculum_subject_id: 1 }] });
+  it("counts as passed, shows as Credited and clears the prerequisite", () => {
+    expect(progress.subjects[0].state).toBe("passed");
+    expect(stateLabel(progress.subjects[0])).toBe("Credited");
+    expect(progress.unitsEarned).toBe(3);
+    expect(progress.subjects[1].missingPrereqs).toEqual([]);
+    expect(creditable(progress.subjects).map((s) => s.id)).toEqual([2]);
+  });
+});
+
+describe("termYear", () => {
+  const row = (term, year, curriculum_year, status = "enrolled") => ({ school_term_id: term, school_year: year, semester: 1, curriculum_year, status });
+  it("is not renamed by one late subject from a lower year", () => {
+    const history = [row(2, "2026-2027", 2), row(2, "2026-2027", 1)];
+    expect(termYear(history, history[1])).toBe(2);
+  });
+  it("never drops below a year passed in an earlier term, even in a retake-only term", () => {
+    const history = [row(1, "2025-2026", 2, "passed"), row(2, "2026-2027", 1)];
+    expect(termYear(history, history[1])).toBe(2);
+    expect(termYear(history, history[0])).toBe(2);
+  });
+});
+
+describe("termsLeft", () => {
+  it("counts summers apart from semesters", () => {
+    const ahead = [1, 2, 3, 1, 2].map((semester) => ({ semester }));
+    expect(termsLeft(ahead)).toEqual({ semesters: 4, summers: 1, words: "semesters and 1 summer" });
+    expect(termsLeft([{ semester: 2 }]).words).toBe("semester");
   });
 });

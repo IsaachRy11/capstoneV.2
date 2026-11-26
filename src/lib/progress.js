@@ -14,7 +14,9 @@ export const SUBJECT_STATE = {
 
 const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
 
-export function buildProgress({ curriculum, history, prerequisites = [] }) {
+// credits: subjects accepted from before (shiftees and transferees). A credit counts as passed, shown as "Credited".
+export function buildProgress({ curriculum, history, prerequisites = [], credits = [] }) {
+  const credited = new Set(credits.map((c) => c.curriculum_subject_id));
   const attempts = new Map(); // subject id → enrollment rows, oldest first
   for (const h of history) {
     if (!attempts.has(h.subject_id)) attempts.set(h.subject_id, []);
@@ -27,7 +29,7 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
     const current = rows.find((r) => r.is_current && r.status === "enrolled");
     const last = rows[rows.length - 1];
     let state = "not_taken";
-    if (passed) state = "passed";
+    if (passed || credited.has(c.id)) state = "passed";
     else if (current) state = "in_progress";
     else if (last && ["failed", "incomplete", "dropped"].includes(last.status)) state = "back";
     // The attempt whose grades are shown: the pass, else this term's, else the latest.
@@ -35,8 +37,9 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
     return {
       ...c,
       state,
-      midterm: shown?.midterm_grade ?? null,
-      final: shown?.final_grade ?? null,
+      credited: !passed && credited.has(c.id),
+      midterm: credited.has(c.id) && !passed ? null : shown?.midterm_grade ?? null,
+      final: credited.has(c.id) && !passed ? null : shown?.final_grade ?? null,
       backReason: state === "back" ? BACK_LABEL[last.status] : null,
       attempts: rows.length,
     };
@@ -135,4 +138,33 @@ export function prerequisiteText(subject) {
 export function graduationCheck(progress) {
   const missing = progress.subjects.filter((s) => s.state !== "passed");
   return { total: progress.subjects.length, missing, eligible: progress.subjects.length > 0 && missing.length === 0 };
+}
+
+// The word for a subject's state on screen.
+export const stateLabel = (s) => (s.credited ? "Credited" : s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label);
+
+// What can still be credited: not passed or credited yet, and not being taken now.
+export const creditable = (subjects) => subjects.filter((s) => s.state !== "passed" && s.state !== "in_progress");
+
+// The year a term card is titled with: the highest year among that term's subjects, never below a year already
+// passed in an earlier term or credited (the same rule as the student's year level). One late subject from a lower
+// year therefore can't rename the whole term.
+export function termYear(history, term, credits = []) {
+  const mine = history.filter((r) => r.school_term_id === term.school_term_id);
+  const counted = mine.some((r) => r.status !== "dropped") ? mine.filter((r) => r.status !== "dropped") : mine;
+  const before = history.filter((r) => r.status === "passed" && (r.school_year + r.semester) < (term.school_year + term.semester));
+  return Math.max(...[...counted, ...before].map((r) => Number(r.curriculum_year)),
+    ...credits.map((c) => Number(c.curriculum_subjects?.year_level || 0)));
+}
+
+// The prerequisites that are actually in the way (failed, or should already have been taken).
+export const blockingPrereqs = (subject, pos) => (subject.missingPrereqs || []).filter((pre) =>
+  pre.state === "back" || (pre.state === "not_taken" && (pre.year_level < pos.year || (pre.year_level === pos.year && pre.semester <= pos.semester))));
+
+// "4 semesters and 1 summer": summers are counted apart from the semesters. ahead comes from futureTerms().
+export function termsLeft(ahead) {
+  const summers = ahead.filter((t) => t.semester === 3).length;
+  const semesters = ahead.length - summers;
+  const words = `${semesters === 1 ? "semester" : "semesters"}${summers ? ` and ${summers} ${summers === 1 ? "summer" : "summers"}` : ""}`;
+  return { semesters, summers, words };
 }

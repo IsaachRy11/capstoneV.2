@@ -17,7 +17,7 @@ const GradeStatus = ({ status, midterm }) => <Badge tone={STATUS_TONE[status]}>{
 
 // Each term is a card that opens and closes (the newest starts open), like "Completed" on the roadmap.
 // For the secretary it also holds the grade editor.
-export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = true }) {
+export default function TermTable({ term, year, rows, canEdit, onSaved, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({});
@@ -113,7 +113,7 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-bold">
-              {yearSemesterLabel(term.curriculum_year, term.semester)}
+              {yearSemesterLabel(year, term.semester)}
               {term.is_current && <Badge tone="info" dot>Current term</Badge>}
             </span>
             <span className="block text-[13px] font-normal text-ink-3">
@@ -154,6 +154,10 @@ export default function TermTable({ term, rows, canEdit, onSaved, defaultOpen = 
                   <td className="font-medium">
                     <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{r.code} <span className="text-ink-3">· {Number(r.units)} {Number(r.units) === 1 ? "unit" : "units"}</span></span>
                     {r.title}
+                    {/* A late or early subject stays in the term it was taken, and says where the curriculum puts it. */}
+                    {(r.curriculum_semester !== term.semester || (term.semester !== 3 && r.curriculum_year !== year)) && (
+                      <span className="mt-0.5 block text-[12px] font-normal text-ink-3">{yearSemesterLabel(r.curriculum_year, r.curriculum_semester)} subject in the curriculum</span>
+                    )}
                     {!editing && <span className="mt-1.5 block sm:hidden"><GradeStatus status={r.status} midterm={r.midterm_grade} /></span>}
                   </td>
                   <td className="num hidden sm:table-cell">{Number(r.units)}</td>

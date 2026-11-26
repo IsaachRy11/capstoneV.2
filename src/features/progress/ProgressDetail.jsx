@@ -1,11 +1,12 @@
 import { Badge, EmptyState, PageHeader } from "../../components/ui";
 import { sumUnits, yearSemesterLabel } from "../../lib/format";
-import { SUBJECT_STATE } from "../../lib/progress";
+import { SUBJECT_STATE, stateLabel } from "../../lib/progress";
+import SubjectLink from "./SubjectLink";
 import { VIEWS } from "./progressViews";
 
 // The list behind each summary card on the subject tracker (opened with ?view=units|passed|enrolled|failed).
 // Grades live on the Academic record, so these lists show the subject, where it sits in the curriculum, and its status.
-export default function ProgressDetail({ view, progress }) {
+export default function ProgressDetail({ view, progress, student }) {
   const cfg = VIEWS[view];
   const rows = cfg.pick(progress);
 
@@ -30,20 +31,20 @@ export default function ProgressDetail({ view, progress }) {
               <tbody>
                 {rows.map((s) => (
                   <tr key={s.id}>
-                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
+                    <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent"><SubjectLink subject={s} student={student} /></td>
                     <td className="min-w-0 align-top sm:min-w-[200px]">
                       <span className="block font-medium">{s.title}</span>
                       {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
                       {/* Phones: the hidden columns are folded in here. */}
                       <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearSemesterLabel(s.year_level, s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                       <span className="mt-1.5 block sm:hidden">
-                        <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
+                        <Badge tone={SUBJECT_STATE[s.state].tone} dot>{stateLabel(s)}</Badge>
                       </span>
                     </td>
                     <td className="hidden whitespace-nowrap text-[13px] text-ink-2 sm:table-cell">{yearSemesterLabel(s.year_level, s.semester)}</td>
                     <td className="num hidden sm:table-cell">{Number(s.units)}</td>
                     <td className="hidden sm:table-cell">
-                      <Badge tone={SUBJECT_STATE[s.state].tone} dot>{s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label}</Badge>
+                      <Badge tone={SUBJECT_STATE[s.state].tone} dot>{stateLabel(s)}</Badge>
                     </td>
                   </tr>
                 ))}

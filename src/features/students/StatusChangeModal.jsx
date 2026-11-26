@@ -11,34 +11,52 @@ import { buildProgress, graduationCheck } from "../../lib/progress";
 // needed. (It warns rather than blocks: subjects credited from another school are not recorded in the system.)
 const EXPLAIN = {
   active: "They return to the Enrolled list and can be added to subjects again.",
-  dropped: "They move to the Dropped list and can't be added to subjects while Dropped.",
+  dropped: "They leave this semester and move to the Withdrawn list. They can't be added to subjects while Withdrawn.",
   shifted_out: "They move to the Shifted out list and can't be added to subjects. Their record and grades are kept.",
   inactive: "They can't be added to subjects while Inactive.",
 };
 const STATE_WORD = { in_progress: "Enrolled now", back: "To resolve", not_taken: "Not yet taken" };
 
-export default function StatusChangeModal({ student, history, status, busy, onClose, onConfirm }) {
+export default function StatusChangeModal({ student, history, credits = [], status, busy, onClose, onConfirm }) {
   const graduating = status === "graduated";
   const [understood, setUnderstood] = useState(false);
   const { data, error, loading } = useAsync(async () => {
     if (!graduating) return null;
     const [curriculum, prerequisites] = await Promise.all([getCurriculum(student.program_code), getPrerequisites()]);
-    return graduationCheck(buildProgress({ curriculum, history, prerequisites }));
+    return graduationCheck(buildProgress({ curriculum, history, prerequisites, credits }));
   }, [student.id, status]);
   const checking = graduating && loading;
   const short = graduating && data && !data.eligible;
   const label = status === "active" ? "Active" : STUDENT_STATUS_LABEL[status];
+  const withdrawing = status === "dropped";
+  // The same subjects the system marks Dropped on withdrawal: this term, no result yet.
+  const leaving = withdrawing ? history.filter((r) => r.is_current && r.status === "enrolled" && r.final_grade === null) : [];
 
   return (
-    <Modal title={graduating ? `Mark ${student.full_name} as Graduated?` : `Change status to ${label}?`} onClose={onClose}
+    <Modal title={graduating ? `Mark ${student.full_name} as Graduated?` : withdrawing ? `Withdraw ${student.full_name}?` : `Change status to ${label}?`} onClose={onClose}
       footer={<>
         <button className="btn btn-secondary" onClick={onClose} disabled={busy}>Cancel</button>
-        <button className={`btn ${short ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}
+        <button className={`btn ${short || withdrawing ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}
           disabled={busy || checking || (graduating && !data) || (short && !understood)}>
-          {busy ? "Saving…" : short ? "Graduate anyway" : graduating ? "Mark as Graduated" : `Change to ${label}`}
+          {busy ? "Saving…" : short ? "Graduate anyway" : graduating ? "Mark as Graduated" : withdrawing ? "Withdraw student" : `Change to ${label}`}
         </button>
       </>}>
       {!graduating && <p className="text-[14px] text-ink-2"><strong className="text-ink">{student.full_name}</strong> ({student.id}). {EXPLAIN[status]}</p>}
+      {withdrawing && (
+        <div className="mt-3 flex flex-col gap-2">
+          {leaving.length > 0 ? (
+            <>
+              <p className="text-[14px] font-semibold text-ink">{leaving.length} {leaving.length === 1 ? "subject" : "subjects"} this semester will be marked Dropped, and {leaving.length === 1 ? "its seat" : "their seats"} freed:</p>
+              <ul className="max-h-40 overflow-auto rounded-lg border border-line">
+                {leaving.map((r) => (
+                  <li key={r.enrollment_id} className="border-b border-line-2 px-3 py-2 text-[13px] last:border-0"><span className="font-mono">{r.code}</span> {r.title}</li>
+                ))}
+              </ul>
+            </>
+          ) : <p className="text-[14px] text-ink-2">No subject this semester is waiting for a result.</p>}
+          <p className="text-[13px] text-ink-3">Passed, Failed and NC results stay, and earlier semesters don't change. Dropped subjects show as subjects to resolve until they are passed.</p>
+        </div>
+      )}
       {checking && <p role="status" className="text-[14px] text-ink-3">Checking the curriculum…</p>}
       {graduating && error && <p role="alert" className="text-[14px] text-bad">Couldn't check the curriculum, so the status wasn't changed. Close this and try again.</p>}
       {graduating && data?.eligible && (

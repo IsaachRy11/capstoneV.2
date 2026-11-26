@@ -20,7 +20,7 @@ const STATE = {
 
 // The student's own history with THIS subject (not their overall Regular/Irregular status).
 function subjectStatus(r) {
-  if (r.state === "passed") return <span className="badge tone-ok">Passed</span>;
+  if (r.state === "passed") return <span className="badge tone-ok">Passed or credited</span>;
   if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
   if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
   if (r.retake) return <span className="badge tone-warn">Retake</span>;
