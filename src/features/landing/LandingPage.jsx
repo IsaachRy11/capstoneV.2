@@ -121,7 +121,7 @@ export default function LandingPage() {
           <Reveal className="mt-14 overflow-hidden rounded-[32px] p-8 sm:p-12" style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div className="max-w-[560px]">
-                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Know where you stand before you visit the office.</h2>
+                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Keep track of your subjects, all the way to graduation.</h2>
                 <p className="mt-3 text-[15px]" style={{ color: "var(--panel-soft)" }}>Forgot your password? The CCS Secretary's Office can reset it.</p>
               </div>
               <Link to="/signin" className="btn btn-secondary h-12 rounded-full px-8 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>
