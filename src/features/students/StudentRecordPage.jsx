@@ -10,7 +10,7 @@ import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
 import ResetPasswordModal from "./ResetPasswordModal";
-import ResolveNotice from "./ResolveNotice";
+import MyResolveBox from "./MyResolveBox";
 import StatusChangeModal from "./StatusChangeModal";
 import CreditedSubjects from "./CreditedSubjects";
 import { isCredited, termYear } from "../../lib/progress";
@@ -98,7 +98,7 @@ export default function StudentRecord() {
                 <h1 className="text-[22px] font-bold leading-tight tracking-tight sm:text-[26px]">{student.full_name}</h1>
                 <StudentStatusBadge student={student} />
               </div>
-              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
+              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span>{active && <> · {yearLabel(student.year_level)}</>}</div>
             </div>
           </div>
           {/* Secretary on phones and tablets: view only. Printing, password resets and deleting are done on a computer. */}
@@ -153,7 +153,7 @@ export default function StudentRecord() {
       </section>
 
       {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary notice. */}
-      {!isSecretary && deficiencies.length > 0 && <ResolveNotice items={deficiencies} detailed />}
+      {!isSecretary && deficiencies.length > 0 && <MyResolveBox deficiencies={deficiencies} />}
 
       {(terms.length > 0 || credits.length > 0) && <GradeLegend className="no-print card px-5 py-3.5" />}
       {terms.length === 0 && credits.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}

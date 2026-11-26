@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { curriculumPlace, semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
-import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft } from "../../lib/progress";
+import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft, backTone, isSerious } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import SubjectLink from "./SubjectLink";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
@@ -180,7 +180,7 @@ export default function Roadmap() {
   });
   const exact = progress.totalUnits ? ((progress.unitsEarned / progress.totalUnits) * 100).toFixed(1) : "0.0";
 
-  if (view) return <ProgressDetail view={view} progress={progress} student={student} />;
+  if (view) return <ProgressDetail view={view} progress={progress} />;
   const left = termsLeft(ahead);
 
   return (
@@ -248,12 +248,12 @@ export default function Roadmap() {
       <section aria-labelledby="ahead-title" className="flex flex-col gap-3">
         <h2 id="ahead-title" className="flex items-center gap-2 text-[19px] font-bold"><GraduationCap size={18} className="text-accent" aria-hidden="true" />Ahead</h2>
         {progress.back.length > 0 && (() => {
-          const tone = progress.back.some((x) => x.backReason === "Failed") ? "bad" : "warn"; // red if anything failed, else amber
+          const tone = progress.back.some((x) => isSerious(x.backReason)) ? "bad" : "warn"; // red if anything failed, else amber
           return (
             <div className="card px-5 py-4" style={{ background: `var(--${tone}-bg)`, borderColor: `var(--${tone})` }}>
               <h3 className={`text-[15px] font-bold ${tone === "bad" ? "text-bad" : "text-warn"}`}>Carry-over: {count(progress.back.length, "subject", "subjects")} to resolve or retake</h3>
               <ul className="mt-1 text-[14px] text-ink-2">
-                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
+                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
               </ul>
             </div>
           );

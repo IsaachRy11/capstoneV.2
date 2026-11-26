@@ -1,9 +1,5 @@
-import { sumUnits } from "../../lib/format";
-
-// What each summary card on the subject tracker opens (?view=units|passed|enrolled|failed):
+// What each summary card on the Roadmap opens (?view=units|passed):
 // the title, which subjects to list, the big sentence on top and the text for an empty list.
-const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-
 export const VIEWS = {
   units: {
     title: "Units earned",
@@ -18,19 +14,5 @@ export const VIEWS = {
     headline: (rows, p) => `${p.passedCount} of ${p.total} subjects`,
     text: "Every subject you've passed. Your grades are on the Academic record.",
     empty: "You haven't passed any subjects yet.",
-  },
-  enrolled: {
-    title: "This semester",
-    pick: (p) => p.inProgress,
-    headline: (rows) => `${plural(rows.length, "subject", "subjects")} · ${sumUnits(rows)} units`,
-    text: "The subjects you're enrolled in now. Grades are on the Academic record.",
-    empty: "You're not enrolled in any subjects this semester.",
-  },
-  failed: {
-    title: "Subjects to resolve",
-    pick: (p) => p.back,
-    headline: (rows) => plural(rows.length, "subject", "subjects"),
-    text: "Failed, NC or dropped, and not passed since. The Curriculum column shows the year and semester each one comes from.",
-    empty: "Nothing to resolve. Keep it up.",
   },
 };

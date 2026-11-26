@@ -1,12 +1,11 @@
 import { Badge, EmptyState, PageHeader } from "../../components/ui";
 import { sumUnits, yearSemesterLabel } from "../../lib/format";
 import { SUBJECT_STATE, stateLabel } from "../../lib/progress";
-import SubjectLink from "./SubjectLink";
 import { VIEWS } from "./progressViews";
 
-// The list behind each summary card on the subject tracker (opened with ?view=units|passed|enrolled|failed).
+// The list behind each summary card on the Roadmap (opened with ?view=units|passed).
 // Grades live on the Academic record, so these lists show the subject, where it sits in the curriculum, and its status.
-export default function ProgressDetail({ view, progress, student }) {
+export default function ProgressDetail({ view, progress }) {
   const cfg = VIEWS[view];
   const rows = cfg.pick(progress);
 
@@ -15,7 +14,7 @@ export default function ProgressDetail({ view, progress, student }) {
       <PageHeader title={cfg.title} />
       <section className="card flex flex-col gap-1.5 p-6">
         <h2 className="text-[15px] font-semibold text-ink-2">{cfg.title}</h2>
-        <p className={`font-display text-[34px] font-bold tracking-tight ${view === "failed" && rows.length ? "text-bad" : "text-ink"}`}>{cfg.headline(rows, progress)}</p>
+        <p className={`font-display text-[34px] font-bold tracking-tight text-ink`}>{cfg.headline(rows, progress)}</p>
         <p className="text-[14px] text-ink-3">{cfg.text}</p>
       </section>
 
@@ -34,8 +33,6 @@ export default function ProgressDetail({ view, progress, student }) {
                     <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                     <td className="min-w-0 align-top sm:min-w-[200px]">
                       <span className="block font-medium">{s.title}</span>
-                      {s.state === "back" && s.attempts > 1 && <span className="mt-0.5 block text-[12px] text-ink-3">{s.attempts} attempts</span>}
-                      {s.state === "back" && <span className="mt-1 block text-[13px]"><SubjectLink subject={s} student={student} /></span>}
                       {/* Phones: the hidden columns are folded in here. */}
                       <span className="mt-0.5 block text-[12px] text-ink-3 sm:hidden">{yearSemesterLabel(s.year_level, s.semester)} · {Number(s.units)} {Number(s.units) === 1 ? "unit" : "units"}</span>
                       <span className="mt-1.5 block sm:hidden">

@@ -1,5 +1,5 @@
 // Resets a student's password. Only a signed-in secretary may call it.
-// Sets a random one-time password (returned once, to hand to the student) and makes the student
+// Sets the temporary password (returned, to tell the student) and makes the student
 // choose their own password at the next sign-in. Creates the login if the student has none.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -11,11 +11,9 @@ const cors = {
 const reply = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-function tempPassword() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
-}
+// The same simple starting password for every new or reset account (college's choice: easy to hand over).
+// It only works until the first sign-in, where the student has to choose their own.
+const TEMP_PASSWORD = "123456789";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -34,7 +32,7 @@ Deno.serve(async (req) => {
     const { data: student } = await admin.from("students").select("id, auth_user_id").eq("id", studentId).maybeSingle();
     if (!student) return reply({ error: "No student with that ID." }, 404);
 
-    const password = tempPassword();
+    const password = TEMP_PASSWORD;
     if (student.auth_user_id) {
       const { error } = await admin.auth.admin.updateUserById(student.auth_user_id, { password, user_metadata: { must_change_password: true } });
       if (error) return reply({ error: error.message }, 400);
