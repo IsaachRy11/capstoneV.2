@@ -16,6 +16,7 @@ export default function AddStudentModal({ programs, term, onClose, onCreated }) 
   const submit = async (e) => {
     e.preventDefault();
     if (!/^\d{4}-\d{4}$/.test(form.id.trim())) return setError("Student ID must look like 2026-0001.");
+    if (!form.first_name.trim() || !form.last_name.trim()) return setError("Enter the first and last name.");
     setBusy(true);
     setError("");
     try {

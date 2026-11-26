@@ -1,3 +1,4 @@
+import { onePerSubject } from "../lib/progress";
 import { supabase, unwrap } from "../lib/supabase";
 
 // v_student_overview computes standing, section and deficiency counts in the database.
@@ -63,12 +64,12 @@ export const removeCredit = (creditId) =>
   unwrap(supabase.from("student_credits").update({ removed_at: new Date().toISOString() }).eq("id", creditId));
 
 // Failed / INC / dropped / Not credited subjects not cleared by a later pass (computed by the database view).
-export const getDeficiencies = (id) =>
-  unwrap(
+export const getDeficiencies = async (id) =>
+  onePerSubject(await unwrap(
     supabase.from("v_student_deficiencies")
       .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year, not_credited")
       .eq("student_id", id)
-  );
+  ));
 
 // Who changed which grade, newest first (secretary only; RLS returns nothing to students).
 export const getGradeChanges = (id) =>
