@@ -48,7 +48,7 @@ export default function WeekTimetable({ items, todaySummary = false, emptyText =
       ) : (
         <>
           {/* Weekly grid (tablet and up) */}
-          <section className="card hidden overflow-x-auto md:block" aria-label="Weekly timetable">
+          <section className="week-grid card hidden overflow-x-auto md:block print:block" aria-label="Weekly timetable">
             <div className="grid min-w-[720px]" style={{ gridTemplateColumns: `64px repeat(${days.length}, minmax(0, 1fr))` }}>
               <div className="border-b border-line" />
               {days.map((d) => (
@@ -82,7 +82,7 @@ export default function WeekTimetable({ items, todaySummary = false, emptyText =
           </section>
 
           {/* Day-by-day list (phones) */}
-          <div className="flex flex-col gap-4 md:hidden">
+          <div className="flex flex-col gap-4 md:hidden print:hidden">
             {days.filter((d) => events.some((e) => e.day === d)).map((d) => (
               <section key={d} className="card overflow-hidden">
                 <h2 className={`border-b border-line px-5 py-3 text-[15px] font-bold ${d === todayNum ? "bg-tint text-tint-ink" : ""}`}>

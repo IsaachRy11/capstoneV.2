@@ -90,6 +90,13 @@ export const updateCurriculumSubject = (id, { year_level, semester, code, title,
   );
 
 // Fails with code 23503 if the subject is scheduled or has grades (protects student records).
+// The sections that have a class for this subject in one term (what the system lists, not an official offer list).
+export const getSubjectClasses = (subjectId, termId) =>
+  unwrap(
+    supabase.from("class_offerings").select("id, sections!inner(name, school_term_id)")
+      .eq("curriculum_subject_id", subjectId).eq("sections.school_term_id", termId)
+  ).then((rows) => rows.map((r) => r.sections.name).sort());
+
 export const deleteCurriculumSubject = (id) =>
   (forget("curriculum"), unwrap)(supabase.from("curriculum_subjects").delete().eq("id", id));
 

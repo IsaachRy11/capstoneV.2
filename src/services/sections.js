@@ -9,6 +9,7 @@ export const getSectionOfferings = (sectionId) =>
     supabase.from("class_offerings")
       .select("id, capacity, curriculum_subjects(id, code, title, units, kind, sort_order), class_meetings(id, weekday, starts_at, ends_at, room_id, rooms(name)), enrollments(count)")
       .eq("section_id", sectionId)
+      .not("enrollments.status", "in", "(dropped,withdrawn)")
   ).then((rows) => rows
     .map((o) => ({ ...o, enrolled: o.enrollments?.[0]?.count ?? 0 }))
     .sort((a, b) => a.curriculum_subjects.sort_order - b.curriculum_subjects.sort_order));
@@ -16,6 +17,7 @@ export const getSectionOfferings = (sectionId) =>
 export async function getRoster(offeringId) {
   const rows = await unwrap(
     supabase.from("enrollments").select("id, student_id, status, students(first_name, last_name, admission_type, status, year_level)").eq("offering_id", offeringId)
+      .not("status", "in", "(dropped,withdrawn)")
   );
   if (!rows.length) return [];
   const standings = await unwrap(
@@ -38,6 +40,18 @@ export function searchStudents(query) {
     supabase.from("v_student_overview").select("id, full_name, program_code, year_level, section_name")
       .or(`full_name.ilike.%${q}%,id.ilike.%${q}%`).order("last_name").limit(8)
   );
+}
+
+// Who has this class's subject from earlier studies: Credited (the add-students plan reports it the same as passed)
+// or Not credited (failed before, still to be taken).
+export async function getEarlierResults(offeringId) {
+  const offering = await unwrap(supabase.from("class_offerings").select("curriculum_subject_id").eq("id", offeringId).maybeSingle());
+  if (!offering) return { credited: [], notCredited: [] };
+  const rows = await unwrap(
+    supabase.from("student_credits").select("student_id, is_credited").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null)
+  );
+  const pick = (ok) => rows.filter((r) => r.is_credited === ok).map((r) => r.student_id);
+  return { credited: pick(true), notCredited: pick(false) };
 }
 
 // Add students to ONE subject: who to list and whether each can be added (migration 0018).

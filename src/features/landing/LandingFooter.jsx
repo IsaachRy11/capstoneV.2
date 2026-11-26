@@ -6,7 +6,7 @@ import { SealLogo } from "../../components/ui";
 // and the college's web and Facebook names; a copyright line and the photo credits underneath. Brand color band.
 // The Facebook link searches for the page by its name (we don't keep a page address that could go out of date).
 const FB_SEARCH = "https://www.facebook.com/search/top?q=" + encodeURIComponent("SJC - College of Computer Studies");
-const CREDITS = "Photos on Unsplash by Jon Eckert (the sign-in page), Bo Peng and Yanhao Fang (the landing page). Photo of the SJC College Building by RM Reoma.";
+const CREDITS = "Sign-in photo from Unsplash. Landing page photos on Unsplash by Bo Peng and Yanhao Fang. Photo of the SJC College Building by RM Reoma.";
 
 export function FacebookMark({ size = 17 }) {
   return (
@@ -53,7 +53,7 @@ export default function LandingFooter() {
         <Column title="Visit us">
           <span className="flex items-start gap-2">
             <MapPin size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>CCS Secretary&apos;s Office<br />Ground Floor, SJC College Building<br />Maasin City, Southern Leyte</span>
+            <span>Ground Floor, SJC College Building<br />Maasin City, Southern Leyte</span>
           </span>
         </Column>
 

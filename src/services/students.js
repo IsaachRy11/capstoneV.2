@@ -1,8 +1,16 @@
+import { onePerSubject } from "../lib/progress";
 import { supabase, unwrap } from "../lib/supabase";
 
 // v_student_overview computes standing, section and deficiency counts in the database.
-export const listStudents = () =>
-  unwrap(supabase.from("v_student_overview").select("*").order("last_name").order("first_name"));
+const PAGE = 1000; // the most rows the database returns in one request
+export async function listStudents() {
+  const all = [];
+  for (let from = 0; ; from += PAGE) {
+    const rows = await unwrap(supabase.from("v_student_overview").select("*").order("last_name").order("first_name").order("id").range(from, from + PAGE - 1));
+    all.push(...rows);
+    if (rows.length < PAGE) return all;
+  }
+}
 
 export const getStudent = (id) =>
   unwrap(supabase.from("v_student_overview").select("*").eq("id", id).maybeSingle());
@@ -28,13 +36,40 @@ export const getTermClasses = (studentId, termId) =>
   ).then((rows) => rows.sort((a, b) =>
     a.class_offerings.curriculum_subjects.sort_order - b.class_offerings.curriculum_subjects.sort_order));
 
-// Failed / INC / dropped subjects not cleared by a later pass (computed by the database view).
-export const getDeficiencies = (id) =>
+// Credited subjects (shiftees and transferees); removed ones are kept in the table as the log and left out here.
+// An empty list while the table doesn't exist yet, so pages still load before the database is updated.
+export const getCredits = (id) =>
   unwrap(
+    supabase.from("student_credits")
+      .select("id, curriculum_subject_id, midterm_grade, final_grade, created_at, curriculum_subjects(code, title, units, year_level, semester, sort_order)")
+      .eq("student_id", id).is("removed_at", null)
+  ).then((rows) => rows.sort((a, b) => a.curriculum_subjects.year_level - b.curriculum_subjects.year_level
+    || a.curriculum_subjects.semester - b.curriculum_subjects.semester || a.curriculum_subjects.sort_order - b.curriculum_subjects.sort_order))
+    .catch((err) => {
+      if (/student_credits/.test(err.message || "")) return [];
+      throw err;
+    });
+
+// Secretary only. One insert, so either every entry is saved or none is. entries: [{ subjectId, midterm, final }].
+export const addCredits = (studentId, entries) =>
+  unwrap(supabase.from("student_credits").insert(entries.map((e) => ({
+    student_id: studentId, curriculum_subject_id: e.subjectId, midterm_grade: e.midterm, final_grade: e.final,
+  }))));
+
+// Secretary only. Corrects grades in one transaction; each old entry stays as a log. changes: [{ id, midterm, final }].
+export const saveCreditGrades = (changes) => unwrap(supabase.rpc("save_credit_grades", { p_changes: changes }));
+
+// Secretary only. The row stays, marked with who removed it and when.
+export const removeCredit = (creditId) =>
+  unwrap(supabase.from("student_credits").update({ removed_at: new Date().toISOString() }).eq("id", creditId));
+
+// Failed / INC / dropped / Not credited subjects not cleared by a later pass (computed by the database view).
+export const getDeficiencies = async (id) =>
+  onePerSubject(await unwrap(
     supabase.from("v_student_deficiencies")
-      .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year")
+      .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year, not_credited")
       .eq("student_id", id)
-  );
+  ));
 
 // Who changed which grade, newest first (secretary only; RLS returns nothing to students).
 export const getGradeChanges = (id) =>
@@ -51,7 +86,7 @@ export const getUnitLimit = (id) =>
 export const updateUnitLimit = (id, units) =>
   unwrap(supabase.from("students").update({ max_units: units }).eq("id", id));
 
-// Secretary only. Sets a new one-time password (done on the server, which holds the secret key) and
+// Secretary only. Sets the temporary password again (done on the server, which holds the secret key) and
 // returns it once. The student must choose their own password at the next sign-in.
 export async function resetStudentPassword(id) {
   const { data, error } = await supabase.functions.invoke("reset-student-password", { body: { studentId: id } });
@@ -86,7 +121,7 @@ export async function createStudent({ id, first_name, last_name, programId, year
   };
   await unwrap(supabase.rpc("add_student", params));
   // The sign-in account is made on the server (it needs a secret key). If that fails the student still exists.
-  // It returns a one-time password, shown once to the secretary to hand to the student.
+  // It returns the temporary password for the secretary to give the student.
   const { data, error } = await supabase.functions.invoke("create-student-login", { body: { studentId: id } });
   const loginCreated = !error && data?.ok === true;
   return { loginCreated, tempPassword: data?.tempPassword ?? null };

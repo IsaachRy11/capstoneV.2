@@ -15,11 +15,11 @@ async function loadProfile(authUser) {
   // Both lookups go out together (one round trip of waiting instead of two); row-level security
   // returns a row only from the table this person belongs to.
   const [{ data: sec, error: secErr }, { data: stu, error: stuErr }] = await Promise.all([
-    supabase.from("secretaries").select("id, full_name, staff_id").eq("auth_user_id", uid).maybeSingle(),
+    supabase.from("secretaries").select("id, full_name, secretary_id").eq("auth_user_id", uid).maybeSingle(),
     supabase.from("students").select("id, first_name, last_name, year_level").eq("auth_user_id", uid).maybeSingle(),
   ]);
   if (secErr) throw secErr;
-  if (sec) return { role: "secretary", name: sec.full_name, staffId: sec.staff_id, avatarUrl: await avatarPromise };
+  if (sec) return { role: "secretary", name: sec.full_name, secretaryId: sec.secretary_id, avatarUrl: await avatarPromise };
   if (stuErr) throw stuErr;
   if (stu) {
     return {
@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
     : loaded.profile ? "ready" : "unlinked";
   const profile = status === "ready" ? loaded.profile : null;
 
-  // Accepts a student ID (2025-0001) or a staff email; see loginEmail() in lib/format.js.
+  // Accepts a student ID (2025-0001) or a secretary email; see loginEmail() in lib/format.js.
   const signIn = useCallback(async (identifier, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(identifier), password });
 

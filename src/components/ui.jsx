@@ -1,22 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { STATUS_LABEL, STATUS_TONE, STUDENT_STATUS_LABEL, STUDENT_STATUS_TONE, colorIndex, initials, studentStatusKey } from "../lib/format";
 
-// "Back" for pages you reach by clicking. With `to` it always goes there (a detail view back to its list).
-// Without it, it steps back in history, or goes to `fallback` when the page was opened directly.
-export function BackButton({ to, fallback = "/", label = "Back" }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const cls = "no-print -ml-2 inline-flex min-h-10 w-fit items-center gap-1.5 rounded-lg px-2 text-[14px] font-semibold text-ink-2 hover:bg-hover hover:text-ink";
-  const icon = <ArrowLeft size={16} aria-hidden="true" />;
-  if (to) return <Link to={to} className={cls}>{icon}{label}</Link>;
-  return (
-    <button type="button" className={cls} onClick={() => (location.key === "default" ? navigate(fallback) : navigate(-1))}>
-      {icon}{label}
-    </button>
-  );
-}
 
 // Profile photo if there is one, otherwise initials on a colored circle. `size` in px.
 export function Avatar({ name, url, size = 40, className = "" }) {
@@ -48,12 +33,12 @@ export const StudentStatusBadge = ({ student }) => {
 export const StatusBadge = ({ status }) => <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status] || status}</Badge>;
 
 // Grade color meanings, used everywhere: red = failing, green = passed,
-// grey = INC or Dropped (no final grade).
+// grey = NC, Dropped or Withdrawn (no final grade).
 // Each color always comes with words, so meaning never depends on color alone.
 const LEGEND = {
   passed: { color: "var(--mark-ok)", label: "Passed", detail: "1.00 – 3.00" },
   failing: { color: "var(--mark-bad)", label: "Failed", detail: "5.00" },
-  other: { color: "var(--mark-none)", label: "INC or Dropped", detail: "No grade" },
+  other: { color: "var(--mark-none)", label: "NC, Dropped or Withdrawn", detail: "No grade" },
 };
 
 // Swatches use the brighter --mark-* colors (distinct at a glance); text keeps the darker readable tones.

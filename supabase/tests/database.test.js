@@ -55,7 +55,7 @@ beforeAll(async () => {
   await db.exec(`grant select, insert, update, delete on all tables in schema public to anon, authenticated;
                  grant usage on all sequences in schema public to authenticated;`);
   await db.exec(readFileSync(join(root, "seed.sql"), "utf8"));
-  // Sign-in accounts are linked by ID: staff ID CCS-001, and the first 2nd-year BSIT student as the demo student.
+  // Sign-in accounts are linked by ID: secretary ID CCS-001, and the first 2nd-year BSIT student as the demo student.
   const demo = (await db.query(`select s.id from students s join programs p on p.id = s.program_id where p.code = 'BSIT' and s.year_level = 2 order by s.id limit 1`)).rows[0].id;
   await db.exec(`insert into auth.users (email) values ('ccs-001@staff.ccs-monitor.test'), ('${demo.toLowerCase()}@students.ccs-monitor.test')`);
   const users = (await db.query(`select email, id from auth.users`)).rows;
@@ -363,6 +363,89 @@ describe("schedule editing rules", () => {
   it("refuses schedule edits from students", async () => {
     const a = await offeringOf("BSIT 2-S");
     expect((await as("authenticated", STU, `insert into class_meetings (offering_id, weekday, starts_at, ends_at) values (${a.id}, 6, '06:00', '07:00') returning id`)).error).toBeTruthy();
+  });
+});
+
+// Every way a class time can collide, on an otherwise empty day (Sunday) so only these rows are in play.
+describe("class time clash scenarios", () => {
+  let a, b, other, room1, room2, shed;
+  const add = (off, from, to, room = null) => as("authenticated", SEC, `insert into class_meetings (offering_id, weekday, starts_at, ends_at, room_id) values (${off}, 7, '${from}', '${to}', ${room ?? "null"}) returning id`);
+  const clear = () => db.exec("delete from class_meetings where weekday = 7");
+  beforeAll(async () => {
+    const cur = "(select id from school_terms where is_current)";
+    // two subjects of one section, and one subject of a section with no students in common
+    const secA = await one(`select s.id from sections s where s.school_term_id = ${cur} order by s.id limit 1`);
+    [a, b] = (await db.query(`select id from class_offerings where section_id = ${secA.id} order by id limit 2`)).rows.map((r) => r.id);
+    other = (await one(`select o.id from class_offerings o join sections s on s.id = o.section_id where s.school_term_id = ${cur} and s.id <> ${secA.id}
+      and not exists (select 1 from enrollments e1 join enrollments e2 on e2.student_id = e1.student_id where e1.offering_id = o.id and e2.offering_id in (${a}, ${b})) order by o.id limit 1`)).id;
+    [room1, room2] = (await db.query("select id from rooms where not is_shared order by name limit 2")).rows.map((r) => r.id);
+    shed = (await one("select id from rooms where is_shared limit 1")).id;
+  });
+
+  it("refuses the same subject twice at the same time, even in a different room or with no room", async () => {
+    await clear();
+    expect((await add(a, "10:00", "11:00", room1)).error).toBeUndefined();
+    for (const [from, to, room] of [["10:00", "11:00", room2], ["10:00", "11:00", null], ["10:00", "11:00", room1], ["10:30", "11:30", room2], ["09:30", "10:30", null], ["10:15", "10:45", null], ["09:00", "12:00", null]]) {
+      expect((await add(a, from, to, room)).error).toMatch(/already has a class on Sunday/);
+    }
+  });
+  it("allows classes that only touch end to start", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(a, "11:00", "12:00", room1)).error).toBeUndefined();
+    expect((await add(b, "09:00", "10:00", room1)).error).toBeUndefined();
+  });
+  it("refuses two subjects of one section at the same time", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(b, "10:30", "11:30", room2)).error).toMatch(/already has/);
+  });
+  it("refuses a room that another section is using, and allows another room or no room", async () => {
+    await clear();
+    await add(a, "10:00", "11:00", room1);
+    expect((await add(other, "10:00", "11:00", room1)).error).toMatch(/is already taken then by/);
+    expect((await add(other, "10:00", "11:00", room2)).error).toBeUndefined();
+  });
+  it("lets two sections share the PE shed", async () => {
+    await clear();
+    expect((await add(a, "13:00", "14:00", shed)).error).toBeUndefined();
+    expect((await add(other, "13:00", "14:00", shed)).error).toBeUndefined();
+  });
+  it("applies the same rules when a time is changed, without clashing with itself", async () => {
+    await clear();
+    const first = (await add(a, "10:00", "11:00", room1)).rows[0].id;
+    const second = (await add(a, "14:00", "15:00", room1)).rows[0].id;
+    expect((await as("authenticated", SEC, `update class_meetings set ends_at = '11:30' where id = ${first}`)).error).toBeUndefined();
+    expect((await as("authenticated", SEC, `update class_meetings set starts_at = '10:30', ends_at = '11:30' where id = ${second}`)).error).toMatch(/already has a class/);
+  });
+  it("keeps class times between 7:30 AM and 8:30 PM, ending after they start", async () => {
+    await clear();
+    expect((await add(a, "07:00", "08:00")).error).toMatch(/between 7:30 AM and 8:30 PM/);
+    expect((await add(a, "20:00", "21:00")).error).toMatch(/between 7:30 AM and 8:30 PM/);
+    expect((await add(a, "10:00", "10:00")).error).toBeTruthy();
+    expect((await add(a, "07:30", "08:30")).error).toBeUndefined();
+    expect((await add(a, "19:30", "20:30")).error).toBeUndefined();
+    await clear();
+  });
+});
+
+describe("students only take subjects of their own curriculum", () => {
+  const pick = () => one(`
+    select st.id as student, o.id as offering from students st
+    join class_offerings o on true join sections sec on sec.id = o.section_id join school_terms t on t.id = sec.school_term_id and t.is_current
+    where st.program_id = (select id from programs where code = 'BSCS') and st.status = 'active'
+      and sec.program_id = (select id from programs where code = 'BSIT') and sec.year_level = 1
+    order by st.id, o.id limit 1`);
+  it("refuses a BSCS student in a BSIT subject, however it is added", async () => {
+    const x = await pick();
+    const direct = await as("authenticated", SEC, `insert into enrollments (student_id, offering_id) values ('${x.student}', ${x.offering})`);
+    expect(direct.error).toMatch(/Students can only take subjects of their own curriculum/);
+    const plan = (await as("authenticated", SEC, `select public.subject_enroll_plan(${x.offering}, array['${x.student}']) as r`)).rows[0].r;
+    expect(["other_program", "passed", "enrolled"]).toContain(plan.students[0].state);
+    expect(plan.students[0].state).toBe("other_program");
+    const saved = (await as("authenticated", SEC, `select public.enroll_in_subject(${x.offering}, array['${x.student}']) as r`)).rows[0].r;
+    expect(saved[0]).toMatchObject({ ok: false, why: "not a subject of their curriculum" });
+    expect(await one(`select count(*)::int n from enrollments where student_id = '${x.student}' and offering_id = ${x.offering}`)).toEqual({ n: 0 });
   });
 });
 
@@ -778,7 +861,55 @@ describe("starting a term and enrolling sections", () => {
     expect((await one(`select count(*)::int n from registrations where school_term_id = ${t.id}`)).n).toBe(0);
     expect((await one(`select count(*)::int n from school_calendar_events where school_year = '2027-2028'`)).n).toBe(0);
     for (const id of carried) expect(await yearOf(id)).toBe(yearsAtStart[id]);
+    // Nothing of the undone term stays behind, so starting it again builds it fresh.
+    expect((await one(`select count(*)::int n from sections where school_term_id = ${t.id}`)).n).toBe(0);
   }, 120_000);
+
+  it("starting a term again after Undo does not bring back what was added to it before", async () => {
+    const sections = () => one(`select count(distinct s.id)::int sections, count(o.id)::int subjects from sections s
+      left join class_offerings o on o.section_id = s.id join school_terms t on t.id = s.school_term_id and t.is_current`);
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    const fresh = await sections();
+    const extra = await one(`select o.section_id, cs.id as subject from class_offerings o join sections s on s.id = o.section_id
+      join school_terms t on t.id = s.school_term_id and t.is_current
+      join curriculum_subjects cs on cs.semester = 2 and cs.curriculum_id = (select curriculum_id from curriculum_subjects where id = o.curriculum_subject_id) limit 1`);
+    await db.exec(`insert into class_offerings (section_id, curriculum_subject_id) values (${extra.section_id}, ${extra.subject})`);
+    await rpc(`public.undo_term_start()`);
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    expect(await sections()).toEqual(fresh);
+    await rpc(`public.undo_term_start()`);
+  }, 240_000);
+
+  it("every New term path can be undone one step at a time and leaves exactly what was there before", async () => {
+    const snapshot = () => one(`select
+      (select school_year || '/' || semester from school_terms where is_current) as current,
+      (select md5(string_agg(id || ':' || year_level || ':' || status, ',' order by id)) from students) as students,
+      (select count(*)::int from sections) as sections, (select count(*)::int from class_offerings) as subjects,
+      (select count(*)::int from class_meetings) as class_times, (select count(*)::int from enrollments) as subjects_taken,
+      (select count(*)::int from registrations) as registrations, (select count(*)::int from school_calendar_events) as calendar`);
+    // As in the app: no later term has been prepared ahead of its start (an earlier test prepared one by hand).
+    await db.exec(`delete from sections s using school_terms t where t.id = s.school_term_id and (t.school_year, t.semester) > ('2026-2027', 2)
+      and not exists (select 1 from registrations r where r.school_term_id = t.id)`);
+    // Each path starts from the 2nd semester: [school year, semester, first day, last day] per step.
+    const summer = ["2026-2027", 3, "2027-05-03", "2027-06-11"];
+    const first = ["2027-2028", 1, "2027-07-05", "2027-11-06"];
+    const second = ["2027-2028", 2, "2027-11-22", "2028-04-21"];
+    for (const path of [[summer], [first, second], [summer, first, second]]) {
+      const stack = [];
+      for (const [year, semester, from, to] of path) {
+        stack.push(await snapshot());
+        await rpc(`public.begin_term('${year}', ${semester}::smallint, '${from}', '${to}')`);
+        const now = await snapshot();
+        expect(now.current).toBe(`${year}/${semester}`);
+        expect((await one(`select count(o.id)::int n from class_offerings o join sections x on x.id = o.section_id
+          join school_terms t on t.id = x.school_term_id and t.is_current`)).n).toBeGreaterThan(0);
+      }
+      while (stack.length) {
+        await rpc(`public.undo_term_start()`);
+        expect(await snapshot()).toEqual(stack.pop());
+      }
+    }
+  }, 480_000);
 
   it("uses each student's own unit limit when enrolling a section", async () => {
     const t2 = await term("2026-2027", 2);
@@ -795,8 +926,8 @@ describe("starting a term and enrolling sections", () => {
 });
 
 describe("sign-in accounts are linked by ID, not by email", () => {
-  it("links the secretary by staff ID and a student by student ID", async () => {
-    expect((await one(`select staff_id, auth_user_id is not null linked from secretaries where staff_id = 'CCS-001'`))).toEqual({ staff_id: "CCS-001", linked: true });
+  it("links the secretary by secretary ID and a student by student ID", async () => {
+    expect((await one(`select secretary_id, auth_user_id is not null linked from secretaries where secretary_id = 'CCS-001'`))).toEqual({ secretary_id: "CCS-001", linked: true });
     expect((await one(`select count(*)::int n from students where auth_user_id is not null`)).n).toBe(1);
   });
   it("keeps no email on students or secretaries", async () => {
@@ -804,4 +935,243 @@ describe("sign-in accounts are linked by ID, not by email", () => {
                                   where table_schema = 'public' and column_name = 'email' and table_name in ('students', 'secretaries')`)).rows;
     expect(cols).toEqual([]);
   });
+});
+
+describe("credited subjects and withdrawal", () => {
+  const sec = (sql) => as("authenticated", SEC, sql);
+  const mk = async (id, type, program = "BSIT") => {
+    await db.exec(`insert into students (id, first_name, last_name, program_id, curriculum_id, year_level, admission_type)
+      select '${id}', 'Test', '${id}', p.id, c.id, 1, '${type}' from programs p join curricula c on c.program_id = p.id and c.is_active where p.code = '${program}'`);
+  };
+  const credit = (student, subjectId, final = 1.75, midterm = 2.0) => sec(`insert into student_credits (student_id, curriculum_subject_id, midterm_grade, final_grade) values ('${student}', ${subjectId}, ${midterm}, ${final}) returning id`);
+  const passed = async (student, subjectId) => (await one(`select private.has_passed('${student}', ${subjectId}) p`)).p;
+  // A subject with a prerequisite, and that prerequisite.
+  const pair = () => one(`select sp.subject_id, sp.prerequisite_id, pre.year_level pre_year from subject_prerequisites sp
+    join curriculum_subjects cs on cs.id = sp.subject_id join curriculum_subjects pre on pre.id = sp.prerequisite_id
+    join curricula c on c.id = cs.curriculum_id and c.is_active join programs p on p.id = c.program_id where p.code = 'BSIT' order by pre.year_level desc, sp.subject_id limit 1`);
+
+  beforeAll(async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0001", "transferee");
+    await mk("2099-0002", "new");
+    await mk("2099-0003", "shiftee");
+  });
+
+  it("only the secretary credits, only shiftees and transferees, only their own curriculum", async () => {
+    const p = await pair();
+    expect((await as("authenticated", STU, `insert into student_credits (student_id, curriculum_subject_id, final_grade) values ('2099-0001', ${p.prerequisite_id}, 1.5)`)).error).toMatch(/row-level security|only for shiftees/i);
+    expect((await credit("2099-0002", p.prerequisite_id)).error).toMatch(/only for shiftees and transferees/);
+    const other = await one(`select cs.id from curriculum_subjects cs join curricula c on c.id = cs.curriculum_id and c.is_active join programs pr on pr.id = c.program_id where pr.code = 'BSCS' limit 1`);
+    expect((await credit("2099-0001", other.id)).error).toMatch(/own curriculum/);
+  });
+
+  it("a credit counts as passed, raises the year level and blocks adding the same subject", async () => {
+    const p = await pair();
+    expect(await passed("2099-0001", p.prerequisite_id)).toBe(false);
+    expect((await credit("2099-0001", p.prerequisite_id)).error).toBeUndefined();
+    expect(await passed("2099-0001", p.prerequisite_id)).toBe(true);
+    expect((await one(`select year_level from students where id = '2099-0001'`)).year_level).toBe(p.pre_year);
+    expect((await credit("2099-0001", p.prerequisite_id)).error).toMatch(/duplicate|unique/i);
+    const off = await one(`select o.id from class_offerings o limit 1`);
+    await db.exec(`update class_offerings set curriculum_subject_id = curriculum_subject_id where id = ${off.id}`);
+    const same = await one(`select o.id from class_offerings o where o.curriculum_subject_id = ${p.prerequisite_id} limit 1`);
+    if (same) expect((await sec(`insert into enrollments (student_id, offering_id) values ('2099-0001', ${same.id})`)).error).toMatch(/already credited/);
+  });
+
+  it("removing a credit keeps the row as the log, and a credit can't be erased or revived", async () => {
+    const p = await pair();
+    const row = await one(`select id from student_credits where student_id = '2099-0001' and removed_at is null`);
+    await sec(`delete from student_credits where id = ${row.id}`);
+    expect((await one(`select count(*)::int n from student_credits where id = ${row.id}`)).n).toBe(1);
+    expect((await sec(`update student_credits set removed_at = now() where id = ${row.id}`)).error).toBeUndefined();
+    expect(await one(`select removed_by from student_credits where id = ${row.id}`)).toEqual({ removed_by: SEC });
+    expect(await passed("2099-0001", p.prerequisite_id)).toBe(false);
+    expect((await sec(`update student_credits set removed_at = null where id = ${row.id}`)).error).toMatch(/only be removed/);
+    expect((await sec(`delete from students where id = '2099-0001'`)).error).toMatch(/record is kept/);
+  });
+
+  it("needs a final grade on the official scale, and the grades can't be edited afterwards", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0006", "transferee");
+    const p = await pair();
+    expect((await credit("2099-0006", p.prerequisite_id, "null")).error).toMatch(/Enter the final grade/);
+    expect((await credit("2099-0006", p.prerequisite_id, 1.2)).error).toMatch(/final_scale/);
+    expect((await credit("2099-0006", p.prerequisite_id, 2.5)).error).toBeUndefined();
+    expect((await sec(`update student_credits set final_grade = 1.0 where student_id = '2099-0006'`)).error).toMatch(/only be removed/);
+  });
+
+  it("a failed grade is kept but is not a credit: nothing counts, and the student can take the subject", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0007", "shiftee");
+    const p = await pair();
+    expect((await credit("2099-0007", p.prerequisite_id, 5.0)).error).toBeUndefined();
+    expect((await one(`select is_credited from student_credits where student_id = '2099-0007'`)).is_credited).toBe(false);
+    expect(await passed("2099-0007", p.prerequisite_id)).toBe(false);
+    expect((await one(`select year_level from students where id = '2099-0007'`)).year_level).toBe(1);
+    const same = await one(`select o.id from class_offerings o join sections s on s.id = o.section_id join school_terms t on t.id = s.school_term_id and t.is_current
+      where o.curriculum_subject_id = ${p.prerequisite_id} limit 1`);
+    if (same) expect((await sec(`select public.subject_enroll_plan(${same.id}, array['2099-0007']) p`)).rows[0].p.students[0].state).not.toBe("passed");
+  });
+
+  it("Not credited is a subject to resolve until it is corrected or passed", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0008", "transferee");
+    const p = await pair();
+    const resolve = async () => (await db.query(`select not_credited from v_student_deficiencies where student_id = '2099-0008'`)).rows;
+    const standing = async () => (await one(`select standing from v_student_overview where id = '2099-0008'`)).standing;
+    await credit("2099-0008", p.prerequisite_id, 5.0);
+    expect(await resolve()).toEqual([{ not_credited: true }]);
+    expect(await standing()).toBe("irregular");
+    const id = (await one(`select id from student_credits where student_id = '2099-0008' and removed_at is null`)).id;
+    expect((await sec(`select public.save_credit_grades('[{"id": ${id}, "midterm": 2, "final": 1.5}]') n`)).rows[0].n).toBe(1);
+    expect(await resolve()).toEqual([]);
+    expect(await passed("2099-0008", p.prerequisite_id)).toBe(true);
+    // The old grade stays as the log.
+    expect((await db.query(`select final_grade::float f, removed_at is not null gone from student_credits where student_id = '2099-0008' order by id`)).rows)
+      .toEqual([{ f: 5, gone: true }, { f: 1.5, gone: false }]);
+    expect((await sec(`select public.save_credit_grades('[{"id": ${id}, "midterm": 2, "final": 2}]')`)).error).toMatch(/already changed/);
+  });
+
+  it("a subject with a class record here can't be added as an earlier subject", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    const row = await one(`select e.student_id, o.curriculum_subject_id sid from enrollments e join class_offerings o on o.id = e.offering_id
+      join students s on s.id = e.student_id where e.status = 'failed' and s.status = 'active' and s.admission_type in ('transferee', 'shiftee')
+      and not exists (select 1 from enrollments x join class_offerings ox on ox.id = x.offering_id where x.student_id = e.student_id and ox.curriculum_subject_id = o.curriculum_subject_id and x.status in ('passed', 'enrolled')) limit 1`);
+    expect(row).toBeTruthy();
+    expect((await credit(row.student_id, row.sid, 1.5)).error).toMatch(/already has a class record here/);
+  });
+
+  it("a student reads only their own credits", async () => {
+    const p = await pair();
+    await credit("2099-0003", p.prerequisite_id);
+    const mine = await as("authenticated", STU, `select count(*)::int n from student_credits`);
+    expect(mine.rows[0].n).toBe(0);
+    expect((await sec(`select count(*)::int n from student_credits where removed_at is null`)).rows[0].n).toBeGreaterThan(0);
+  });
+
+  it("withdrawing marks this term's subjects without a result Withdrawn, frees the seats and keeps the rest", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0004", "transferee");
+    const offs = (await db.query(`select o.id from class_offerings o join sections s on s.id = o.section_id
+      join school_terms t on t.id = s.school_term_id and t.is_current join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      join students st on st.id = '2099-0004' and st.curriculum_id = cs.curriculum_id
+      where cs.year_level = 1 and not exists (select 1 from class_meetings m where m.offering_id = o.id)
+        and (select count(*) from enrollments e where e.offering_id = o.id and e.status <> 'dropped') < coalesce(o.capacity, s.capacity)
+      order by o.id`)).rows;
+    const all = offs.length >= 2 ? offs : (await db.query(`select o.id from class_offerings o join sections s on s.id = o.section_id
+      join school_terms t on t.id = s.school_term_id and t.is_current join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      join students st on st.id = '2099-0004' and st.curriculum_id = cs.curriculum_id where cs.year_level = 1 order by o.id`)).rows;
+    await db.exec(`delete from class_meetings where offering_id in (${all[0].id}, ${all[1].id});
+      update class_offerings set capacity = 60 where id in (${all[0].id}, ${all[1].id});
+      insert into enrollments (student_id, offering_id) values ('2099-0004', ${all[0].id}), ('2099-0004', ${all[1].id});
+      update enrollments set midterm_grade = 1.5, final_grade = 1.5 where student_id = '2099-0004' and offering_id = ${all[0].id}`);
+    expect((await sec(`update students set status = 'dropped' where id = '2099-0004'`)).error).toBeUndefined();
+    const rows = (await db.query(`select offering_id, status from enrollments where student_id = '2099-0004' order by offering_id`)).rows;
+    expect(rows.map((r) => r.status)).toEqual(["passed", "withdrawn"]);
+    expect((await sec(`insert into enrollments (student_id, offering_id) values ('2099-0004', ${all[2]?.id ?? all[0].id})`)).error).toMatch(/withdrawn/);
+  });
+
+  it("one subject can be withdrawn: no grade needed, the seat is freed, and it is not a subject to resolve", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0005", "transferee");
+    const off = await one(`select o.id from class_offerings o join sections sc on sc.id = o.section_id
+      join school_terms t on t.id = sc.school_term_id and t.is_current join curriculum_subjects cs on cs.id = o.curriculum_subject_id
+      join students st on st.id = '2099-0005' and st.curriculum_id = cs.curriculum_id where cs.year_level = 1 order by o.id desc limit 1`);
+    await db.exec(`delete from class_meetings where offering_id = ${off.id}; update class_offerings set capacity = 60 where id = ${off.id};
+      insert into enrollments (student_id, offering_id) values ('2099-0005', ${off.id})`);
+    const e = await one(`select id from enrollments where student_id = '2099-0005'`);
+    const save = (status, final = "null") => sec(`select public.save_grades('[{"enrollment_id":${e.id},"midterm":null,"final":${final},"status":"${status}"}]'::jsonb)`);
+    expect((await save("withdrawn")).error).toBeUndefined();
+    expect((await one(`select status from enrollments where id = ${e.id}`)).status).toBe("withdrawn");
+    expect((await one(`select count(*)::int n from v_student_deficiencies where student_id = '2099-0005'`)).n).toBe(0);
+    // The seat is free again: seats can be lowered to exactly the students still taking it.
+    const taking = (await one(`select count(*)::int n from enrollments where offering_id = ${off.id} and status not in ('dropped','withdrawn')`)).n;
+    expect((await sec(`update class_offerings set capacity = ${Math.max(taking, 1)} where id = ${off.id}`)).error).toBeUndefined();
+    // Bringing it back checks the seats again.
+    if (taking >= 1) expect((await save("auto")).error).toMatch(/full/);
+    await db.exec(`update class_offerings set capacity = 60 where id = ${off.id}`);
+    expect((await save("auto")).error).toBeUndefined();
+    // Dropped still counts against the student.
+    expect((await save("dropped")).error).toBeUndefined();
+    expect((await one(`select count(*)::int n from v_student_deficiencies where student_id = '2099-0005'`)).n).toBe(1);
+  });
+
+  it("a subject with a final grade can't be withdrawn", async () => {
+    const e = await one(`select id from enrollments where student_id = '2099-0004' and status = 'passed' limit 1`);
+    const r = await sec(`select public.save_grades('[{"enrollment_id":${e.id},"midterm":1.5,"final":null,"status":"withdrawn"}]'::jsonb)`);
+    expect(r.error).toMatch(/final grade can't be withdrawn/);
+  });
+
+  it("Add students says a student withdrew from the subject this term", async () => {
+    const w = await one(`select offering_id from enrollments where student_id = '2099-0004' and status = 'withdrawn' limit 1`);
+    const r = await sec(`select public.subject_enroll_plan(${w.offering_id}, array['2099-0004']) p`);
+    expect(r.rows[0].p.students[0].state).toBe("withdrawn");
+  });
+});
+
+// Last on purpose: it leaves the database in a later term with a summer grade in it.
+describe("after a summer", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const rpc = async (sql) => {
+    const r = await asSec(`select ${sql} as r`);
+    if (r.error) throw new Error(r.error);
+    return r.rows[0].r;
+  };
+
+  it("keeps a summer grade on the record after the next school year starts", async () => {
+    await rpc(`public.begin_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
+    const off = await one(`select o.id, o.curriculum_subject_id as subject, sec.program_id from class_offerings o join sections sec on sec.id = o.section_id
+      join school_terms t on t.id = sec.school_term_id and t.is_current join programs p on p.id = sec.program_id where p.code = 'BSIT' order by o.id limit 1`);
+    const who = (await one(`select s.id from students s join curriculum_subjects cs on cs.curriculum_id = s.curriculum_id and cs.id = ${off.subject}
+      where s.status = 'active' and not exists (select 1 from enrollments e join class_offerings x on x.id = e.offering_id where e.student_id = s.id and x.curriculum_subject_id = ${off.subject}) order by s.id limit 1`)).id;
+    await asDb(`insert into enrollments (student_id, offering_id) values ('${who}', ${off.id})`); // owner: skips the prerequisite rule
+    const e = await one(`select id from enrollments where student_id = '${who}' and offering_id = ${off.id}`);
+    const saved = await asSec(`select public.save_grades('[{"enrollment_id": ${e.id}, "midterm": 1.75, "final": 1.5, "status": "auto"}]')`);
+    expect(saved.error).toBeUndefined();
+    const row = () => one(`select school_year, semester, is_current, status, final_grade::float as final from v_enrollment_details where enrollment_id = ${e.id}`);
+    expect(await row()).toEqual({ school_year: "2026-2027", semester: 3, is_current: true, status: "passed", final: 1.5 });
+    // With a grade in it, the summer can no longer be undone...
+    expect((await asSec(`select public.undo_term_start()`)).error).toMatch(/Grades or statuses were already entered/);
+    // ...and after the next school year starts it stays on the record as that year's summer.
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    expect(await row()).toEqual({ school_year: "2026-2027", semester: 3, is_current: false, status: "passed", final: 1.5 });
+    expect((await one(`select private.has_passed('${who}', ${off.subject}) as p`)).p).toBe(true);
+  }, 240_000);
+});
+
+// Runs on from "after a summer" (the current term is the 1st semester of 2027-2028).
+describe("an inactive student when new terms start", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const rpc = async (sql) => {
+    const r = await asSec(`select ${sql} as r`);
+    if (r.error) throw new Error(r.error);
+    return r.rows[0].r;
+  };
+
+  it("stays inactive and gets no subjects through a 2nd semester, a summer, a new school year and Undo", async () => {
+    const before = await one(`select s.id, s.year_level, (select count(*)::int from enrollments e where e.student_id = s.id) as subjects
+      from students s where s.status = 'active' and not exists (select 1 from v_enrollment_details d where d.student_id = s.id and d.is_current and d.status = 'enrolled')
+      and exists (select 1 from enrollments e where e.student_id = s.id) order by s.id limit 1`);
+    expect((await asSec(`update students set status = 'inactive' where id = '${before.id}'`)).error).toBeUndefined();
+    const check = async () => {
+      expect(await one(`select s.status::text as status, s.year_level, (select count(*)::int from enrollments e where e.student_id = s.id) as subjects
+        from students s where s.id = '${before.id}'`)).toEqual({ status: "inactive", year_level: before.year_level, subjects: before.subjects });
+    };
+    const terms = [["2027-2028", 2, "2027-11-22", "2028-04-21"], ["2027-2028", 3, "2028-05-01", "2028-06-09"], ["2028-2029", 1, "2028-07-03", "2028-11-04"]];
+    for (const [year, semester, from, to] of terms) {
+      await rpc(`public.begin_term('${year}', ${semester}::smallint, '${from}', '${to}')`);
+      await check();
+      const off = await one(`select o.id from class_offerings o join sections x on x.id = o.section_id join school_terms t on t.id = x.school_term_id and t.is_current
+        join students s on s.program_id = x.program_id where s.id = '${before.id}' order by o.id limit 1`);
+      if (!off) continue;
+      const plan = await rpc(`public.subject_enroll_plan(${off.id})`);
+      expect(plan.students.map((x) => x.student_id)).not.toContain(before.id);
+      expect((await asSec(`insert into enrollments (student_id, offering_id) values ('${before.id}', ${off.id})`)).error).toBeTruthy();
+    }
+    await rpc(`public.undo_term_start()`);
+    await check();
+    // Coming back: set to Active again, with the same record.
+    expect((await asSec(`update students set status = 'active' where id = '${before.id}'`)).error).toBeUndefined();
+    expect((await one(`select count(*)::int as n from enrollments where student_id = '${before.id}'`)).n).toBe(before.subjects);
+  }, 480_000);
 });

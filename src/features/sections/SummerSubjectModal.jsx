@@ -30,7 +30,7 @@ export default function SummerSubjectModal({ section, onClose, onAdded }) {
   return (
     <Modal title="Add a subject to the summer" onClose={onClose} width="max-w-xl"
       footer={<button className="btn btn-secondary" onClick={onClose}>Close</button>}>
-      <p className="mb-3 text-[14px] text-ink-2">For students who have to retake a subject. Subjects that students still owe come first. After adding one, use Add students on it to enroll them.</p>
+      <p className="mb-3 text-[14px] text-ink-2">For students who have to retake a subject. Subjects that students still owe come first. After adding one, use Add students on it to add them.</p>
       <input className="field mb-3" placeholder="Search by course number or description" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search subjects" />
       {list.loading && <LoadingState variant="list" />}
       {list.error && <ErrorState error={list.error} onRetry={list.reload} />}

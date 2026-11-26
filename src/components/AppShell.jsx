@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, CalendarClock, CalendarRange, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Users } from "lucide-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { BookOpen, CalendarClock, CalendarRange, FileText, Home, Layers, LayoutDashboard, ListChecks, Monitor, ChevronDown, PanelLeftClose, PanelLeftOpen, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAsync } from "../hooks/useAsync";
 import { getCurrentTerm } from "../services/catalog";
@@ -10,6 +10,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { SealLogo } from "./ui";
 import Backdrop from "./Backdrop";
 import ChromeArt from "./ChromeArt";
+import GlobalBack from "./GlobalBack";
 
 const PAGE_TITLES = [
   [/^\/$/, "Dashboard"],
@@ -60,7 +61,7 @@ const NAV = {
   secretary: [
     { to: "/", end: true, icon: LayoutDashboard, label: "Dashboard", tab: "Home" },
     { to: "/students", icon: Users, label: "Students", tab: "Students", group: "Records", byList: true,
-      children: [{ to: "/students", label: "Enrolled" }, { to: "/students?list=graduated", label: "Graduated" }, { to: "/students?list=dropped", label: "Dropped" }, { to: "/students?list=shifted_out", label: "Shifted out" }] },
+      children: [{ to: "/students", label: "Enrolled" }, { to: "/students?list=graduated", label: "Graduated" }, { to: "/students?list=dropped", label: "Withdrawn" }, { to: "/students?list=shifted_out", label: "Shifted out" }, { to: "/students?list=inactive", label: "Inactive" }] },
     { to: "/sections", icon: Layers, label: "Section allocations", tab: "Sections" },
     { to: "/schedules", icon: CalendarClock, label: "Schedules", tab: "Schedules", children: [{ to: "/schedules", end: true, label: "Timetables" }, { to: "/schedules/edit", label: "Edit class times" }] },
     { to: "/curriculum", icon: BookOpen, label: "Curriculum", tab: "Curriculum" },
@@ -163,13 +164,11 @@ function readCollapsed() {
 export default function AppShell() {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const toggleSidebar = () => setCollapsed((c) => {
     try { localStorage.setItem(SIDEBAR_KEY, c ? "open" : "collapsed"); } catch { /* private mode: just don't remember */ }
     return !c;
   });
-  const [q, setQ] = useState("");
   const term = useAsync(getCurrentTerm, [], "term");
 
   // Pages that live under a dropdown show "Group / Page" (Subject tracker / This semester).
@@ -179,7 +178,7 @@ export default function AppShell() {
     if (path === "/progress") return "Subject tracker / This semester";
     if (path === "/progress/roadmap") return "Subject tracker / Roadmap";
     if (path === "/curriculum" && user.role === "student") return "Subject tracker / Curriculum";
-    if (path === "/students") return `Students / ${{ graduated: "Graduated", dropped: "Dropped", shifted_out: "Shifted out" }[list] || "Enrolled"}`;
+    if (path === "/students") return `Students / ${{ graduated: "Graduated", dropped: "Withdrawn", shifted_out: "Shifted out", inactive: "Inactive" }[list] || "Enrolled"}`;
     if (path === "/schedules") return "Schedules / Timetables";
     if (path === "/schedules/edit") return "Schedules / Edit class times";
     return null;
@@ -187,10 +186,6 @@ export default function AppShell() {
   const title = path === "/"
     ? (user.role === "secretary" ? "Dashboard" : "Home")
     : crumb() || PAGE_TITLES.find(([re]) => re.test(path))?.[1] || "";
-  const search = (e) => {
-    e.preventDefault();
-    if (q.trim()) navigate(`/students?q=${encodeURIComponent(q.trim())}`);
-  };
 
   return (
     <div className="relative isolate flex min-h-screen flex-col bg-ground">
@@ -205,14 +200,8 @@ export default function AppShell() {
         <header className="chrome no-print sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2 sm:px-8 lg:min-h-16 lg:py-3 isolate">
           <ChromeArt variant="bar" />
           <span className="shrink-0 lg:hidden"><SealLogo size={30} /></span>
+          <GlobalBack />
           <div className="min-w-0 flex-1 truncate font-display text-[18px] font-bold tracking-tight text-ink">{title}</div>
-          {user.role === "secretary" && (
-            <form onSubmit={search} role="search" className="relative hidden w-[320px] md:block">
-              <label htmlFor="global-search" className="sr-only">Search students</label>
-              <Search size={16} className="absolute left-3 top-3 text-ink-3" aria-hidden="true" />
-              <input id="global-search" className="field pl-9" placeholder="Search students by name or ID" value={q} onChange={(e) => setQ(e.target.value)} />
-            </form>
-          )}
           <TermCalendar term={term.data} />
           <UserMenu />
         </header>
@@ -249,7 +238,7 @@ export default function AppShell() {
             <p className="mt-0.5 text-[13px] text-ink-3">College of Computer Studies · Saint Joseph College, Maasin City, Southern Leyte</p>
           </div>
           <div className="flex flex-col gap-1 text-[13px] text-ink-3 sm:text-right">
-            <span>Questions about your records? Visit the CCS Secretary's Office.</span>
+            {user.role !== "secretary" && <span>Questions about your records? Visit the CCS Secretary's Office.</span>}
             <span>© {new Date().getFullYear()} CCS Subject Monitoring System · Capstone project</span>
           </div>
         </div>

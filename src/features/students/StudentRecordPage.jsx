@@ -1,15 +1,19 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, KeyRound, Printer, Trash2 } from "lucide-react";
+import { KeyRound, Printer, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
-import { Avatar, BackButton, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
-import { STUDENT_STATUS, semesterLabel, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
+import { getCredits, getDeficiencies, getGradeChanges, getHistory, getStudent, getUnitLimit, updateStudentStatus, updateUnitLimit } from "../../services/students";
+import { Avatar, ErrorState, FormError, GradeLegend, LoadingState, StudentStatusBadge } from "../../components/ui";
+import { STUDENT_STATUS, isActiveStudent, studentStatusLabel, studentTypeLabel, sumUnits, yearLabel } from "../../lib/format";
 import TermTable from "./TermTable";
 import GradeHistory from "./GradeHistory";
 import DeleteStudentModal from "./DeleteStudentModal";
 import ResetPasswordModal from "./ResetPasswordModal";
+import MyResolveBox from "./MyResolveBox";
+import StatusChangeModal from "./StatusChangeModal";
+import CreditedSubjects from "./CreditedSubjects";
+import { isCredited, termYear } from "../../lib/progress";
 
 export default function StudentRecord() {
   const { user } = useAuth();
@@ -21,13 +25,14 @@ export default function StudentRecord() {
   const isSecretary = user.role === "secretary";
   const [statusError, setStatusError] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  const [nextStatus, setNextStatus] = useState(null); // picked in the list, waiting for "yes"
   const [limitError, setLimitError] = useState("");
 
   const { data, error, loading, reload } = useAsync(async () => {
-    const [student, history, deficiencies, changes, limit] = await Promise.all([
-      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [], getUnitLimit(id),
+    const [student, history, deficiencies, changes, limit, credits] = await Promise.all([
+      getStudent(id), getHistory(id), getDeficiencies(id), isSecretary ? getGradeChanges(id) : [], getUnitLimit(id), getCredits(id),
     ]);
-    return { student, history, deficiencies, changes, limit };
+    return { student, history, deficiencies, changes, limit, credits };
   }, [id, isSecretary], "record");
 
   if (loading) return <LoadingState />;
@@ -36,7 +41,7 @@ export default function StudentRecord() {
     return <div className="card p-6 text-[14px] text-ink-2">No student with ID {id}. <Link to="/students">Back to students</Link></div>;
   }
 
-  const { student, history, deficiencies, changes, limit } = data;
+  const { student, history, deficiencies, changes, limit, credits } = data;
   // The most units this student may take in a term; used when a new term starts. Saved when the field loses focus.
   const saveLimit = async (raw) => {
     const n = Number(raw);
@@ -55,8 +60,10 @@ export default function StudentRecord() {
     setStatusBusy(true);
     try {
       await updateStudentStatus(student.id, status);
+      setNextStatus(null);
       reload();
     } catch (err) {
+      setNextStatus(null);
       setStatusError(err.message);
     } finally {
       setStatusBusy(false);
@@ -64,14 +71,17 @@ export default function StudentRecord() {
   };
   const terms = [...new Map(history.map((r) => [r.school_term_id, r])).values()]
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
-  const current = history.filter((r) => r.is_current && r.status !== "dropped");
-  const earned = sumUnits(history.filter((r) => r.status === "passed"));
+  const current = history.filter((r) => r.is_current && r.status !== "dropped" && r.status !== "withdrawn");
+  // Units earned: passed here plus credited from before.
+  const earned = sumUnits([...history.filter((r) => r.status === "passed"), ...credits.filter(isCredited).map((c) => c.curriculum_subjects)]);
+  const active = isActiveStudent(student);
+  // Credits are only for shiftees and transferees; the database enforces the same rule.
+  const mayCredit = isSecretary && (student.admission_type === "transferee" || student.admission_type === "shiftee");
 
   return (
     <>
       {isSecretary && (
         <div className="no-print -mb-2 flex flex-wrap items-center gap-x-4">
-        <BackButton fallback="/students" />
         <nav aria-label="Breadcrumb" className="hidden text-[14px] text-ink-3 sm:block">
           <Link to="/students" className="inline-flex min-h-10 items-center text-ink-3 hover:text-ink">Students</Link><span className="px-1.5">/</span><span className="font-semibold text-ink">{student.full_name}</span>
         </nav>
@@ -88,7 +98,7 @@ export default function StudentRecord() {
                 <h1 className="text-[22px] font-bold leading-tight tracking-tight sm:text-[26px]">{student.full_name}</h1>
                 <StudentStatusBadge student={student} />
               </div>
-              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
+              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span>{active && <> · {yearLabel(student.year_level)}</>}</div>
             </div>
           </div>
           {/* Secretary on phones and tablets: view only. Printing, password resets and deleting are done on a computer. */}
@@ -100,11 +110,11 @@ export default function StudentRecord() {
         </div>
         <dl className="stat-grid border-t border-line-2 pt-5">
           {[
-            ["Section", student.section_name || "Not yet enrolled"],
-            ["Units this term", `${sumUnits(current)} units`],
+            ["Section", active ? student.section_name || "Not yet enrolled" : "—"],
+            ["Units this term", active ? `${sumUnits(current)} units` : "—"],
             ["Units earned", `${earned} units`],
             ...(limit && !isSecretary ? [["Unit limit", `${limit} units a term`]] : []),
-            ["Student type", studentTypeLabel(student)],
+            ["Student type", active ? studentTypeLabel(student) : "—"],
           ].map(([k, v]) => (
             <div key={k}><dt className="text-[12px] font-semibold text-ink-3">{k}</dt><dd className="mt-1 text-[15px] font-semibold text-ink">{v}</dd></div>
           ))}
@@ -113,11 +123,12 @@ export default function StudentRecord() {
             <dd className="mt-1 text-[15px] font-semibold text-ink">
               {isSecretary ? (
                 <>
-                  <span className="lg:hidden">{studentStatusLabel(student)}</span>
-                  <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => changeStatus(e.target.value)}>
-                    {Object.entries(STUDENT_STATUS).filter(([k]) => k !== "inactive" || student.status === "inactive").map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  <span className="lg:hidden print:hidden">{studentStatusLabel(student)}</span>
+                  <select id="student-status" className="field no-print hidden h-9 w-full max-w-[180px] py-0 text-[14px] lg:block" value={student.status} disabled={statusBusy} onChange={(e) => setNextStatus(e.target.value)}>
+                    {Object.entries(STUDENT_STATUS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select>
                   <span className="hidden print:inline">{studentStatusLabel(student)}</span>
+                  {student.status === "active" && <span className="no-print mt-1 hidden text-[12px] font-normal text-ink-3 lg:block">Now {studentStatusLabel(student)}, set automatically from grades.</span>}
                   {statusError && <div className="no-print mt-1.5 text-[13px] font-normal"><FormError error={statusError} /></div>}
                 </>
               ) : studentStatusLabel(student)}
@@ -137,34 +148,25 @@ export default function StudentRecord() {
               </dd>
             </div>
           )}
-          <div><dt className="text-[12px] font-semibold text-ink-3">Failed subjects</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
+          <div><dt className="text-[12px] font-semibold text-ink-3">Subjects to resolve</dt><dd className={`mt-1 text-[15px] font-semibold ${deficiencies.length ? "text-bad" : "text-ink"}`}>{deficiencies.length} {deficiencies.length === 1 ? "subject" : "subjects"}</dd></div>
         </dl>
       </section>
 
-      {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary banner. */}
-      {!isSecretary && deficiencies.length > 0 && (
-        <div role="alert" className="flex items-start gap-3.5 rounded-xl border px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" aria-hidden="true" />
-          <div className="flex flex-col gap-1">
-            <div className="text-[15px] font-bold text-bad">{deficiencies.length === 1 ? "1 failed subject" : `${deficiencies.length} failed subjects`} to resolve</div>
-            <ul className="text-[14px] leading-relaxed text-ink-2">
-              {deficiencies.map((d) => (
-                <li key={d.enrollment_id}>
-                  <span className="font-mono">{d.code}</span> {d.title}: {d.status === "failed" ? "failed (5.00)" : d.status === "incomplete" ? "incomplete (INC)" : "dropped"} in {yearLabel(d.curriculum_year)}, {semesterLabel(d.semester)}, SY {d.school_year.replace("-", "–")}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary notice. */}
+      {!isSecretary && deficiencies.length > 0 && <MyResolveBox deficiencies={deficiencies} />}
 
-      {terms.length > 0 && <GradeLegend className="card px-5 py-3.5" />}
-      {terms.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
-      {terms.map((t, i) => (
-        <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
-      ))}
+      {(terms.length > 0 || credits.length > 0) && <GradeLegend className="no-print card px-5 py-3.5" />}
+      {terms.length === 0 && credits.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
+      {/* On paper the terms sit in two columns so the whole record fits one page. */}
+      <div className="record-terms flex flex-col gap-4 sm:gap-6">
+        {terms.map((t, i) => (
+          <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} year={termYear(history, t, credits)} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
+        ))}
+        <CreditedSubjects student={student} history={history} credits={credits} tint={!isSecretary} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} defaultOpen={terms.length === 0} />
+      </div>
 
       {isSecretary && <GradeHistory changes={changes} />}
+      {nextStatus && <StatusChangeModal student={student} history={history} credits={credits} status={nextStatus} busy={statusBusy} onClose={() => setNextStatus(null)} onConfirm={() => changeStatus(nextStatus)} />}
       {resetting && <ResetPasswordModal student={student} onClose={() => setResetting(false)} />}
       {deleting && <DeleteStudentModal student={student} onClose={() => setDeleting(false)} onDeleted={() => navigate("/students", { replace: true })} />}
     </>

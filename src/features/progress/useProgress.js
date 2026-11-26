@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAsync } from "../../hooks/useAsync";
-import { getHistory, getStudent } from "../../services/students";
+import { getCredits, getHistory, getStudent } from "../../services/students";
 import { getCurriculum, getPrerequisites, getPrograms } from "../../services/catalog";
 import { buildProgress, futureTerms, nextTermFor } from "../../lib/progress";
 
@@ -12,11 +12,11 @@ export function useProgress() {
   const { term, termLoading } = useOutletContext();
   const state = useAsync(async () => {
     const student = await getStudent(user.studentId);
-    const [curriculum, history, prerequisites, programs] = await Promise.all([
-      getCurriculum(student.program_code), getHistory(user.studentId), getPrerequisites(), getPrograms(),
+    const [curriculum, history, prerequisites, programs, credits] = await Promise.all([
+      getCurriculum(student.program_code), getHistory(user.studentId), getPrerequisites(), getPrograms(), getCredits(user.studentId),
     ]);
     const program = programs.find((p) => p.code === student.program_code);
-    return { student, program, progress: buildProgress({ curriculum, history, prerequisites }) };
+    return { student, program, progress: buildProgress({ curriculum, history, prerequisites, credits }) };
   }, [user.studentId], "progress");
 
   const { data } = state;

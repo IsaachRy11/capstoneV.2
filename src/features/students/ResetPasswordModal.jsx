@@ -34,7 +34,7 @@ export default function ResetPasswordModal({ student, onClose }) {
       {password ? (
         <div className="flex flex-col gap-3">
           <p role="status" className="rounded-lg px-4 py-3 text-[14px] tone-ok">{student.full_name}'s password was reset.</p>
-          <p className="text-[14px] text-ink-2">Give the student this one-time password. It is shown only now. They sign in with their student ID ({student.id}) and will be asked to choose their own password.</p>
+          <p className="text-[14px] text-ink-2">Tell the student this temporary password. They sign in with their student ID ({student.id}) and will be asked to choose their own password.</p>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-4 py-3">
             <span className="select-all font-mono text-[18px] font-semibold tracking-wide">{password}</span>
             <button className="btn btn-secondary btn-sm" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
@@ -42,7 +42,7 @@ export default function ResetPasswordModal({ student, onClose }) {
         </div>
       ) : (
         <>
-          <p className="text-[14px] text-ink-2">This replaces their current password with a new one-time password. The student must choose their own password the next time they sign in. Do this only after checking who they are at the CCS Secretary's Office.</p>
+          <p className="text-[14px] text-ink-2">This replaces their current password with the temporary password, 123456789. The student must choose their own password the next time they sign in. Do this only after checking who they are at the CCS Secretary's Office.</p>
           <div className="mt-3"><FormError error={error} /></div>
         </>
       )}

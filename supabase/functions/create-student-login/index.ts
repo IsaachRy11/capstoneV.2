@@ -1,6 +1,6 @@
 // Creates the sign-in account for a student the secretary just added.
 // Only a signed-in secretary may call it. The service-role key stays on the server.
-// The account gets a random one-time password (returned once, to hand to the student) and the
+// The account gets the temporary password (returned, to tell the student) and the
 // student must choose their own password at first sign-in.
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -13,12 +13,9 @@ const cors = {
 const reply = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-// 10 characters, no look-alikes (0/O, 1/l/I).
-function tempPassword() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
-}
+// The same simple starting password for every new or reset account (college's choice: easy to hand over).
+// It only works until the first sign-in, where the student has to choose their own.
+const TEMP_PASSWORD = "123456789";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -41,7 +38,7 @@ Deno.serve(async (req) => {
     if (!student) return reply({ error: "No student with that ID." }, 404);
     if (student.auth_user_id) return reply({ ok: true, alreadyHadLogin: true });
 
-    const password = tempPassword();
+    const password = TEMP_PASSWORD;
     const { data, error } = await admin.auth.admin.createUser({
       email: `${studentId}@${LOGIN_DOMAIN}`, password, email_confirm: true,
       user_metadata: { student_id: studentId, must_change_password: true },

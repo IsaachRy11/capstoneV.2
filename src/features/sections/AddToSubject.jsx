@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
-import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
-import { BackButton, EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
+import { enrollInSubject, getSubjectPlan, searchStudents, getEarlierResults } from "../../services/sections";
+import { EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
 // Add students to ONE subject, the only enrolling page. Listed: this section's block (pre-ticked) and anyone who took the
@@ -14,14 +14,18 @@ const STATE = {
   add: { text: "Can be added", tone: "text-ok" },
   enrolled: { text: "Already in this subject", tone: "text-ink-3" },
   passed: { text: "Already passed it", tone: "text-ink-3" },
+  withdrawn: { text: "Withdrew from it this term", tone: "text-ink-3" },
   over_limit: { text: "Over their unit limit", tone: "text-warn" },
+  other_program: { text: "Not in their curriculum", tone: "text-bad" },
 };
 
 // The student's own history with THIS subject (not their overall Regular/Irregular status).
 function subjectStatus(r) {
-  if (r.state === "passed") return <span className="badge tone-ok">Passed</span>;
+  if (r.state === "passed") return <span className="badge tone-ok">{r.credited ? "Credited" : "Passed"}</span>;
   if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
+  if (r.state === "withdrawn") return <span className="badge tone-neutral">Withdrawn</span>;
   if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
+  if (r.notCredited) return <span className="badge tone-bad">NC</span>;
   if (r.retake) return <span className="badge tone-warn">Retake</span>;
   return <span className="text-[13px] text-ink-3">Not yet enrolled</span>;
 }
@@ -29,32 +33,50 @@ function subjectStatus(r) {
 export default function AddToSubject({ offeringId }) {
   const { term } = useOutletContext();
   const { data, error, loading, reload } = useAsync(() => getSubjectPlan(offeringId), [offeringId], `subject-plan-${offeringId}`);
+  const { data: earlier } = useAsync(() => getEarlierResults(offeringId), [offeringId], `subject-earlier-${offeringId}`);
   const [extra, setExtra] = useState([]);       // students found with the search
   const [choice, setChoice] = useState(new Map()); // studentId -> ticked, when the secretary changed it
-  const [q, setQ] = useState("");
+  const [typed, setTyped] = useState(""); // in the search box
+  const [q, setQ] = useState("");         // searched on Enter or the Search button
   const [found, setFound] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
+  const [showDone, setShowDone] = useState(false); // students already in the subject or who passed it
 
   useEffect(() => {
     let alive = true;
-    const t = setTimeout(() => { searchStudents(q).then((r) => alive && setFound(r)).catch(() => {}); }, 200);
-    return () => { alive = false; clearTimeout(t); };
+    searchStudents(q).then((r) => alive && setFound(r)).catch(() => {});
+    return () => { alive = false; };
   }, [q]);
+
+  // Picked students are only saved by the "Add ... to" button: warn before a refresh or closing the tab loses them.
+  const unsaved = choice.size > 0 && [...choice.values()].some(Boolean);
+  useEffect(() => {
+    if (!unsaved) return;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [unsaved]);
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const rows = [...extra.filter((x) => !data.students.some((s) => s.student_id === x.student_id)), ...data.students];
+  const rows = [...extra.filter((x) => !data.students.some((s) => s.student_id === x.student_id)), ...data.students]
+    .map((r) => ({ ...r, credited: !!earlier?.credited.includes(r.student_id), notCredited: !!earlier?.notCredited.includes(r.student_id) }));
   const isTicked = (r) => r.state === "add" && (choice.has(r.student_id) ? choice.get(r.student_id) : r.in_block);
   const ready = rows.filter((r) => r.state === "add");
   const chosen = rows.filter(isTicked);
   const allOn = chosen.length === ready.length && ready.length > 0;
   const tooMany = chosen.length > data.seats_left;
+  const isDone = (r) => r.state === "enrolled" || r.state === "passed" || r.state === "withdrawn";
+  const done = rows.filter(isDone);
+  // A student the secretary searched for is always shown, so the reason is visible.
+  const listed = showDone ? rows : rows.filter((r) => !isDone(r) || extra.some((x) => x.student_id === r.student_id));
   const setTick = (id, on) => setChoice((m) => new Map(m).set(id, on));
   const nameOf = (id) => rows.find((r) => r.student_id === id)?.full_name || id;
   const shown = q.trim().length >= 2 ? found.filter((s) => !rows.some((r) => r.student_id === s.id)) : [];
+  const program = data.section.split(" ")[0]; // "BSIT 1-S" -> BSIT: only its students can take its subjects
 
   const addToList = async (s) => {
     setErr("");
@@ -63,6 +85,7 @@ export default function AddToSubject({ offeringId }) {
       setExtra((x) => [...plan.students, ...x.filter((r) => r.student_id !== s.id)]);
       setTick(s.id, true);
       setQ("");
+      setTyped("");
     } catch (e) { setErr(e.message); }
   };
   const add = async () => {
@@ -79,7 +102,6 @@ export default function AddToSubject({ offeringId }) {
 
   return (
     <>
-      <BackButton to="/sections" label="Section allocations" />
       <PageHeader title={`Add students to ${data.code}`} showTitle
         subtitle={`${data.title} · ${data.section} · ${Number(data.units)} units${term ? ` · ${termLabel(term)}` : ""}`} />
 
@@ -92,11 +114,14 @@ export default function AddToSubject({ offeringId }) {
         {/* Find anyone: by name or by student ID. */}
         <section className="card flex flex-col gap-3 p-5">
           <label htmlFor="find-student" className="text-[15px] font-bold text-ink">Find a student</label>
-          <div className="relative">
-            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
-            <input id="find-student" className="field h-12 pl-12 text-[16px]" placeholder="Type a name or a student ID, e.g. 2025-0001"
-              value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
-          </div>
+          <form role="search" className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setQ(typed.trim()); }}>
+            <div className="relative min-w-0 flex-1">
+              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
+              <input id="find-student" type="search" enterKeyHint="search" className="field h-12 pl-12 text-[16px]" placeholder="Type a name or a student ID, e.g. 2025-0001, then press Enter"
+                value={typed} onChange={(e) => { setTyped(e.target.value); if (!e.target.value) setQ(""); }} autoComplete="off" />
+            </div>
+            <button type="submit" className="btn btn-secondary h-12" disabled={typed.trim().length < 2}>Search</button>
+          </form>
           {q.trim().length >= 2 && (
             <ul className="overflow-hidden rounded-lg border border-line">
               {shown.map((s) => (
@@ -106,7 +131,9 @@ export default function AddToSubject({ offeringId }) {
                     <span className="block truncate text-[14px] font-semibold text-ink">{s.full_name}</span>
                     <span className="text-[12px] text-ink-3">{s.program_code} {yearLabel(s.year_level)} · {s.section_name || "no section yet"}</span>
                   </span>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => addToList(s)}><Plus size={14} aria-hidden="true" />Add to the list</button>
+                  {s.program_code === program
+                    ? <button type="button" className="btn btn-secondary btn-sm" onClick={() => addToList(s)}><Plus size={14} aria-hidden="true" />Select</button>
+                    : <span className="badge tone-neutral">{s.program_code} student: not a {program} subject</span>}
                 </li>
               ))}
               {shown.length === 0 && <li className="px-4 py-3 text-[13px] text-ink-3">{found.length ? "Everyone found is already in the list below." : "No student with that name or ID."}</li>}
@@ -116,9 +143,15 @@ export default function AddToSubject({ offeringId }) {
 
         {result && (
           <div role="status" className="card flex flex-col gap-1 p-4 text-[14px]">
-            <p><strong className="text-ink">{result.filter((r) => r.ok).length} students added</strong> to {data.code}.</p>
+            <p><strong className="text-ink">{result.filter((r) => r.ok).length} {result.filter((r) => r.ok).length === 1 ? "student" : "students"} added</strong> to {data.code}.</p>
             {result.filter((r) => !r.ok).map((r) => <p key={r.student_id} className="text-[13px] text-ink-2">{nameOf(r.student_id)}: {r.why}</p>)}
           </div>
+        )}
+
+        {chosen.length > 0 && (
+          <p role="status" className="rounded-lg px-4 py-3 text-[14px] font-semibold tone-warn">
+            {chosen.length} {chosen.length === 1 ? "student is" : "students are"} selected but not saved yet. Press “Add {chosen.length} to {data.code}” to save.
+          </p>
         )}
 
         <section className="card overflow-hidden">
@@ -137,13 +170,15 @@ export default function AddToSubject({ offeringId }) {
           </div>
           <FormError error={err} />
 
-          {rows.length === 0 ? (
+          {listed.length === 0 && rows.length > 0 ? (
+            <EmptyState>Everyone listed is already in {data.code} or has passed it. Find another student with the search above.</EmptyState>
+          ) : rows.length === 0 ? (
             <EmptyState>Nobody is listed for {data.code}. Find a student with the search above.</EmptyState>
           ) : (
             <table className="data-table">
               <thead><tr><th className="w-10"><span className="sr-only">Select</span></th><th>Student</th><th>Section this semester</th><th>{data.code}</th><th>Status in this subject</th></tr></thead>
               <tbody>
-                {rows.map((r) => {
+                {listed.map((r) => {
                   const st = STATE[r.state];
                   return (
                     <tr key={r.student_id}>
@@ -154,13 +189,19 @@ export default function AddToSubject({ offeringId }) {
                         <span className="block font-mono text-[12px] text-ink-3">{r.student_id} · {yearLabel(r.year_level)}</span>
                       </td>
                       <td className="whitespace-nowrap text-[13px] text-ink-2">{r.section || "Not yet enrolled"}</td>
-                      <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : st.text}</td>
+                      <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : r.state === "passed" && r.credited ? "Already credited" : st.text}</td>
                       <td>{subjectStatus(r)}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          )}
+          {done.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 text-[13px] text-ink-3">
+              <span>{done.length} {done.length === 1 ? "student is" : "students are"} already in {data.code} or passed it</span>
+              <button type="button" className="btn btn-secondary btn-sm" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>{showDone ? "Show less" : "Show more"}</button>
+            </div>
           )}
         </section>
       </div>

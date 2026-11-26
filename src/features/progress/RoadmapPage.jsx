@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
-import { semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
-import { prerequisiteStatus, prerequisiteText } from "../../lib/progress";
+import { curriculumPlace, semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
+import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft, backTone, isSerious, reasonLabel } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
+import SubjectLink from "./SubjectLink";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
 import { VIEWS } from "./progressViews";
 import { useProgress } from "./useProgress";
@@ -26,11 +27,20 @@ function Stat({ to, label, value, sub }) {
 }
 
 // A semester ahead. The first one (next semester) starts open; the rest open on tap.
+// What stands in the way, as a red label that can't be missed.
+function ToClear({ codes }) {
+  if (!codes) return null;
+  return (
+    <span className="mt-1 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] font-bold tone-bad" style={{ borderColor: "var(--bad)" }}>
+      <AlertTriangle size={13} className="shrink-0" aria-hidden="true" />{codes} to clear first
+    </span>
+  );
+}
+
 function AheadTerm({ t, isNext, pos }) {
   const units = sumUnits(t.subjects);
   const statuses = t.subjects.map((s) => prerequisiteStatus(s, pos));
   const blocked = statuses.filter((x) => x === "blocked").length;
-  const waiting = statuses.filter((x) => x === "waiting").length;
   return (
     <li className="relative pb-5 pl-9 last:pb-0">
       <span className={`absolute left-0 top-4 flex h-6 w-6 items-center justify-center rounded-full border-2 ${isNext ? "border-accent bg-accent text-white" : "border-line bg-surface text-ink-3"}`} aria-hidden="true">
@@ -44,7 +54,6 @@ function AheadTerm({ t, isNext, pos }) {
             <span className="block text-[13px] text-ink-3">
               {count(t.subjects.length, "subject", "subjects")} · {units} units
               {blocked > 0 && <span className="text-warn"> · {blocked} blocked</span>}
-              {waiting > 0 && <span> · {waiting} waiting on this semester</span>}
             </span>
           </span>
           <ChevronDown size={20} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
@@ -58,17 +67,19 @@ function AheadTerm({ t, isNext, pos }) {
               {t.subjects.map((s) => {
                 const text = prerequisiteText(s);
                 const blocked = prerequisiteStatus(s, pos) === "blocked";
+                const inTheWay = blocked ? blockingPrereqs(s, pos).map((p) => p.code).join(", ") : "";
                 return (
-                  <tr key={s.id}>
+                  <tr key={s.id} style={blocked ? { background: "var(--bad-bg)" } : undefined}>
                     <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                     <td className="min-w-0 align-top font-medium">
                       {s.title}
-                      {text && <span className={`mt-0.5 block text-[12px] font-normal md:hidden ${blocked ? "text-bad" : "text-ink-3"}`}>Prerequisite: {text}{blocked ? " (to clear first)" : ""}</span>}
+                      {text && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {text}</span>}
+                      <span className="block md:hidden"><ToClear codes={inTheWay} /></span>
                     </td>
                     <td className="num align-top">{Number(s.units)}</td>
                     <td className={`hidden align-top text-[13px] leading-snug md:table-cell ${blocked ? "font-semibold text-bad" : "text-ink-2"}`}>
                       {text || <span className="text-ink-3">—</span>}
-                      {blocked && <span className="block text-[11px] font-normal">to clear first</span>}
+                      <span className="block"><ToClear codes={inTheWay} /></span>
                     </td>
                   </tr>
                 );
@@ -114,7 +125,7 @@ function CompletedYear({ year, inYear, done, defaultOpen }) {
                 <td className="hidden whitespace-nowrap align-top text-[13px] text-ink-2 sm:table-cell">{semesterLabel(s.semester)}</td>
                 <td className="whitespace-nowrap align-top font-mono text-[13px] text-accent">{s.code}</td>
                 <td className="min-w-0 align-top font-medium">
-                  {s.title}
+                  {s.title}{s.credited && <span className="badge tone-ok ml-2">Credited</span>}
                   <span className="mt-0.5 block text-[12px] font-normal text-ink-3 sm:hidden">{semesterLabel(s.semester)}</span>
                   {prerequisiteText(s) && <span className="mt-0.5 block text-[12px] font-normal text-ink-3 md:hidden">Prerequisite: {prerequisiteText(s)}</span>}
                 </td>
@@ -154,12 +165,11 @@ export default function Roadmap() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <LoadingState />;
 
-  const { student, progress, next, ahead, term } = data;
+  const { student, progress, ahead, term } = data;
   const pct = progress.totalUnits ? Math.round((progress.unitsEarned / progress.totalUnits) * 100) : 0;
   const unitsLeft = progress.totalUnits - progress.unitsEarned;
   const passed = progress.subjects.filter((s) => s.state === "passed");
   const completedYears = [...new Set(passed.map((s) => s.year_level))].sort();
-  const retakeNext = next ? progress.back.filter((s) => s.semester === next.semester) : [];
   // The computation behind the percentage, year by year (curriculum units vs units passed).
   const years = [...new Set(progress.subjects.map((s) => s.year_level))].sort();
   const yearTotals = years.map((y) => sumUnits(progress.subjects.filter((s) => s.year_level === y)));
@@ -170,7 +180,8 @@ export default function Roadmap() {
   });
   const exact = progress.totalUnits ? ((progress.unitsEarned / progress.totalUnits) * 100).toFixed(1) : "0.0";
 
-  if (view) return <ProgressDetail view={view} progress={progress} retakeNext={retakeNext} backTo="/progress/roadmap" backLabel="Back to roadmap" />;
+  if (view) return <ProgressDetail view={view} progress={progress} />;
+  const left = termsLeft(ahead);
 
   return (
     <>
@@ -216,7 +227,7 @@ export default function Roadmap() {
           <Stat to="/progress/roadmap?view=units" label="Units earned" value={progress.unitsEarned} sub={`of ${progress.totalUnits} units`} />
           <Stat to="/progress/roadmap?view=passed" label="Subjects passed" value={progress.passedCount} sub={`of ${progress.total} subjects`} />
           <Stat label="Units left" value={unitsLeft} sub="to graduate" />
-          <Stat label="Semesters left" value={ahead.length} sub="after this one" />
+          <Stat label="Left after this one" value={left.semesters} sub={left.words} />
         </div>
       </section>
 
@@ -236,16 +247,19 @@ export default function Roadmap() {
 
       <section aria-labelledby="ahead-title" className="flex flex-col gap-3">
         <h2 id="ahead-title" className="flex items-center gap-2 text-[19px] font-bold"><GraduationCap size={18} className="text-accent" aria-hidden="true" />Ahead</h2>
-        {progress.back.length > 0 && (
-          <div className="card px-5 py-4" style={{ background: "var(--bad-bg)", borderColor: "var(--bad-line)" }}>
-            <h3 className="text-[15px] font-bold text-bad">Carry-over: {count(progress.back.length, "subject", "subjects")} to retake</h3>
-            <ul className="mt-1 text-[14px] text-ink-2">
-              {progress.back.map((s) => <li key={s.id}><span className="font-mono">{s.code}</span> {s.title} · {s.backReason}</li>)}
-            </ul>
-          </div>
-        )}
+        {progress.back.length > 0 && (() => {
+          const tone = progress.back.some((x) => isSerious(x.backReason)) ? "bad" : "warn"; // red if anything failed, else amber
+          return (
+            <div className="card px-5 py-4" style={{ background: `var(--${tone}-bg)`, borderColor: `var(--${tone})` }}>
+              <h3 className={`text-[15px] font-bold ${tone === "bad" ? "text-bad" : "text-warn"}`}>Carry-over: {count(progress.back.length, "subject", "subjects")} to resolve or retake</h3>
+              <ul className="mt-1 text-[14px] text-ink-2">
+                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{reasonLabel(s.backReason)}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
+              </ul>
+            </div>
+          );
+        })()}
         {ahead.length === 0 ? (
-          <div className="card"><EmptyState>This is your last semester. Clear any failed subjects to finish on time.</EmptyState></div>
+          <div className="card"><EmptyState>This is your last semester. Resolve any pending subjects to finish on time.</EmptyState></div>
         ) : (
           <ol className="relative">
             <span className="absolute bottom-3 left-[11px] top-5 w-0.5 bg-line" aria-hidden="true" />

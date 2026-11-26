@@ -1,6 +1,6 @@
 import { Database, Eye, History, ShieldCheck, UserCheck } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { BackButton, PageHeader } from "../../components/ui";
+import { PageHeader } from "../../components/ui";
 
 // What the system stores and who can see it. Describes how this app actually works (roles and
 // database security rules); it is not a legal policy of the college.
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
     {
       icon: ShieldCheck,
       title: "How it's protected",
-      body: <>These rules are enforced by the database itself, not just hidden on screen. Passwords are stored as one-way hashes, so no one can read them.</>,
+      body: <>These rules are enforced by the system itself, not just hidden on screen. Passwords are stored as one-way hashes, so no one can read them.</>,
     },
     {
       icon: History,
@@ -47,7 +47,6 @@ export default function PrivacyPage() {
 
   return (
     <>
-      <BackButton fallback="/" />
       <PageHeader title="Privacy" subtitle="What the system keeps about you, and who can see it." />
       <div className="flex max-w-[760px] flex-col gap-4">
         {sections.map(({ icon: Icon, title, body }) => (

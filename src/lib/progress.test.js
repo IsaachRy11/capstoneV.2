@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck, creditable, stateLabel, termYear, termsLeft, onePerSubject } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -31,8 +31,8 @@ describe("buildProgress", () => {
     expect(s["IT 103"]).toMatchObject({ state: "back", backReason: "Failed" });
   });
 
-  it("treats INC as a failed subject (unresolved)", () => {
-    expect(s["GE 4"]).toMatchObject({ state: "back", backReason: "INC" });
+  it("treats NC as a subject still to resolve", () => {
+    expect(s["GE 4"]).toMatchObject({ state: "back", backReason: "NC" });
   });
 
   it("shows a current-term subject as enrolled, with its midterm", () => {
@@ -134,5 +134,92 @@ describe("prerequisiteText", () => {
     expect(prerequisiteText(bySubject(prog)["IT 101"])).toBe("");
     expect(prerequisiteText({ prereqs: [{ code: "CAPSTONE 1" }], standing_required: 4 })).toBe("CAPSTONE 1, 4th year standing");
     expect(prerequisiteText({ prereqs: [], standing_required: 4 })).toBe("4th year standing");
+  });
+});
+
+describe("graduationCheck", () => {
+  const sub = (id, state) => ({ id, state });
+  it("is eligible only when every subject is passed", () => {
+    expect(graduationCheck({ subjects: [sub(1, "passed"), sub(2, "passed")] }).eligible).toBe(true);
+    for (const state of ["in_progress", "back", "not_taken"]) {
+      const r = graduationCheck({ subjects: [sub(1, "passed"), sub(2, state)] });
+      expect(r.eligible).toBe(false);
+      expect(r.missing.map((s) => s.id)).toEqual([2]);
+    }
+  });
+  it("is not eligible without a curriculum", () => {
+    expect(graduationCheck({ subjects: [] }).eligible).toBe(false);
+  });
+});
+
+describe("credited subjects", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 2, semester: 1 }];
+  const progress = buildProgress({ curriculum, history: [], prerequisites: [{ subject_id: 2, prerequisite_id: 1 }], credits: [{ curriculum_subject_id: 1 }] });
+  it("counts as passed, shows as Credited and clears the prerequisite", () => {
+    expect(progress.subjects[0].state).toBe("passed");
+    expect(stateLabel(progress.subjects[0])).toBe("Credited");
+    expect(progress.unitsEarned).toBe(3);
+    expect(progress.subjects[1].missingPrereqs).toEqual([]);
+    expect(creditable(progress.subjects).map((s) => s.id)).toEqual([2]);
+  });
+});
+
+describe("grades from earlier studies", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 1, semester: 1 }];
+  it("credits a passing final grade and not a failed one", () => {
+    const progress = buildProgress({ curriculum, history: [], credits: [{ curriculum_subject_id: 1, final_grade: "3.00" }, { curriculum_subject_id: 2, final_grade: "5.00" }] });
+    expect(progress.subjects.map((s) => s.state)).toEqual(["passed", "back"]);
+    expect(progress.subjects[1].backReason).toBe("Not credited");
+    expect(progress.unitsEarned).toBe(3);
+  });
+  it("offers only subjects never taken here as earlier subjects", () => {
+    const history = [{ subject_id: 1, status: "dropped" }, { subject_id: 2, status: "withdrawn" }];
+    expect(creditable(buildProgress({ curriculum, history }).subjects).map((s) => s.id)).toEqual([2]);
+  });
+});
+
+describe("a subject being retaken", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 1, semester: 1 }];
+  it("stays to resolve until it is passed", () => {
+    const history = [
+      { subject_id: 1, status: "failed" }, { subject_id: 1, status: "enrolled", is_current: true },
+      { subject_id: 2, status: "enrolled", is_current: true },
+    ];
+    const progress = buildProgress({ curriculum, history });
+    expect(progress.back).toEqual([]);
+    expect(progress.resolve.map((s) => [s.id, s.backReason])).toEqual([[1, "Failed"]]);
+    expect(buildProgress({ curriculum, history: [{ subject_id: 1, status: "failed" }, { subject_id: 1, status: "passed" }] }).resolve).toEqual([]);
+  });
+});
+
+describe("termYear", () => {
+  const row = (term, year, curriculum_year, status = "enrolled") => ({ school_term_id: term, school_year: year, semester: 1, curriculum_year, status });
+  it("is not renamed by one late subject from a lower year", () => {
+    const history = [row(2, "2026-2027", 2), row(2, "2026-2027", 1)];
+    expect(termYear(history, history[1])).toBe(2);
+  });
+  it("never drops below a year passed in an earlier term, even in a retake-only term", () => {
+    const history = [row(1, "2025-2026", 2, "passed"), row(2, "2026-2027", 1)];
+    expect(termYear(history, history[1])).toBe(2);
+    expect(termYear(history, history[0])).toBe(2);
+  });
+});
+
+describe("termsLeft", () => {
+  it("counts summers apart from semesters", () => {
+    const ahead = [1, 2, 3, 1, 2].map((semester) => ({ semester }));
+    expect(termsLeft(ahead)).toEqual({ semesters: 4, summers: 1, words: "semesters and 1 summer" });
+    expect(termsLeft([{ semester: 2 }]).words).toBe("semester");
+  });
+});
+
+describe("subjects to resolve are counted once each", () => {
+  it("keeps only the latest attempt of a subject failed twice", () => {
+    const rows = [
+      { code: "IT 101", status: "failed", school_year: "2026-2027", semester: 3 },
+      { code: "IT101", status: "incomplete", school_year: "2026-2027", semester: 1 },
+      { code: "GE 1", status: "dropped", school_year: "2026-2027", semester: 1 },
+    ];
+    expect(onePerSubject(rows).map((r) => [r.code, r.status])).toEqual([["IT 101", "failed"], ["GE 1", "dropped"]]);
   });
 });

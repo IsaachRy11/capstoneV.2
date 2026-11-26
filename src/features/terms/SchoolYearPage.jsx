@@ -115,8 +115,7 @@ export default function SchoolYearPage() {
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"><next.icon size={22} aria-hidden="true" /></span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-[13px] font-semibold text-ink-3">Usually next</h2>
-              <p className="font-display text-[20px] font-bold text-ink">{next.title}</p>
+              <h2 className="font-display text-[20px] font-bold text-ink">{next.title}</h2>
               <p className="text-[14px] text-ink-2">{next.what}</p>
             </div>
             <button className="btn btn-primary" onClick={begin}>Start {next.title}<ArrowRight size={16} aria-hidden="true" /></button>
@@ -146,7 +145,7 @@ export default function SchoolYearPage() {
           <DateRangePicker key={next.title} starts={starts} ends={ends} onChange={setDates} min={range.min} max={range.max} termName={next.label} />
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-            <p className="text-[13px] text-ink-3">Sections and subjects are made from the curriculum. Students are enrolled after the start.</p>
+            <p className="text-[13px] text-ink-3">Sections and subjects are made from the curriculum. You add students after the start.</p>
             <button className="btn btn-primary" disabled={!starts || !ends} onClick={() => { setErr(""); setConfirm("start"); }}>Start {next.title}</button>
           </div>
           {!confirm && <FormError error={err} />}
@@ -174,13 +173,13 @@ export default function SchoolYearPage() {
           {confirm === "start" ? (
             <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[14px] text-ink-2">
               <li>The whole site switches to {next.title}: {fmt(starts)} to {fmt(ends)}.</li>
-              <li>Sections and subjects are made from the curriculum. Nobody is enrolled yet: you add them subject by subject on Section allocations (Add students).</li>
-              <li>A student&apos;s year level follows the subjects you enroll them in.</li>
+              <li>Sections and subjects are made from the curriculum. No students are in them yet: you add students subject by subject on Section allocations (Add students).</li>
+              <li>A student&apos;s year level follows the subjects you add them to.</li>
               {isNewYear && <li>The calendar for the new school year starts with just these two days. Right after the start, this page offers last year&apos;s holidays to copy; add exams and other dates on the Calendar page.</li>}
               <li>You can undo it until a grade is entered.</li>
             </ul>
           ) : (
-            <p className="text-[14px] text-ink-2">{current ? termLabel(current) : "This term"} stops being current. Its subjects, enrollments and calendar dates added by the start are removed, and every student gets back their year level and status.</p>
+            <p className="text-[14px] text-ink-2">{current ? termLabel(current) : "This term"} stops being current. Its sections, subjects, class times, the students added to them and the calendar dates added by the start are removed, and every student gets back their year level and status.</p>
           )}
           <div className="mt-3"><FormError error={err} /></div>
         </Modal>

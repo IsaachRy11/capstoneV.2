@@ -59,7 +59,7 @@ scripts/           one-off tools (create student logins)
    - or `.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the live database, then `npm run dev` and open http://localhost:5173
 4. `npm test` runs the unit and database tests (no settings file needed).
 
-Sign-in uses Supabase Auth: students sign in with their student ID and the secretary with a staff ID (CCS-001). The database is already set up; [supabase/README.md](supabase/README.md) is only needed to build a new one.
+Sign-in uses Supabase Auth: students sign in with their student ID and the secretary with a secretary ID (CCS-001). The database is already set up; [supabase/README.md](supabase/README.md) is only needed to build a new one.
 
 ## Data sources
 

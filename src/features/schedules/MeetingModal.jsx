@@ -42,14 +42,14 @@ export default function MeetingModal({ offering, meeting, rooms, onClose, onSave
       <form id="meeting-form" onSubmit={save} className="grid grid-cols-2 gap-4">
         <div className="col-span-2"><label className="label" htmlFor="md">Day</label>
           <select id="md" className="field" value={form.weekday} onChange={set("weekday")}>{SCHOOL_DAYS.map((d) => <option key={d} value={d}>{DAY_NAMES[d]}</option>)}</select></div>
-        <div><label className="label" htmlFor="ms">Starts</label><input id="ms" type="time" step={900} className="field font-mono" value={form.starts_at} onChange={set("starts_at")} required /></div>
-        <div><label className="label" htmlFor="me">Ends</label><input id="me" type="time" step={900} className="field font-mono" value={form.ends_at} onChange={set("ends_at")} required /></div>
+        <div><label className="label" htmlFor="ms">Starts</label><input id="ms" type="time" step={900} min="07:30" max="20:30" className="field font-mono" value={form.starts_at} onChange={set("starts_at")} required /></div>
+        <div><label className="label" htmlFor="me">Ends</label><input id="me" type="time" step={900} min="07:30" max="20:30" className="field font-mono" value={form.ends_at} onChange={set("ends_at")} required /></div>
         <div className="col-span-2"><label className="label" htmlFor="mr">Room</label>
           <select id="mr" className="field" value={form.room_id} onChange={set("room_id")}>
             <option value="">Room TBA</option>
-            {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}{r.is_shared ? " (shared)" : ""}</option>)}
+            {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select></div>
-        <p className="col-span-2 text-[13px] text-ink-3">Students in this class see the new time on their schedule right away.</p>
+        <p className="col-span-2 text-[13px] text-ink-3">Classes run from 7:30 AM to 8:30 PM. Students in this class see the new time on their schedule right away.</p>
         <div className="col-span-2"><FormError error={error} /></div>
       </form>
     </Modal>

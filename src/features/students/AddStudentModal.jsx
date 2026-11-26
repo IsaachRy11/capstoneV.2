@@ -9,19 +9,20 @@ export default function AddStudentModal({ programs, term, onClose, onCreated }) 
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const setGroup = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  // A Freshman is a first-time 1st year student: moving the year away from 1st makes them Continuing.
-  const setYear = (e) => setForm((f) => { const y = Number(e.target.value); return { ...f, year_level: y, studentType: y !== 1 && f.studentType === "freshman" ? "continuing" : f.studentType }; });
+  // A Freshman is a first-time 1st year student: moving the year away from 1st switches to Transferee.
+  const setYear = (e) => setForm((f) => { const y = Number(e.target.value); return { ...f, year_level: y, studentType: y !== 1 && f.studentType === "freshman" ? "transferee" : f.studentType }; });
   const program = programs.find((p) => String(p.id) === String(form.programId));
 
   const submit = async (e) => {
     e.preventDefault();
     if (!/^\d{4}-\d{4}$/.test(form.id.trim())) return setError("Student ID must look like 2026-0001.");
+    if (!form.first_name.trim() || !form.last_name.trim()) return setError("Enter the first and last name.");
     setBusy(true);
     setError("");
     try {
       const { loginCreated, tempPassword } = await createStudent({ ...form, admission_type: ADMISSION_FOR_TYPE[form.studentType], programId: Number(form.programId), year_level: Number(form.year_level) }, term);
       const login = tempPassword
-        ? ` Give them this one-time password: ${tempPassword}. They sign in with their student ID and choose their own password.`
+        ? ` Their temporary password is ${tempPassword}. They sign in with their student ID, then choose their own password.`
         : loginCreated ? " They can sign in with their student ID." : " Their login could not be created; open their record and use Reset password.";
       onCreated(`${form.first_name} ${form.last_name} was created. Add them to their subjects on Section allocations.${login}`);
     } catch (err) {
@@ -55,9 +56,9 @@ export default function AddStudentModal({ programs, term, onClose, onCreated }) 
         <div className="col-span-2">
           <label className="label" htmlFor="sadm">Student type</label>
           <select id="sadm" className="field" value={form.studentType} onChange={set("studentType")}>
-            {Object.entries(STUDENT_TYPE).map(([v, l]) => <option key={v} value={v} disabled={v === "freshman" && Number(form.year_level) !== 1}>{l}</option>)}
+            {Object.entries(STUDENT_TYPE).filter(([v]) => v !== "continuing").map(([v, l]) => <option key={v} value={v} disabled={v === "freshman" && Number(form.year_level) !== 1}>{l}</option>)}
           </select>
-          <p className="mt-1.5 text-[12px] text-ink-3">Freshman: a first-time 1st year student. Continuing: carries on from an earlier year.</p>
+          <p className="mt-1.5 text-[12px] text-ink-3">Freshman: a first-time 1st year student. Transferee: from another school. Shiftee: from another program. A student already here becomes Continuing automatically.</p>
         </div>
         <div className="col-span-2"><FormError error={error} /></div>
       </form>

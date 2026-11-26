@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, CircleHelp, Building2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { BackButton, GradeLegend, PageHeader } from "../../components/ui";
+import { GradeLegend, PageHeader } from "../../components/ui";
 
 // Short answers to the questions people actually have about this system. Facts only; for anything
 // about a real record, the answer is the CCS Secretary's Office.
 const COMMON = [
   {
     q: "How do I sign in?",
-    a: <>Students sign in with their student ID (for example 2025-0001). Staff sign in with their staff ID, such as CCS-001. Forgot your password? The CCS Secretary's Office can reset it.</>,
+    a: <>Students sign in with their student ID (for example 2025-0001). The secretary signs in with a secretary ID, such as CCS-001. Forgot your password? The CCS Secretary's Office can reset it.</>,
   },
   {
     q: "How do I change my password or theme?",
@@ -18,18 +18,18 @@ const COMMON = [
     q: "What do the grade colors mean?",
     a: (
       <div className="flex flex-col gap-3">
-        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. INC and Dropped are statuses, not grades.</span>
+        <span>Grades run from 1.00 (highest) to 3.00 (still passing). 5.00 is failed. NC (no credit) can still be resolved. NC and Dropped are statuses, not grades.</span>
         <GradeLegend className="rounded-lg border border-line px-4 py-3" />
       </div>
     ),
   },
   {
     q: "What are Student type and Status?",
-    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated or Dropped.</>,
+    a: <>Student type is how the student came in: Freshman (a first-time 1st year student), Continuing, Transferee or Shiftee. Status is where they stand now: Regular, Irregular, Graduated, Withdrawn, Shifted out or Inactive.</>,
   },
   {
     q: "What do Regular and Irregular mean?",
-    a: <>Regular: no failed subjects. Irregular: at least one failed, INC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
+    a: <>Regular: nothing to resolve. Irregular: at least one failed, NC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
 ];
 
@@ -54,12 +54,16 @@ const SECRETARY = [
     a: <>Yes. You are asked to confirm, the grades go away with the subject, and the removal is saved in the student's grade change history, which can't be edited or deleted.</>,
   },
   {
-    q: "Why can't I put a dropped student back in a subject?",
-    a: <>Bringing a student back runs the same checks as a new enrollment: the subject must have a free seat and no schedule clash.</>,
+    q: "What happens when a student is Withdrawn?",
+    a: <>They leave the current semester: its subjects without a result are marked Withdrawn and their seats are freed. Earlier semesters and results already given don't change. If they come back, set them to Active and add their subjects. To undo a withdrawal made by mistake, set Active, then use Encode grades and choose Graded for each subject; a free seat and no schedule clash are required. To withdraw just one subject, use Encode grades and choose Withdrawn.</>,
+  },
+  {
+    q: "What are credited subjects?",
+    a: <>Subjects a shiftee or transferee passed before. On the student's record, use Add earlier subjects and enter the midterm and final grade. A final grade of 1.00 to 3.00 is Credited and counts as passed. A final grade of 5.00 is NC (No Credit): it adds no units and is a subject to resolve until the student passes it here. To correct a grade, use Encode grades on that card; the system keeps the old value and who changed it. A subject the student already has a class record for here can't be added. A subject the student still has to take is added in Section allocations as usual.</>,
   },
   {
     q: "What does Student status do?",
-    a: <>It is set on the student's record: Active, Graduated, Dropped or Shifted out. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Graduated and Dropped students have their own tabs on the Students page.</>,
+    a: <>It is set on the student's record: Active, Graduated, Withdrawn, Shifted out or Inactive. Regular and Irregular are worked out automatically for active students. A student never graduates automatically: you set Graduated on their record after checking everything the school requires. Only active students can be enrolled in subjects. Inactive is for a student who didn't continue but hasn't officially withdrawn; it can't be set while they have a subject this semester with no result, and you can set them back to Active when they return. Graduated, Withdrawn, Shifted out and Inactive students have their own lists under Students.</>,
   },
   {
     q: "Why can't I delete a subject?",
@@ -67,7 +71,7 @@ const SECRETARY = [
   },
   {
     q: "Why was a class time refused?",
-    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The gymnasium is the only room that can be shared.</>,
+    a: <>It overlaps another subject of the same section, a room that is already booked, or an enrolled student's other subject. The PE shed is the only room that can be shared.</>,
   },
   {
     q: "Where can I see who changed a grade?",
@@ -94,7 +98,6 @@ export default function HelpPage() {
 
   return (
     <>
-      <BackButton fallback="/" />
       <PageHeader title="Help center" subtitle="Quick answers about using the system." />
       <section className="card overflow-hidden" aria-label="Questions">
         <div className="card-head flex items-center gap-2.5 px-5 py-3.5">
@@ -104,13 +107,15 @@ export default function HelpPage() {
         </div>
         {list.map((item) => <Question key={item.q} {...item} />)}
       </section>
-      <section className="card flex items-start gap-3.5 p-5">
-        <Building2 size={22} className="shrink-0 text-accent" aria-hidden="true" />
-        <div>
-          <h2 className="text-[15px] font-bold text-ink">Still need help?</h2>
-          <p className="mt-1 text-[14px] text-ink-2">Visit the CCS Secretary's Office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
-        </div>
-      </section>
+      {user.role !== "secretary" && (
+        <section className="card flex items-start gap-3.5 p-5">
+          <Building2 size={22} className="shrink-0 text-accent" aria-hidden="true" />
+          <div>
+            <h2 className="text-[15px] font-bold text-ink">Still need help?</h2>
+            <p className="mt-1 text-[14px] text-ink-2">Visit the CCS Secretary's Office at Saint Joseph College, Maasin City. Records, grades and accounts are handled there.</p>
+          </div>
+        </section>
+      )}
     </>
   );
 }

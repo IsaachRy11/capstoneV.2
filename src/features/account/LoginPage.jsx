@@ -9,7 +9,7 @@ import Backdrop from "../../components/Backdrop";
 // Demo passwords only exist in the rehearsal/test build (VITE_DEMO_* env vars, a fake database). The live build
 // never sets them, so there the demo buttons only fill in the ID and no password is shipped in the page.
 const DEMO_ACCOUNTS = [
-  { id: "CCS-001", label: "Demo secretary", hint: "Staff ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
+  { id: "CCS-001", label: "Demo secretary", hint: "Secretary ID CCS-001", password: import.meta.env.VITE_DEMO_SECRETARY_PASSWORD },
   { id: "2025-0001", label: "Demo student", hint: "Student ID 2025-0001", password: import.meta.env.VITE_DEMO_STUDENT_PASSWORD },
 ];
 
@@ -63,11 +63,10 @@ export default function Login() {
     <div className="relative isolate flex min-h-screen flex-wrap bg-ground">
       <Backdrop />
       {/* Brand panel (PC only): the college's own words, set large */}
-      <section className="relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
+      <section className="signin-panel relative isolate hidden min-h-[320px] flex-[1_1_480px] flex-col justify-between gap-12 overflow-hidden p-14 lg:flex"
         style={{ background: "var(--panel)", color: "var(--panel-ink)", backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
-        <img src="/photos/p71.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-45" />
-        <span className="bd-ring pointer-events-none absolute -right-24 top-24 -z-10 h-[420px] w-[420px]" style={{ borderColor: "rgba(255,255,255,.16)", animationDuration: "48s" }} aria-hidden="true" />
-        <span className="bd-ring pointer-events-none absolute -left-16 bottom-16 -z-10 h-[240px] w-[240px]" style={{ borderColor: "rgba(255,255,255,.12)", animationDuration: "58s" }} aria-hidden="true" />
+        {/* Gray photo mixed by brightness, so it takes the panel's own color in both themes. */}
+        <img src="/photos/signin-servers.jpg" alt="" aria-hidden="true" decoding="async" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-30 mix-blend-luminosity" />
         <Link to="/" className="flex w-fit items-center gap-3 rounded-lg" style={{ color: "var(--panel-ink)" }} aria-label="CCS Subject Monitoring System home">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5"><SealLogo size={44} /></span>
           <span className="min-w-0">
@@ -116,7 +115,7 @@ export default function Login() {
         <div className="flex w-full max-w-[420px] flex-col gap-6 rounded-[20px] border border-line bg-surface p-6 shadow-[0_24px_60px_-36px_rgba(20,16,10,0.4)] sm:p-8 lg:gap-7 lg:self-center">
           <div className="flex flex-col gap-1.5 lg:gap-2">
             <h2 className="text-[24px] font-bold tracking-tight lg:text-[28px]">Sign in</h2>
-            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your staff ID.</p>
+            <p className="text-[14px] text-ink-2 lg:text-[15px]">Students: use your student ID. Secretary: use your secretary ID.</p>
           </div>
 
           {status === "unlinked" && (
@@ -129,7 +128,7 @@ export default function Login() {
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-              <label className="label" htmlFor="email">Student ID or staff ID</label>
+              <label className="label" htmlFor="email">Student ID or secretary ID</label>
               <input id="email" type="text" inputMode="text" className="field h-11" placeholder="e.g. 2025-0001 or CCS-001" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" required
                 onKeyDown={(e) => { if (e.key === "Enter" && !password) { e.preventDefault(); passwordRef.current?.focus(); } }} />
             </div>

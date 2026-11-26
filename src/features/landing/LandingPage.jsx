@@ -16,14 +16,14 @@ import LandingFooter from "./LandingFooter";
 // the banners are illustrated with line-art school things (see ArtHero).
 
 const STEPS = [
-  { title: "Sign in", text: "Students use their student ID. Staff use their staff ID, such as CCS-001." },
+  { title: "Sign in", text: "Students use their student ID. The secretary uses a secretary ID, such as CCS-001." },
   { title: "Check your subjects and grades", text: "Your schedule, grades and standing, in one place." },
-  { title: "Spot a failed subject? Act early", text: "Visit the CCS Secretary's Office while there's still time to plan." },
+  { title: "A subject to resolve? Act early", text: "Visit the CCS Secretary's Office while there's still time to plan." },
 ];
 
 const MOMENTS = [
-  { tone: "a", seed: 1, title: "Check your subjects any time", text: "No queue, no waiting for the office to open." },
-  { tone: "g", seed: 5, title: "An open door to the limitless horizon.", text: "The College of Computer Studies, Saint Joseph College.", quote: true },
+  { tone: "a", seed: 1, title: "Check your subjects any time", text: "Your subjects, schedule and grades, on your phone or computer." },
+  { tone: "g", seed: 5, title: "See your way to graduation", text: "What you've passed, what's left, and what to resolve first." },
   { tone: "c", seed: 8, title: "Keep every record in order", text: "Grades, seats and schedules, kept by the CCS Secretary's Office." },
 ];
 
@@ -92,7 +92,7 @@ export default function LandingPage() {
               <Reveal key={m.title} delay={i * 90}>
                 <ArtHero tone={m.tone} seed={m.seed} className="h-full min-h-[170px] rounded-[20px] sm:min-h-[200px]">
                   <div className="flex h-full min-h-[170px] flex-col justify-end gap-1.5 p-5 sm:min-h-[200px] sm:p-6">
-                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] ${m.quote ? "text-[22px] sm:text-[24px]" : "text-[19px] sm:text-[20px]"}`}>{m.title}</p>
+                    <p className={`font-display font-extrabold leading-tight tracking-[-0.01em] text-[19px] sm:text-[20px]`}>{m.title}</p>
                     <p className="text-[14px] opacity-90">{m.text}</p>
                   </div>
                 </ArtHero>
@@ -121,7 +121,7 @@ export default function LandingPage() {
           <Reveal className="mt-14 overflow-hidden rounded-[32px] p-8 sm:p-12" style={{ background: "var(--panel)", color: "var(--panel-ink)" }}>
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div className="max-w-[560px]">
-                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Know where you stand before you visit the office.</h2>
+                <h2 className="text-balance font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]" style={{ color: "var(--panel-ink)" }}>Keep track of your subjects, all the way to graduation.</h2>
                 <p className="mt-3 text-[15px]" style={{ color: "var(--panel-soft)" }}>Forgot your password? The CCS Secretary's Office can reset it.</p>
               </div>
               <Link to="/signin" className="btn btn-secondary h-12 rounded-full px-8 text-[15px]">Sign in <ArrowRight size={17} aria-hidden="true" /></Link>

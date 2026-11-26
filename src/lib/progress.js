@@ -3,7 +3,8 @@
 
 // passed      — passed at least once
 // in_progress — enrolled this term and not yet passed (shown as "Enrolled")
-// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies); shown as "Failed subjects"
+// back        — failed / INC / dropped / Not credited and not passed since (same rule as v_student_deficiencies);
+//               shown as "Subjects to resolve"
 // not_taken   — never enrolled (shown as "Not yet enrolled")
 export const SUBJECT_STATE = {
   passed: { label: "Passed", tone: "ok" },
@@ -12,9 +13,30 @@ export const SUBJECT_STATE = {
   not_taken: { label: "Not yet enrolled", tone: "neutral" },
 };
 
-const BACK_LABEL = { failed: "Failed", incomplete: "INC", dropped: "Dropped" };
+const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
+// Failed and Not credited are the serious ones (red); NC is amber; Dropped is grey.
+// One line per subject to resolve: the database lists every unresolved attempt, so a subject failed twice comes back
+// twice. The latest attempt is the one kept (its reason is the current one).
+export function onePerSubject(rows) {
+  const latest = new Map();
+  const when = (r) => `${r.school_year || ""}/${r.semester || 0}`;
+  for (const r of rows) {
+    const key = String(r.code).replace(/\s+/g, "").toLowerCase();
+    if (!latest.has(key) || when(r) > when(latest.get(key))) latest.set(key, r);
+  }
+  return [...latest.values()];
+}
 
-export function buildProgress({ curriculum, history, prerequisites = [] }) {
+// On screen, a subject without credit reads "NC" (No Credit), like the Status column of the record.
+export const reasonLabel = (reason) => (reason === "Not credited" ? "NC" : reason);
+export const isSerious = (reason) => reason === "Failed" || reason === "Not credited";
+export const backTone = (reason) => (isSerious(reason) ? "tone-bad" : reason === "NC" ? "tone-warn" : "tone-neutral");
+
+// credits: entries from a shiftee's or transferee's earlier studies. Only those with a passing grade are credited
+// (isCredited); a credit counts as passed, shown as "Credited". A failed one ("Not credited") is a subject to resolve.
+export function buildProgress({ curriculum, history, prerequisites = [], credits = [] }) {
+  const credited = new Set(credits.filter(isCredited).map((c) => c.curriculum_subject_id));
+  const notCredited = new Set(credits.filter((c) => !isCredited(c)).map((c) => c.curriculum_subject_id));
   const attempts = new Map(); // subject id → enrollment rows, oldest first
   for (const h of history) {
     if (!attempts.has(h.subject_id)) attempts.set(h.subject_id, []);
@@ -27,17 +49,25 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
     const current = rows.find((r) => r.is_current && r.status === "enrolled");
     const last = rows[rows.length - 1];
     let state = "not_taken";
-    if (passed) state = "passed";
+    if (passed || credited.has(c.id)) state = "passed";
     else if (current) state = "in_progress";
     else if (last && ["failed", "incomplete", "dropped"].includes(last.status)) state = "back";
+    if (state === "not_taken" && notCredited.has(c.id)) state = "back";
     // The attempt whose grades are shown: the pass, else this term's, else the latest.
     const shown = passed || current || last;
+    // Being taken again: still to resolve (like the database) until it is passed.
+    const earlier = rows.filter((r) => r !== current);
+    const unresolved = earlier.length ? BACK_LABEL[earlier[earlier.length - 1].status] : null;
+    const retaking = state === "in_progress" ? unresolved || (notCredited.has(c.id) ? "Not credited" : null) : null;
     return {
       ...c,
       state,
-      midterm: shown?.midterm_grade ?? null,
-      final: shown?.final_grade ?? null,
-      backReason: state === "back" ? BACK_LABEL[last.status] : null,
+      retaking,
+      credited: !passed && credited.has(c.id),
+      midterm: credited.has(c.id) && !passed ? null : shown?.midterm_grade ?? null,
+      final: credited.has(c.id) && !passed ? null : shown?.final_grade ?? null,
+      backReason: state === "back" ? BACK_LABEL[last?.status] || "Not credited" : null,
+      takenHere: rows.some((r) => r.status !== "withdrawn"),
       attempts: rows.length,
     };
   });
@@ -68,6 +98,8 @@ export function buildProgress({ curriculum, history, prerequisites = [] }) {
     unitsEarned: passedList.reduce((t, s) => t + Number(s.units), 0),
     inProgress: subjects.filter((s) => s.state === "in_progress"),
     back: subjects.filter((s) => s.state === "back"),
+    // Everything still to resolve, including what is being retaken right now. Home, the tracker and the record use this.
+    resolve: subjects.filter((s) => s.state === "back" || s.retaking).map((s) => (s.retaking ? { ...s, backReason: s.retaking } : s)),
   };
 }
 
@@ -129,4 +161,46 @@ export function prerequisiteText(subject) {
   const parts = (subject.prereqs || []).map((p) => p.code);
   if (subject.standing_required) parts.push(`${ordinal(subject.standing_required)} year standing`);
   return parts.join(", ");
+}
+
+// Ready to graduate = every subject of the student's curriculum is passed. Returns what is still missing.
+export function graduationCheck(progress) {
+  const missing = progress.subjects.filter((s) => s.state !== "passed");
+  return { total: progress.subjects.length, missing, eligible: progress.subjects.length > 0 && missing.length === 0 };
+}
+
+// A failed final grade (5.00) from earlier studies is not credited. Entries without a grade (made before grades
+// were recorded) stay credited. The same rule as student_credits.is_credited in the database.
+export function isCredited(entry) {
+  return entry.final_grade === null || entry.final_grade === undefined || Number(entry.final_grade) <= 3;
+}
+
+// The word for a subject's state on screen.
+export const stateLabel = (s) => (s.credited ? "Credited" : s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label);
+
+// What can be added from earlier studies: not passed or credited yet, and never taken here (a class here is settled here).
+export const creditable = (subjects) => subjects.filter((s) => s.state !== "passed" && s.state !== "in_progress" && !s.takenHere);
+
+// The year a term card is titled with: the highest year among that term's subjects, never below a year already
+// passed in an earlier term or credited (the same rule as the student's year level). One late subject from a lower
+// year therefore can't rename the whole term.
+export function termYear(history, term, credits = []) {
+  const mine = history.filter((r) => r.school_term_id === term.school_term_id);
+  const held = mine.filter((r) => r.status !== "dropped" && r.status !== "withdrawn");
+  const counted = held.length ? held : mine;
+  const before = history.filter((r) => r.status === "passed" && (r.school_year + r.semester) < (term.school_year + term.semester));
+  return Math.max(...[...counted, ...before].map((r) => Number(r.curriculum_year)),
+    ...credits.filter(isCredited).map((c) => Number(c.curriculum_subjects?.year_level || 0)));
+}
+
+// The prerequisites that are actually in the way (failed, or should already have been taken).
+export const blockingPrereqs = (subject, pos) => (subject.missingPrereqs || []).filter((pre) =>
+  pre.state === "back" || (pre.state === "not_taken" && (pre.year_level < pos.year || (pre.year_level === pos.year && pre.semester <= pos.semester))));
+
+// "4 semesters and 1 summer": summers are counted apart from the semesters. ahead comes from futureTerms().
+export function termsLeft(ahead) {
+  const summers = ahead.filter((t) => t.semester === 3).length;
+  const semesters = ahead.length - summers;
+  const words = `${semesters === 1 ? "semester" : "semesters"}${summers ? ` and ${summers} ${summers === 1 ? "summer" : "summers"}` : ""}`;
+  return { semesters, summers, words };
 }
