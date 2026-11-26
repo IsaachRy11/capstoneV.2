@@ -1108,3 +1108,33 @@ describe("credited subjects and withdrawal", () => {
     expect(r.rows[0].p.students[0].state).toBe("withdrawn");
   });
 });
+
+// Last on purpose: it leaves the database in a later term with a summer grade in it.
+describe("after a summer", () => {
+  const asSec = (sql) => as("authenticated", SEC, sql);
+  const rpc = async (sql) => {
+    const r = await asSec(`select ${sql} as r`);
+    if (r.error) throw new Error(r.error);
+    return r.rows[0].r;
+  };
+
+  it("keeps a summer grade on the record after the next school year starts", async () => {
+    await rpc(`public.begin_term('2026-2027', 3::smallint, '2027-05-03', '2027-06-11')`);
+    const off = await one(`select o.id, o.curriculum_subject_id as subject, sec.program_id from class_offerings o join sections sec on sec.id = o.section_id
+      join school_terms t on t.id = sec.school_term_id and t.is_current join programs p on p.id = sec.program_id where p.code = 'BSIT' order by o.id limit 1`);
+    const who = (await one(`select s.id from students s join curriculum_subjects cs on cs.curriculum_id = s.curriculum_id and cs.id = ${off.subject}
+      where s.status = 'active' and not exists (select 1 from enrollments e join class_offerings x on x.id = e.offering_id where e.student_id = s.id and x.curriculum_subject_id = ${off.subject}) order by s.id limit 1`)).id;
+    await asDb(`insert into enrollments (student_id, offering_id) values ('${who}', ${off.id})`); // owner: skips the prerequisite rule
+    const e = await one(`select id from enrollments where student_id = '${who}' and offering_id = ${off.id}`);
+    const saved = await asSec(`select public.save_grades('[{"enrollment_id": ${e.id}, "midterm": 1.75, "final": 1.5, "status": "auto"}]')`);
+    expect(saved.error).toBeUndefined();
+    const row = () => one(`select school_year, semester, is_current, status, final_grade::float as final from v_enrollment_details where enrollment_id = ${e.id}`);
+    expect(await row()).toEqual({ school_year: "2026-2027", semester: 3, is_current: true, status: "passed", final: 1.5 });
+    // With a grade in it, the summer can no longer be undone...
+    expect((await asSec(`select public.undo_term_start()`)).error).toMatch(/Grades or statuses were already entered/);
+    // ...and after the next school year starts it stays on the record as that year's summer.
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    expect(await row()).toEqual({ school_year: "2026-2027", semester: 3, is_current: false, status: "passed", final: 1.5 });
+    expect((await one(`select private.has_passed('${who}', ${off.subject}) as p`)).p).toBe(true);
+  }, 240_000);
+});
