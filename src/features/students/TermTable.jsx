@@ -155,7 +155,7 @@ export default function TermTable({ term, year, rows, canEdit, onSaved, defaultO
               const d = editing ? draft[r.enrollment_id] : null;
               return (
                 // Failed rows are tinted for the student only; the secretary just sees the red grade.
-                <tr key={r.enrollment_id} style={bad && !editing ? { background: "var(--bad-bg)" } : undefined}>
+                <tr key={r.enrollment_id} style={bad && !editing && !canEdit ? { background: "var(--bad-bg)" } : undefined}>
                   <td className="hidden whitespace-nowrap font-mono text-[13px] text-accent sm:table-cell">{r.code}</td>
                   <td className="font-medium">
                     <span className="block font-mono text-[12px] font-normal text-accent sm:hidden">{r.code} <span className="text-ink-3">· {Number(r.units)} {Number(r.units) === 1 ? "unit" : "units"}</span></span>

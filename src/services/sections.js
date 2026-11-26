@@ -47,7 +47,7 @@ export async function getCreditedStudentIds(offeringId) {
   const offering = await unwrap(supabase.from("class_offerings").select("curriculum_subject_id").eq("id", offeringId).maybeSingle());
   if (!offering) return [];
   const rows = await unwrap(
-    supabase.from("student_credits").select("student_id").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null)
+    supabase.from("student_credits").select("student_id").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null).eq("is_credited", true)
   );
   return rows.map((r) => r.student_id);
 }

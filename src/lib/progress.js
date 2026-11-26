@@ -14,9 +14,10 @@ export const SUBJECT_STATE = {
 
 const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
 
-// credits: subjects accepted from before (shiftees and transferees). A credit counts as passed, shown as "Credited".
+// credits: entries from a shiftee's or transferee's earlier studies. Only those with a passing grade are credited
+// (isCredited); a credit counts as passed, shown as "Credited". A failed one counts for nothing.
 export function buildProgress({ curriculum, history, prerequisites = [], credits = [] }) {
-  const credited = new Set(credits.map((c) => c.curriculum_subject_id));
+  const credited = new Set(credits.filter(isCredited).map((c) => c.curriculum_subject_id));
   const attempts = new Map(); // subject id → enrollment rows, oldest first
   for (const h of history) {
     if (!attempts.has(h.subject_id)) attempts.set(h.subject_id, []);
@@ -140,6 +141,12 @@ export function graduationCheck(progress) {
   return { total: progress.subjects.length, missing, eligible: progress.subjects.length > 0 && missing.length === 0 };
 }
 
+// A failed final grade (5.00) from earlier studies is not credited. Entries without a grade (made before grades
+// were recorded) stay credited. The same rule as student_credits.is_credited in the database.
+export function isCredited(entry) {
+  return entry.final_grade === null || entry.final_grade === undefined || Number(entry.final_grade) <= 3;
+}
+
 // The word for a subject's state on screen.
 export const stateLabel = (s) => (s.credited ? "Credited" : s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label);
 
@@ -155,7 +162,7 @@ export function termYear(history, term, credits = []) {
   const counted = held.length ? held : mine;
   const before = history.filter((r) => r.status === "passed" && (r.school_year + r.semester) < (term.school_year + term.semester));
   return Math.max(...[...counted, ...before].map((r) => Number(r.curriculum_year)),
-    ...credits.map((c) => Number(c.curriculum_subjects?.year_level || 0)));
+    ...credits.filter(isCredited).map((c) => Number(c.curriculum_subjects?.year_level || 0)));
 }
 
 // The prerequisites that are actually in the way (failed, or should already have been taken).

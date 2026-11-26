@@ -13,7 +13,7 @@ import ResetPasswordModal from "./ResetPasswordModal";
 import ResolveNotice from "./ResolveNotice";
 import StatusChangeModal from "./StatusChangeModal";
 import CreditedSubjects from "./CreditedSubjects";
-import { termYear } from "../../lib/progress";
+import { isCredited, termYear } from "../../lib/progress";
 
 export default function StudentRecord() {
   const { user } = useAuth();
@@ -73,7 +73,7 @@ export default function StudentRecord() {
     .sort((a, b) => (b.school_year + b.semester).localeCompare(a.school_year + a.semester));
   const current = history.filter((r) => r.is_current && r.status !== "dropped" && r.status !== "withdrawn");
   // Units earned: passed here plus credited from before.
-  const earned = sumUnits([...history.filter((r) => r.status === "passed"), ...credits.map((c) => c.curriculum_subjects)]);
+  const earned = sumUnits([...history.filter((r) => r.status === "passed"), ...credits.filter(isCredited).map((c) => c.curriculum_subjects)]);
   const active = isActiveStudent(student);
   // Credits are only for shiftees and transferees; the database enforces the same rule.
   const mayCredit = isSecretary && (student.admission_type === "transferee" || student.admission_type === "shiftee");
@@ -155,9 +155,9 @@ export default function StudentRecord() {
       {/* The secretary sees failed subjects as red rows in the grades; only the student gets the summary notice. */}
       {!isSecretary && deficiencies.length > 0 && <ResolveNotice items={deficiencies} detailed />}
 
-      {terms.length > 0 && <GradeLegend className="no-print card px-5 py-3.5" />}
+      {(terms.length > 0 || credits.length > 0) && <GradeLegend className="no-print card px-5 py-3.5" />}
       {terms.length === 0 && credits.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
-      <CreditedSubjects student={student} history={history} credits={credits} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} />
+      <CreditedSubjects student={student} history={history} credits={credits} tint={!isSecretary} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} />
       {/* On paper the terms sit in two columns so the whole record fits one page. */}
       <div className="record-terms flex flex-col gap-4 sm:gap-6">
         {terms.map((t, i) => (

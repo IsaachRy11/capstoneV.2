@@ -170,6 +170,8 @@
     padding: 12px 20px; font-size: 14px; color: var(--ink);
     border-bottom: 1px solid var(--line-2); vertical-align: middle;
   }
+  /* A failing grade stays red inside a table (the cell color above would otherwise win). */
+  .data-table td.text-bad { color: var(--bad); }
   .data-table tbody tr:last-child td { border-bottom: 0; }
   .data-table tbody tr:hover td { background: var(--row-hover); }
   .data-table .num { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
