@@ -41,9 +41,14 @@ export function buildProgress({ curriculum, history, prerequisites = [], credits
     if (state === "not_taken" && notCredited.has(c.id)) state = "back";
     // The attempt whose grades are shown: the pass, else this term's, else the latest.
     const shown = passed || current || last;
+    // Being taken again: still to resolve (like the database) until it is passed.
+    const earlier = rows.filter((r) => r !== current);
+    const unresolved = earlier.length ? BACK_LABEL[earlier[earlier.length - 1].status] : null;
+    const retaking = state === "in_progress" ? unresolved || (notCredited.has(c.id) ? "Not credited" : null) : null;
     return {
       ...c,
       state,
+      retaking,
       credited: !passed && credited.has(c.id),
       midterm: credited.has(c.id) && !passed ? null : shown?.midterm_grade ?? null,
       final: credited.has(c.id) && !passed ? null : shown?.final_grade ?? null,
@@ -79,6 +84,8 @@ export function buildProgress({ curriculum, history, prerequisites = [], credits
     unitsEarned: passedList.reduce((t, s) => t + Number(s.units), 0),
     inProgress: subjects.filter((s) => s.state === "in_progress"),
     back: subjects.filter((s) => s.state === "back"),
+    // Everything still to resolve, including what is being retaken right now. Home, the tracker and the record use this.
+    resolve: subjects.filter((s) => s.state === "back" || s.retaking).map((s) => (s.retaking ? { ...s, backReason: s.retaking } : s)),
   };
 }
 

@@ -861,7 +861,55 @@ describe("starting a term and enrolling sections", () => {
     expect((await one(`select count(*)::int n from registrations where school_term_id = ${t.id}`)).n).toBe(0);
     expect((await one(`select count(*)::int n from school_calendar_events where school_year = '2027-2028'`)).n).toBe(0);
     for (const id of carried) expect(await yearOf(id)).toBe(yearsAtStart[id]);
+    // Nothing of the undone term stays behind, so starting it again builds it fresh.
+    expect((await one(`select count(*)::int n from sections where school_term_id = ${t.id}`)).n).toBe(0);
   }, 120_000);
+
+  it("starting a term again after Undo does not bring back what was added to it before", async () => {
+    const sections = () => one(`select count(distinct s.id)::int sections, count(o.id)::int subjects from sections s
+      left join class_offerings o on o.section_id = s.id join school_terms t on t.id = s.school_term_id and t.is_current`);
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    const fresh = await sections();
+    const extra = await one(`select o.section_id, cs.id as subject from class_offerings o join sections s on s.id = o.section_id
+      join school_terms t on t.id = s.school_term_id and t.is_current
+      join curriculum_subjects cs on cs.semester = 2 and cs.curriculum_id = (select curriculum_id from curriculum_subjects where id = o.curriculum_subject_id) limit 1`);
+    await db.exec(`insert into class_offerings (section_id, curriculum_subject_id) values (${extra.section_id}, ${extra.subject})`);
+    await rpc(`public.undo_term_start()`);
+    await rpc(`public.begin_term('2027-2028', 1::smallint, '2027-07-05', '2027-11-06')`);
+    expect(await sections()).toEqual(fresh);
+    await rpc(`public.undo_term_start()`);
+  }, 240_000);
+
+  it("every New term path can be undone one step at a time and leaves exactly what was there before", async () => {
+    const snapshot = () => one(`select
+      (select school_year || '/' || semester from school_terms where is_current) as current,
+      (select md5(string_agg(id || ':' || year_level || ':' || status, ',' order by id)) from students) as students,
+      (select count(*)::int from sections) as sections, (select count(*)::int from class_offerings) as subjects,
+      (select count(*)::int from class_meetings) as class_times, (select count(*)::int from enrollments) as subjects_taken,
+      (select count(*)::int from registrations) as registrations, (select count(*)::int from school_calendar_events) as calendar`);
+    // As in the app: no later term has been prepared ahead of its start (an earlier test prepared one by hand).
+    await db.exec(`delete from sections s using school_terms t where t.id = s.school_term_id and (t.school_year, t.semester) > ('2026-2027', 2)
+      and not exists (select 1 from registrations r where r.school_term_id = t.id)`);
+    // Each path starts from the 2nd semester: [school year, semester, first day, last day] per step.
+    const summer = ["2026-2027", 3, "2027-05-03", "2027-06-11"];
+    const first = ["2027-2028", 1, "2027-07-05", "2027-11-06"];
+    const second = ["2027-2028", 2, "2027-11-22", "2028-04-21"];
+    for (const path of [[summer], [first, second], [summer, first, second]]) {
+      const stack = [];
+      for (const [year, semester, from, to] of path) {
+        stack.push(await snapshot());
+        await rpc(`public.begin_term('${year}', ${semester}::smallint, '${from}', '${to}')`);
+        const now = await snapshot();
+        expect(now.current).toBe(`${year}/${semester}`);
+        expect((await one(`select count(o.id)::int n from class_offerings o join sections x on x.id = o.section_id
+          join school_terms t on t.id = x.school_term_id and t.is_current`)).n).toBeGreaterThan(0);
+      }
+      while (stack.length) {
+        await rpc(`public.undo_term_start()`);
+        expect(await snapshot()).toEqual(stack.pop());
+      }
+    }
+  }, 480_000);
 
   it("uses each student's own unit limit when enrolling a section", async () => {
     const t2 = await term("2026-2027", 2);

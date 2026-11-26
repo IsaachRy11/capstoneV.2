@@ -178,6 +178,20 @@ describe("grades from earlier studies", () => {
   });
 });
 
+describe("a subject being retaken", () => {
+  const curriculum = [{ id: 1, units: 3, year_level: 1, semester: 1 }, { id: 2, units: 3, year_level: 1, semester: 1 }];
+  it("stays to resolve until it is passed", () => {
+    const history = [
+      { subject_id: 1, status: "failed" }, { subject_id: 1, status: "enrolled", is_current: true },
+      { subject_id: 2, status: "enrolled", is_current: true },
+    ];
+    const progress = buildProgress({ curriculum, history });
+    expect(progress.back).toEqual([]);
+    expect(progress.resolve.map((s) => [s.id, s.backReason])).toEqual([[1, "Failed"]]);
+    expect(buildProgress({ curriculum, history: [{ subject_id: 1, status: "failed" }, { subject_id: 1, status: "passed" }] }).resolve).toEqual([]);
+  });
+});
+
 describe("termYear", () => {
   const row = (term, year, curriculum_year, status = "enrolled") => ({ school_term_id: term, school_year: year, semester: 1, curriculum_year, status });
   it("is not renamed by one late subject from a lower year", () => {

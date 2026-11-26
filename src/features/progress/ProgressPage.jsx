@@ -30,7 +30,7 @@ export default function Progress() {
   const taking = progress.inProgress;
   const units = sumUnits(taking);
 
-  const severe = progress.back.some((x) => isSerious(x.backReason)); // red if anything failed, else amber
+  const severe = progress.resolve.some((x) => isSerious(x.backReason)); // red if anything failed, else amber
 
   return (
     <>
@@ -50,13 +50,13 @@ export default function Progress() {
           <Tile label="Subjects" value={taking.length} sub="you're taking" />
           <Tile label="Load" value={units} sub="units this semester" />
           <div className="col-span-2 grid sm:col-span-1">
-            <Tile label="To resolve" value={progress.back.length} sub={progress.back.length ? "not yet cleared" : "nothing left over"} tone={progress.back.length ? (severe ? "text-bad" : "text-warn") : undefined} />
+            <Tile label="To resolve" value={progress.resolve.length} sub={progress.resolve.length ? "not yet cleared" : "nothing left over"} tone={progress.resolve.length ? (severe ? "text-bad" : "text-warn") : undefined} />
           </div>
         </div>
       </section>
 
-      {progress.back.length > 0 ? (
-        <ResolveBox items={progress.back} student={student} />
+      {progress.resolve.length > 0 ? (
+        <ResolveBox items={progress.resolve} student={student} />
       ) : (
         <section className="card flex items-center gap-3.5 px-5 py-4" style={{ background: "var(--ok-bg)", borderColor: "var(--ok-line)" }}>
           <CheckCircle2 size={22} className="shrink-0 text-ok" aria-hidden="true" />
