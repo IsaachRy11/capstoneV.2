@@ -147,20 +147,20 @@ export default function Students() {
           </form>
           <label htmlFor="prog" className="sr-only">Program</label>
           <select id="prog" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_220px]" value={programFilter} onChange={(e) => setParam("program", e.target.value)}>
-            <option value="all">Program</option>
+            <option value="all" hidden>Program</option>
             {data.programs.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
           </select>
           {!hideType && <>
             <label htmlFor="stype" className="sr-only">Student type</label>
             <select id="stype" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_170px]" value={type} onChange={(e) => { setType(e.target.value); setPage(0); }}>
-              <option value="all">Student type</option>
+              <option value="all" hidden>Student type</option>
               {typeOptions.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
             </select>
           </>}
           {!other && <>
             <label htmlFor="stat" className="sr-only">Status</label>
             <select id="stat" className="field w-auto min-w-0 flex-[1_1_140px] sm:flex-[0_1_150px]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-              <option value="all">Status</option>
+              <option value="all" hidden>Status</option>
               <option value="regular">Regular</option><option value="irregular">Irregular</option>
             </select>
           </>}

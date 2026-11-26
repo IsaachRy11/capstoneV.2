@@ -15,6 +15,20 @@ export const SUBJECT_STATE = {
 
 const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
 // Failed and Not credited are the serious ones (red); NC is amber; Dropped is grey.
+// One line per subject to resolve: the database lists every unresolved attempt, so a subject failed twice comes back
+// twice. The latest attempt is the one kept (its reason is the current one).
+export function onePerSubject(rows) {
+  const latest = new Map();
+  const when = (r) => `${r.school_year || ""}/${r.semester || 0}`;
+  for (const r of rows) {
+    const key = String(r.code).replace(/\s+/g, "").toLowerCase();
+    if (!latest.has(key) || when(r) > when(latest.get(key))) latest.set(key, r);
+  }
+  return [...latest.values()];
+}
+
+// On screen, a subject without credit reads "NC" (No Credit), like the Status column of the record.
+export const reasonLabel = (reason) => (reason === "Not credited" ? "NC" : reason);
 export const isSerious = (reason) => reason === "Failed" || reason === "Not credited";
 export const backTone = (reason) => (isSerious(reason) ? "tone-bad" : reason === "NC" ? "tone-warn" : "tone-neutral");
 

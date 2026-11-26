@@ -157,12 +157,12 @@ export default function StudentRecord() {
 
       {(terms.length > 0 || credits.length > 0) && <GradeLegend className="no-print card px-5 py-3.5" />}
       {terms.length === 0 && credits.length === 0 && <div className="card p-6 text-[14px] text-ink-3">No classes on record yet.</div>}
-      <CreditedSubjects student={student} history={history} credits={credits} tint={!isSecretary} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} />
       {/* On paper the terms sit in two columns so the whole record fits one page. */}
       <div className="record-terms flex flex-col gap-4 sm:gap-6">
         {terms.map((t, i) => (
           <TermTable key={t.school_term_id} defaultOpen={i === 0} term={t} year={termYear(history, t, credits)} rows={history.filter((r) => r.school_term_id === t.school_term_id)} canEdit={isSecretary} onSaved={reload} />
         ))}
+        <CreditedSubjects student={student} history={history} credits={credits} tint={!isSecretary} canAdd={mayCredit && active} canRemove={mayCredit && active} onSaved={reload} defaultOpen={terms.length === 0} />
       </div>
 
       {isSecretary && <GradeHistory changes={changes} />}

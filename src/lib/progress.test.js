@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck, creditable, stateLabel, termYear, termsLeft } from "./progress";
+import { buildProgress, futureTerms, nextTermFor, prerequisiteStatus, prerequisiteText, requirementText, graduationCheck, creditable, stateLabel, termYear, termsLeft, onePerSubject } from "./progress";
 
 const curriculum = [
   { id: 1, code: "IT 101", units: 3, year_level: 1, semester: 1 },
@@ -210,5 +210,16 @@ describe("termsLeft", () => {
     const ahead = [1, 2, 3, 1, 2].map((semester) => ({ semester }));
     expect(termsLeft(ahead)).toEqual({ semesters: 4, summers: 1, words: "semesters and 1 summer" });
     expect(termsLeft([{ semester: 2 }]).words).toBe("semester");
+  });
+});
+
+describe("subjects to resolve are counted once each", () => {
+  it("keeps only the latest attempt of a subject failed twice", () => {
+    const rows = [
+      { code: "IT 101", status: "failed", school_year: "2026-2027", semester: 3 },
+      { code: "IT101", status: "incomplete", school_year: "2026-2027", semester: 1 },
+      { code: "GE 1", status: "dropped", school_year: "2026-2027", semester: 1 },
+    ];
+    expect(onePerSubject(rows).map((r) => [r.code, r.status])).toEqual([["IT 101", "failed"], ["GE 1", "dropped"]]);
   });
 });

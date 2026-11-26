@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import SubjectLink from "./SubjectLink";
-import { backTone, isSerious } from "../../lib/progress";
+import { backTone, isSerious, reasonLabel } from "../../lib/progress";
 import { curriculumPlace } from "../../lib/format";
 
 // The student's "subjects to resolve" box, one design on This semester and the Academic record: each line says why,
@@ -16,7 +16,7 @@ export default function ResolveBox({ items, student, className = "" }) {
         <h2 className={`text-[15px] font-bold ${severe ? "text-bad" : "text-warn"}`}>{items.length === 1 ? "1 subject to resolve" : `${items.length} subjects to resolve`}</h2>
         <ul className="mt-1 text-[14px] text-ink-2">
           {items.map((s) => (
-            <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)}{" "}
+            <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{reasonLabel(s.backReason)}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)}{" "}
               {s.retaking ? <span className="font-semibold text-ink">· You're taking it this semester</span> : <SubjectLink subject={s} student={student} />}</li>
           ))}
         </ul>
