@@ -25,7 +25,7 @@ function subjectStatus(r) {
   if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
   if (r.state === "withdrawn") return <span className="badge tone-neutral">Withdrawn</span>;
   if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
-  if (r.notCredited) return <span className="badge tone-bad">Not credited</span>;
+  if (r.notCredited) return <span className="badge tone-bad">NC</span>;
   if (r.retake) return <span className="badge tone-warn">Retake</span>;
   return <span className="text-[13px] text-ink-3">Not yet enrolled</span>;
 }

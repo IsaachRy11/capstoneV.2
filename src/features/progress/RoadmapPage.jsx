@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Check, ChevronDown, Flag, GraduationCap } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../../components/ui";
 import { curriculumPlace, semesterLabel, sumUnits, yearLabel, yearSemesterLabel } from "../../lib/format";
-import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft, backTone, isSerious } from "../../lib/progress";
+import { blockingPrereqs, prerequisiteStatus, prerequisiteText, termsLeft, backTone, isSerious, reasonLabel } from "../../lib/progress";
 import ProgressDetail from "./ProgressDetail";
 import SubjectLink from "./SubjectLink";
 import { CurriculumLink, TrackerSwitch } from "./TrackerParts";
@@ -253,7 +253,7 @@ export default function Roadmap() {
             <div className="card px-5 py-4" style={{ background: `var(--${tone}-bg)`, borderColor: `var(--${tone})` }}>
               <h3 className={`text-[15px] font-bold ${tone === "bad" ? "text-bad" : "text-warn"}`}>Carry-over: {count(progress.back.length, "subject", "subjects")} to resolve or retake</h3>
               <ul className="mt-1 text-[14px] text-ink-2">
-                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
+                {progress.back.map((s) => <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{reasonLabel(s.backReason)}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>)}
               </ul>
             </div>
           );

@@ -15,6 +15,8 @@ export const SUBJECT_STATE = {
 
 const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
 // Failed and Not credited are the serious ones (red); NC is amber; Dropped is grey.
+// On screen, a subject without credit reads "NC" (No Credit), like the Status column of the record.
+export const reasonLabel = (reason) => (reason === "Not credited" ? "NC" : reason);
 export const isSerious = (reason) => reason === "Failed" || reason === "Not credited";
 export const backTone = (reason) => (isSerious(reason) ? "tone-bad" : reason === "NC" ? "tone-warn" : "tone-neutral");
 

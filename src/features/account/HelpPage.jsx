@@ -29,7 +29,7 @@ const COMMON = [
   },
   {
     q: "What do Regular and Irregular mean?",
-    a: <>Regular: nothing to resolve. Irregular: at least one failed, NC, dropped or not credited subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
+    a: <>Regular: nothing to resolve. Irregular: at least one failed, NC or dropped subject that hasn't been passed yet, or a missing prerequisite. The system works this out from the grades on record.</>,
   },
 ];
 
@@ -59,7 +59,7 @@ const SECRETARY = [
   },
   {
     q: "What are credited subjects?",
-    a: <>Subjects a shiftee or transferee passed before. On the student's record, use Add earlier subjects and enter the midterm and final grade. A final grade of 1.00 to 3.00 is Credited and counts as passed. A final grade of 5.00 is Not credited: it adds no units and is a subject to resolve until the student passes it here. To correct a grade, use Encode grades on that card; the system keeps the old value and who changed it. A subject the student already has a class record for here can't be added. A subject the student still has to take is added in Section allocations as usual.</>,
+    a: <>Subjects a shiftee or transferee passed before. On the student's record, use Add earlier subjects and enter the midterm and final grade. A final grade of 1.00 to 3.00 is Credited and counts as passed. A final grade of 5.00 is NC (No Credit): it adds no units and is a subject to resolve until the student passes it here. To correct a grade, use Encode grades on that card; the system keeps the old value and who changed it. A subject the student already has a class record for here can't be added. A subject the student still has to take is added in Section allocations as usual.</>,
   },
   {
     q: "What does Student status do?",
