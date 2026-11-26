@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { Monitor, Plus, Search, UserPlus } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
-import { enrollInSubject, getSubjectPlan, searchStudents } from "../../services/sections";
+import { enrollInSubject, getSubjectPlan, searchStudents, getCreditedStudentIds } from "../../services/sections";
 import { EmptyState, ErrorState, FormError, LoadingState, PageHeader } from "../../components/ui";
 import { termLabel, yearLabel } from "../../lib/format";
 
@@ -21,7 +21,7 @@ const STATE = {
 
 // The student's own history with THIS subject (not their overall Regular/Irregular status).
 function subjectStatus(r) {
-  if (r.state === "passed") return <span className="badge tone-ok">Passed or credited</span>;
+  if (r.state === "passed") return <span className="badge tone-ok">{r.credited ? "Credited" : "Passed"}</span>;
   if (r.state === "enrolled") return <span className="badge tone-info">Enrolled</span>;
   if (r.state === "withdrawn") return <span className="badge tone-neutral">Withdrawn</span>;
   if (r.failed_this) return <span className="badge tone-bad">Failed</span>;
@@ -32,6 +32,7 @@ function subjectStatus(r) {
 export default function AddToSubject({ offeringId }) {
   const { term } = useOutletContext();
   const { data, error, loading, reload } = useAsync(() => getSubjectPlan(offeringId), [offeringId], `subject-plan-${offeringId}`);
+  const { data: creditedIds } = useAsync(() => getCreditedStudentIds(offeringId), [offeringId], `subject-credits-${offeringId}`);
   const [extra, setExtra] = useState([]);       // students found with the search
   const [choice, setChoice] = useState(new Map()); // studentId -> ticked, when the secretary changed it
   const [typed, setTyped] = useState(""); // in the search box
@@ -60,7 +61,8 @@ export default function AddToSubject({ offeringId }) {
   if (loading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
-  const rows = [...extra.filter((x) => !data.students.some((s) => s.student_id === x.student_id)), ...data.students];
+  const rows = [...extra.filter((x) => !data.students.some((s) => s.student_id === x.student_id)), ...data.students]
+    .map((r) => ({ ...r, credited: !!creditedIds?.includes(r.student_id) }));
   const isTicked = (r) => r.state === "add" && (choice.has(r.student_id) ? choice.get(r.student_id) : r.in_block);
   const ready = rows.filter((r) => r.state === "add");
   const chosen = rows.filter(isTicked);
@@ -186,7 +188,7 @@ export default function AddToSubject({ offeringId }) {
                         <span className="block font-mono text-[12px] text-ink-3">{r.student_id} · {yearLabel(r.year_level)}</span>
                       </td>
                       <td className="whitespace-nowrap text-[13px] text-ink-2">{r.section || "Not yet enrolled"}</td>
-                      <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : st.text}</td>
+                      <td className={`text-[13px] font-semibold ${r.state === "needs" ? "text-warn" : st.tone}`}>{r.state === "needs" ? `Needs ${r.needs} passed first` : r.state === "passed" && r.credited ? "Already credited" : st.text}</td>
                       <td>{subjectStatus(r)}</td>
                     </tr>
                   );

@@ -42,6 +42,16 @@ export function searchStudents(query) {
   );
 }
 
+// Which students have this class's subject as Credited (the add-students plan reports it the same as passed).
+export async function getCreditedStudentIds(offeringId) {
+  const offering = await unwrap(supabase.from("class_offerings").select("curriculum_subject_id").eq("id", offeringId).maybeSingle());
+  if (!offering) return [];
+  const rows = await unwrap(
+    supabase.from("student_credits").select("student_id").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null)
+  );
+  return rows.map((r) => r.student_id);
+}
+
 // Add students to ONE subject: who to list and whether each can be added (migration 0018).
 export const getSubjectPlan = (offeringId, studentIds = null) =>
   unwrap(supabase.rpc("subject_enroll_plan", { p_offering: offeringId, p_students: studentIds }));
