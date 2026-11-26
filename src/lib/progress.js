@@ -3,7 +3,8 @@
 
 // passed      — passed at least once
 // in_progress — enrolled this term and not yet passed (shown as "Enrolled")
-// back        — failed / INC / dropped and not passed since (same rule as v_student_deficiencies); shown as "Subjects to resolve"
+// back        — failed / INC / dropped / Not credited and not passed since (same rule as v_student_deficiencies);
+//               shown as "Subjects to resolve"
 // not_taken   — never enrolled (shown as "Not yet enrolled")
 export const SUBJECT_STATE = {
   passed: { label: "Passed", tone: "ok" },
@@ -13,11 +14,15 @@ export const SUBJECT_STATE = {
 };
 
 const BACK_LABEL = { failed: "Failed", incomplete: "NC", dropped: "Dropped" };
+// Failed and Not credited are the serious ones (red); NC is amber; Dropped is grey.
+export const isSerious = (reason) => reason === "Failed" || reason === "Not credited";
+export const backTone = (reason) => (isSerious(reason) ? "tone-bad" : reason === "NC" ? "tone-warn" : "tone-neutral");
 
 // credits: entries from a shiftee's or transferee's earlier studies. Only those with a passing grade are credited
-// (isCredited); a credit counts as passed, shown as "Credited". A failed one counts for nothing.
+// (isCredited); a credit counts as passed, shown as "Credited". A failed one ("Not credited") is a subject to resolve.
 export function buildProgress({ curriculum, history, prerequisites = [], credits = [] }) {
   const credited = new Set(credits.filter(isCredited).map((c) => c.curriculum_subject_id));
+  const notCredited = new Set(credits.filter((c) => !isCredited(c)).map((c) => c.curriculum_subject_id));
   const attempts = new Map(); // subject id → enrollment rows, oldest first
   for (const h of history) {
     if (!attempts.has(h.subject_id)) attempts.set(h.subject_id, []);
@@ -33,6 +38,7 @@ export function buildProgress({ curriculum, history, prerequisites = [], credits
     if (passed || credited.has(c.id)) state = "passed";
     else if (current) state = "in_progress";
     else if (last && ["failed", "incomplete", "dropped"].includes(last.status)) state = "back";
+    if (state === "not_taken" && notCredited.has(c.id)) state = "back";
     // The attempt whose grades are shown: the pass, else this term's, else the latest.
     const shown = passed || current || last;
     return {
@@ -41,7 +47,8 @@ export function buildProgress({ curriculum, history, prerequisites = [], credits
       credited: !passed && credited.has(c.id),
       midterm: credited.has(c.id) && !passed ? null : shown?.midterm_grade ?? null,
       final: credited.has(c.id) && !passed ? null : shown?.final_grade ?? null,
-      backReason: state === "back" ? BACK_LABEL[last.status] : null,
+      backReason: state === "back" ? BACK_LABEL[last?.status] || "Not credited" : null,
+      takenHere: rows.some((r) => r.status !== "withdrawn"),
       attempts: rows.length,
     };
   });
@@ -150,8 +157,8 @@ export function isCredited(entry) {
 // The word for a subject's state on screen.
 export const stateLabel = (s) => (s.credited ? "Credited" : s.state === "back" ? s.backReason : SUBJECT_STATE[s.state].label);
 
-// What can still be credited: not passed or credited yet, and not being taken now.
-export const creditable = (subjects) => subjects.filter((s) => s.state !== "passed" && s.state !== "in_progress");
+// What can be added from earlier studies: not passed or credited yet, and never taken here (a class here is settled here).
+export const creditable = (subjects) => subjects.filter((s) => s.state !== "passed" && s.state !== "in_progress" && !s.takenHere);
 
 // The year a term card is titled with: the highest year among that term's subjects, never below a year already
 // passed in an earlier term or credited (the same rule as the student's year level). One late subject from a lower

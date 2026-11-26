@@ -42,14 +42,16 @@ export function searchStudents(query) {
   );
 }
 
-// Which students have this class's subject as Credited (the add-students plan reports it the same as passed).
-export async function getCreditedStudentIds(offeringId) {
+// Who has this class's subject from earlier studies: Credited (the add-students plan reports it the same as passed)
+// or Not credited (failed before, still to be taken).
+export async function getEarlierResults(offeringId) {
   const offering = await unwrap(supabase.from("class_offerings").select("curriculum_subject_id").eq("id", offeringId).maybeSingle());
-  if (!offering) return [];
+  if (!offering) return { credited: [], notCredited: [] };
   const rows = await unwrap(
-    supabase.from("student_credits").select("student_id").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null).eq("is_credited", true)
+    supabase.from("student_credits").select("student_id, is_credited").eq("curriculum_subject_id", offering.curriculum_subject_id).is("removed_at", null)
   );
-  return rows.map((r) => r.student_id);
+  const pick = (ok) => rows.filter((r) => r.is_credited === ok).map((r) => r.student_id);
+  return { credited: pick(true), notCredited: pick(false) };
 }
 
 // Add students to ONE subject: who to list and whether each can be added (migration 0018).

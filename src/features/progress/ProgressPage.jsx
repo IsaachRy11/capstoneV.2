@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { backTone, isSerious } from "../../lib/progress";
 import { AlertTriangle, ArrowRight, CheckCircle2, Layers } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader, StudentStatusBadge } from "../../components/ui";
 import { sumUnits, termLabel, yearSemesterLabel, curriculumPlace } from "../../lib/format";
@@ -40,7 +41,7 @@ export default function Progress() {
 
   if (view) return <ProgressDetail view={view} progress={progress} student={student} />;
 
-  const severe = progress.back.some((x) => x.backReason === "Failed"); // red if anything failed, else amber
+  const severe = progress.back.some((x) => isSerious(x.backReason)); // red if anything failed, else amber
 
   return (
     <>
@@ -60,7 +61,7 @@ export default function Progress() {
           <Tile to="/progress?view=enrolled" label="Subjects" value={taking.length} sub="you're taking" />
           <Tile label="Load" value={units} sub="units this semester" />
           <Tile label="Opens next" value={opening.size} sub={opening.size === 1 ? "subject after you pass" : "subjects after you pass"} />
-          <Tile to="/progress?view=failed" label="To resolve" value={progress.back.length} sub={progress.back.length ? "failed, NC or dropped" : "nothing left over"} tone={progress.back.length ? (severe ? "text-bad" : "text-warn") : undefined} />
+          <Tile to="/progress?view=failed" label="To resolve" value={progress.back.length} sub={progress.back.length ? "not yet cleared" : "nothing left over"} tone={progress.back.length ? (severe ? "text-bad" : "text-warn") : undefined} />
         </div>
       </section>
 
@@ -71,7 +72,7 @@ export default function Progress() {
             <h2 className={`text-[15px] font-bold ${severe ? "text-bad" : "text-warn"}`}>{progress.back.length === 1 ? "1 subject to resolve" : `${progress.back.length} subjects to resolve`}</h2>
             <ul className="mt-1 text-[14px] text-ink-2">
               {progress.back.map((s) => (
-                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${s.backReason === "Failed" ? "tone-bad" : s.backReason === "NC" ? "tone-warn" : "tone-neutral"}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>
+                <li key={s.id} className="py-0.5"><span className={`badge mr-2 ${backTone(s.backReason)}`}>{s.backReason}</span><span className="font-mono">{s.code}</span> {s.title} · In your curriculum: {curriculumPlace(s.year_level, s.semester)} <SubjectLink subject={s} student={student} /></li>
               ))}
             </ul>
             <p className="mt-2 text-[13px] text-ink-3">Check with the CCS Secretary's Office how to resolve or retake them.</p>

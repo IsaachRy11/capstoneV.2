@@ -30,7 +30,7 @@ export const VIEWS = {
     title: "Subjects to resolve",
     pick: (p) => p.back,
     headline: (rows) => plural(rows.length, "subject", "subjects"),
-    text: "Failed, NC or dropped, and not passed since. The Curriculum column shows the year and semester each one comes from.",
+    text: "Failed, NC, dropped or not credited, and not passed since. The Curriculum column shows the year and semester each one comes from.",
     empty: "Nothing to resolve. Keep it up.",
   },
 };

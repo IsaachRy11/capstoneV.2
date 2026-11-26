@@ -21,7 +21,7 @@ export default function AddStudentModal({ programs, term, onClose, onCreated }) 
     try {
       const { loginCreated, tempPassword } = await createStudent({ ...form, admission_type: ADMISSION_FOR_TYPE[form.studentType], programId: Number(form.programId), year_level: Number(form.year_level) }, term);
       const login = tempPassword
-        ? ` Give them this one-time password: ${tempPassword}. They sign in with their student ID and choose their own password.`
+        ? ` Their temporary password is ${tempPassword}. They sign in with their student ID, then choose their own password.`
         : loginCreated ? " They can sign in with their student ID." : " Their login could not be created; open their record and use Reset password.";
       onCreated(`${form.first_name} ${form.last_name} was created. Add them to their subjects on Section allocations.${login}`);
     } catch (err) {

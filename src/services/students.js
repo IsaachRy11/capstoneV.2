@@ -55,15 +55,18 @@ export const addCredits = (studentId, entries) =>
     student_id: studentId, curriculum_subject_id: e.subjectId, midterm_grade: e.midterm, final_grade: e.final,
   }))));
 
+// Secretary only. Corrects grades in one transaction; each old entry stays as a log. changes: [{ id, midterm, final }].
+export const saveCreditGrades = (changes) => unwrap(supabase.rpc("save_credit_grades", { p_changes: changes }));
+
 // Secretary only. The row stays, marked with who removed it and when.
 export const removeCredit = (creditId) =>
   unwrap(supabase.from("student_credits").update({ removed_at: new Date().toISOString() }).eq("id", creditId));
 
-// Failed / INC / dropped subjects not cleared by a later pass (computed by the database view).
+// Failed / INC / dropped / Not credited subjects not cleared by a later pass (computed by the database view).
 export const getDeficiencies = (id) =>
   unwrap(
     supabase.from("v_student_deficiencies")
-      .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year")
+      .select("enrollment_id, code, title, status, final_grade, school_year, semester, curriculum_year, not_credited")
       .eq("student_id", id)
   );
 
@@ -82,7 +85,7 @@ export const getUnitLimit = (id) =>
 export const updateUnitLimit = (id, units) =>
   unwrap(supabase.from("students").update({ max_units: units }).eq("id", id));
 
-// Secretary only. Sets a new one-time password (done on the server, which holds the secret key) and
+// Secretary only. Sets the temporary password again (done on the server, which holds the secret key) and
 // returns it once. The student must choose their own password at the next sign-in.
 export async function resetStudentPassword(id) {
   const { data, error } = await supabase.functions.invoke("reset-student-password", { body: { studentId: id } });
@@ -117,7 +120,7 @@ export async function createStudent({ id, first_name, last_name, programId, year
   };
   await unwrap(supabase.rpc("add_student", params));
   // The sign-in account is made on the server (it needs a secret key). If that fails the student still exists.
-  // It returns a one-time password, shown once to the secretary to hand to the student.
+  // It returns the temporary password for the secretary to give the student.
   const { data, error } = await supabase.functions.invoke("create-student-login", { body: { studentId: id } });
   const loginCreated = !error && data?.ok === true;
   return { loginCreated, tempPassword: data?.tempPassword ?? null };

@@ -965,6 +965,34 @@ describe("credited subjects and withdrawal", () => {
     if (same) expect((await sec(`select public.subject_enroll_plan(${same.id}, array['2099-0007']) p`)).rows[0].p.students[0].state).not.toBe("passed");
   });
 
+  it("Not credited is a subject to resolve until it is corrected or passed", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    await mk("2099-0008", "transferee");
+    const p = await pair();
+    const resolve = async () => (await db.query(`select not_credited from v_student_deficiencies where student_id = '2099-0008'`)).rows;
+    const standing = async () => (await one(`select standing from v_student_overview where id = '2099-0008'`)).standing;
+    await credit("2099-0008", p.prerequisite_id, 5.0);
+    expect(await resolve()).toEqual([{ not_credited: true }]);
+    expect(await standing()).toBe("irregular");
+    const id = (await one(`select id from student_credits where student_id = '2099-0008' and removed_at is null`)).id;
+    expect((await sec(`select public.save_credit_grades('[{"id": ${id}, "midterm": 2, "final": 1.5}]') n`)).rows[0].n).toBe(1);
+    expect(await resolve()).toEqual([]);
+    expect(await passed("2099-0008", p.prerequisite_id)).toBe(true);
+    // The old grade stays as the log.
+    expect((await db.query(`select final_grade::float f, removed_at is not null gone from student_credits where student_id = '2099-0008' order by id`)).rows)
+      .toEqual([{ f: 5, gone: true }, { f: 1.5, gone: false }]);
+    expect((await sec(`select public.save_credit_grades('[{"id": ${id}, "midterm": 2, "final": 2}]')`)).error).toMatch(/already changed/);
+  });
+
+  it("a subject with a class record here can't be added as an earlier subject", async () => {
+    await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+    const row = await one(`select e.student_id, o.curriculum_subject_id sid from enrollments e join class_offerings o on o.id = e.offering_id
+      join students s on s.id = e.student_id where e.status = 'failed' and s.status = 'active' and s.admission_type in ('transferee', 'shiftee')
+      and not exists (select 1 from enrollments x join class_offerings ox on ox.id = x.offering_id where x.student_id = e.student_id and ox.curriculum_subject_id = o.curriculum_subject_id and x.status in ('passed', 'enrolled')) limit 1`);
+    expect(row).toBeTruthy();
+    expect((await credit(row.student_id, row.sid, 1.5)).error).toMatch(/already has a class record here/);
+  });
+
   it("a student reads only their own credits", async () => {
     const p = await pair();
     await credit("2099-0003", p.prerequisite_id);

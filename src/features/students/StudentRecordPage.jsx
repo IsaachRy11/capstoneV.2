@@ -98,7 +98,7 @@ export default function StudentRecord() {
                 <h1 className="text-[22px] font-bold leading-tight tracking-tight sm:text-[26px]">{student.full_name}</h1>
                 <StudentStatusBadge student={student} />
               </div>
-              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span> · {yearLabel(student.year_level)}</div>
+              <div className="text-[14px] text-ink-2"><span className="font-mono">{student.id}</span> · <span className="sm:hidden">{student.program_code}</span><span className="hidden sm:inline">{student.program_name}</span>{active && <> · {yearLabel(student.year_level)}</>}</div>
             </div>
           </div>
           {/* Secretary on phones and tablets: view only. Printing, password resets and deleting are done on a computer. */}
