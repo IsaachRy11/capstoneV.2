@@ -180,7 +180,7 @@ export default function Roadmap() {
   });
   const exact = progress.totalUnits ? ((progress.unitsEarned / progress.totalUnits) * 100).toFixed(1) : "0.0";
 
-  if (view) return <ProgressDetail view={view} progress={progress} student={student} />;
+  if (view) return <ProgressDetail view={view} progress={progress} />;
   const left = termsLeft(ahead);
 
   return (
