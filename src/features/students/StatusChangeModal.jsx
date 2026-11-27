@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAsync } from "../../hooks/useAsync";
 import { getCurriculum, getPrerequisites } from "../../services/catalog";
@@ -7,8 +6,8 @@ import { STUDENT_STATUS_LABEL, sumUnits } from "../../lib/format";
 import { buildProgress, graduationCheck } from "../../lib/progress";
 
 // Asked before a student's status changes, so a wrong pick in the list can't take effect by accident. Marking
-// someone Graduated checks the curriculum first: if subjects are missing, they are listed and an extra tick is
-// needed. (It warns rather than blocks: subjects credited from another school are not recorded in the system.)
+// someone Graduated checks the curriculum first: while subjects are not passed or credited, they are listed and
+// there is no button to graduate. (This is a screen rule; the database does not enforce it.)
 const EXPLAIN = {
   active: "They return to the Enrolled list and can be added to subjects again.",
   dropped: "They leave this semester and move to the Withdrawn list. They can't be added to subjects while Withdrawn.",
@@ -19,7 +18,6 @@ const STATE_WORD = { in_progress: "Enrolled now", back: "To resolve", not_taken:
 
 export default function StatusChangeModal({ student, history, credits = [], status, busy, onClose, onConfirm }) {
   const graduating = status === "graduated";
-  const [understood, setUnderstood] = useState(false);
   const { data, error, loading } = useAsync(async () => {
     if (!graduating) return null;
     const [curriculum, prerequisites] = await Promise.all([getCurriculum(student.program_code), getPrerequisites()]);
@@ -37,11 +35,13 @@ export default function StatusChangeModal({ student, history, credits = [], stat
   return (
     <Modal title={graduating ? `Mark ${student.full_name} as Graduated?` : withdrawing ? `Withdraw ${student.full_name}?` : `Change status to ${label}?`} onClose={onClose}
       footer={<>
-        <button className="btn btn-secondary" onClick={onClose} disabled={busy}>Cancel</button>
-        <button className={`btn ${short || withdrawing ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}
-          disabled={busy || checking || stillTaking > 0 || (graduating && !data) || (short && !understood)}>
-          {busy ? "Saving…" : short ? "Graduate anyway" : graduating ? "Mark as Graduated" : withdrawing ? "Withdraw student" : `Change to ${label}`}
-        </button>
+        <button className="btn btn-secondary" onClick={onClose} disabled={busy}>{short ? "Close" : "Cancel"}</button>
+        {!short && (
+          <button className={`btn ${withdrawing ? "btn-danger" : "btn-primary"}`} onClick={onConfirm}
+            disabled={busy || checking || stillTaking > 0 || (graduating && !data)}>
+            {busy ? "Saving…" : graduating ? "Mark as Graduated" : withdrawing ? "Withdraw student" : `Change to ${label}`}
+          </button>
+        )}
       </>}>
       {!graduating && <p className="text-[14px] text-ink-2"><strong className="text-ink">{student.full_name}</strong> ({student.id}). {EXPLAIN[status]}</p>}
       {stillTaking > 0 && (
@@ -86,10 +86,7 @@ export default function StatusChangeModal({ student, history, credits = [], stat
               </li>
             ))}
           </ul>
-          <label className="flex items-start gap-2.5 text-[14px] text-ink">
-            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} />
-            I checked this student's record and want to mark them Graduated anyway.
-          </label>
+          <p className="text-[13px] text-ink-3">They can be marked as Graduated once every subject is passed or credited.</p>
         </div>
       )}
     </Modal>
